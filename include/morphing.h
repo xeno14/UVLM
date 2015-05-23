@@ -47,12 +47,16 @@ class Morphing {
   void set_twist(std::function<double(const Eigen::Vector3d&, double)> f) {
     twist_ = f;
   }
+  void set_bend(std::function<double(const Eigen::Vector3d&, double)> f) {
+    bend_ = f;
+  }
 
  private:
   double alpha_;
   std::function<double(double)> plug_;
   std::function<double(double)> flap_;
   std::function<double(const Eigen::Vector3d&, double)> twist_;
+  std::function<double(const Eigen::Vector3d&, double)> bend_;
 };
 
 }  // namespace UVLM

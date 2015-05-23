@@ -12,6 +12,7 @@ Morphing::Morphing() {
   plug_ = internal::DefaultFunc;
   flap_ = internal::DefaultFunc;
   twist_ = internal::DefaultFunc2;
+  bend_ = internal::DefaultFunc2;
 }
 
 void Morphing::Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& x0,
@@ -19,9 +20,11 @@ void Morphing::Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& x0,
   Eigen::Matrix3d T;
   PrepareMatrix(&T, x0, t);
 
-  double gamma_z = plug_(t);
+  const double gamma_z = plug_(t);
+  const double gamma_b = bend_(x0, t);
 
-  *x = Eigen::Vector3d::UnitZ() * gamma_z + T * x0;
+  *x = Eigen::Vector3d::UnitZ() * gamma_z +
+       T * (x0 + Eigen::Vector3d::UnitZ() * gamma_b);
 }
 
 void Morphing::PrepareMatrix(Eigen::Matrix3d* m, const Eigen::Vector3d& x0,

@@ -27,12 +27,20 @@ struct Deformation {
   }
 };
 
+struct Bend {
+  double A, k, omega;
+  double operator()(const Eigen::Vector3d& x0, double t) {
+    return A * sin(k * x0.y()) * sin(omega * t);
+  }
+  Bend(double A, double k, double omega) : A(A), k(k), omega(omega) {}
+};
+
 void InitWing(std::vector<Eigen::Vector3d>* points) {
   points->clear();
   for (int i=1; i<=10; i++) {
     for (int j=1; j<=40; j++) {
       double x = -0.5 + i * DX;
-      double y = j * DX;
+      double y = -DX/2 + j * DX;
       double z = 0;
       points->emplace_back(x, y, z);
     }
@@ -46,7 +54,8 @@ int main() {
   UVLM::Morphing m;
   m.set_flap(SineCurve(M_PI/6, 1, M_PI/2));
   m.set_plug(SineCurve(0.5, 1, M_PI/2));
-  m.set_twist(Deformation());
+  // m.set_twist(Deformation());
+  m.set_bend(Bend(0.2, 1, 1));
 
   FILE* fp = stdout;
   for (double t=0; t<100; t+=0.1) {
