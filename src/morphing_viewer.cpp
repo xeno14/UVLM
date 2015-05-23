@@ -58,14 +58,20 @@ int main() {
   m.set_bend(Bend(0.2, 1, 1));
 
   FILE* fp = stdout;
-  for (double t=0; t<100; t+=0.1) {
+  fprintf(fp, "set xrange[-1:2]\n");
+  fprintf(fp, "set yrange[-3:3]\n");
+  fprintf(fp, "set zrange[-2:2]\n");
+  for (double t=0; t<10; t+=0.1) {
+    fprintf(fp, "splot \"-\" usi 1:2:3\n");
+    // Data
     for (const auto& x0 : wing) {
       Eigen::Vector3d x;
       m.Perfome(&x, x0, t);
       fprintf(fp, "%e\t%e\t%e\n", x.x(), x.y(), x.z());
       fprintf(fp, "%e\t%e\t%e\n", x.x(), -x.y(), x.z());
     }
-    fprintf(fp, "\n\n");
+    fprintf(fp, "end\n");
+    fprintf(fp, "pause -1\n");
   }
 
   return 0;

@@ -37,6 +37,7 @@ void Morphing::PrepareMatrix(Eigen::Matrix3d* m, const Eigen::Vector3d& x0,
 
   Eigen::Matrix3d flap;
   const double phi = flap_(t);
+
   flap << 1, 0, 0,
           0, cos(phi), sin(phi),
           0, -sin(phi), cos(phi);
