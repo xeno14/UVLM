@@ -1,5 +1,5 @@
 /**
- * @file morphing.hpp
+ * @file morphing.h
  * @brief Add description here
  */
 #pragma once
@@ -14,7 +14,8 @@
 
 namespace UVLM {
 namespace internal {
-inline double DefaultFunc(double t) { return 0; }
+inline double DefaultFunc(double) { return 0; }
+inline double DefaultFunc2(const Eigen::Vector3d&, double) { return 0; }
 }
 
 /**
@@ -41,13 +42,17 @@ class Morphing {
                      double t) const;
 
   void set_alpha(double alpha) { alpha_ = alpha; }
-  void set_pluging(std::function<double(double)> f) { pluging_ = f; }
-  void set_flapping(std::function<double(double)> f) { flapping_ = f; }
+  void set_plug(std::function<double(double)> f) { plug_ = f; }
+  void set_flap(std::function<double(double)> f) { flap_ = f; }
+  void set_twist(std::function<double(const Eigen::Vector3d&, double)> f) {
+    twist_ = f;
+  }
 
  private:
   double alpha_;
-  std::function<double(double)> pluging_;
-  std::function<double(double)> flapping_;
+  std::function<double(double)> plug_;
+  std::function<double(double)> flap_;
+  std::function<double(const Eigen::Vector3d&, double)> twist_;
 };
 
 }  // namespace UVLM
