@@ -3,6 +3,8 @@
  * @brief Add description here
  */
 
+
+#include "naca00XX.h"
 #include "wing.h"
 
 #include <gflags/gflags.h>
@@ -18,13 +20,7 @@ DEFINE_int32(rows, 10, "Number of rows (x).");
 namespace UVLM {
 namespace wing {
 
-/**
- * @brief Equation for a symmetrical 4-digit NACA airfoil
- * http://en.wikipedia.org/wiki/NACA_airfoil#Equation_for_a_symmetrical_4-digit_NACA_airfoil
- * @param c chord length
- * @param xx number
- */
-inline double NACA00XX(double x, double c, int xx) {
+double NACA00XX(double x, double c, int xx) {
   double t = xx * 0.01;
   double z = x / c;
   return 5 * t * c * (0.2969 * sqrt(z) + (-0.1260) * (z) + (-0.3516) * z * z +
