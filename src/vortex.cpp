@@ -5,6 +5,8 @@
 
 #include "vortex.h"
 
+#include <algorithm>
+
 namespace UVLM {
 
 double DistanceLineAndPoint(const Vector3d& start,
@@ -35,18 +37,16 @@ void BiotSavartLaw(Vector3d* result,
   *result *= (cos1 - cos2) / (4. * M_PI * h);
 }
 
-void VortexFilament::BiotSavartLaw(Vector3d* result,
-                                const Vector3d& pos) const {
-    ::UVLM::BiotSavartLaw(result, start_, end_, pos);
-    *result *= gamma_;
-}
-
 void VortexRing::BiotSavartLaw(Vector3d* result, const Vector3d& pos) const {
   *result << 0, 0, 0;
   Vector3d tmp;
-  for (const auto& filament : filaments_) {
-    filament.BiotSavartLaw(&tmp, pos); *result += tmp;
+  for (std::size_t i=0; i<nodes_.size(); i++) {
+    const Vector3d& start = nodes_[i];
+    const Vector3d& end = nodes_[(i+1) % nodes_.size()];
+    ::UVLM::BiotSavartLaw(&tmp, start, end, pos);
+    *result += tmp;
   }
+  *result *= gamma_;
 }
 
 VortexRing& VortexRing::PushNode(const Vector3d& pos) {
@@ -54,14 +54,31 @@ VortexRing& VortexRing::PushNode(const Vector3d& pos) {
   return *this;
 }
 
-void VortexRing::AssembleRing() {
-  if (nodes_.size() < 3) return; // exception?
+VortexRing& VortexRing::PushNode(double x, double y, double z) {
+  nodes_.emplace_back(x, y, z);
+  return *this;
+}
 
-  nodes_.push_back(nodes_[0]);  // for circulation
-  for (std::size_t i=0; i<nodes_.size() -1; i++) {
-    filaments_.emplace_back(gamma_, nodes_[i], nodes_[i+1]);
-  }
-  nodes_.clear();
+void VortexRing::SaveReferenceNode() {
+  nodes0_.resize(nodes_.size());
+  std::copy(std::begin(nodes_), std::end(nodes_), std::begin(nodes0_));
+}
+
+Vector3d VortexRing::Normal() const {
+  Vector3d diff1 = nodes_[2] - nodes_[0];
+  Vector3d diff2 = nodes_[3] - nodes_[1];
+  return diff1.cross(diff2);
+}
+
+Vector3d VortexRing::Centroid() const {
+  // TODO ちゃんと交点を計算する
+  // Vector3d res;
+  // for (const auto& node : nodes_) {
+  //   res += node;
+  // }
+  // res /= nodes_.size();
+  // return res;
+  return (nodes_[0] + nodes_[1] + nodes_[2] + nodes_[3]) / 4;
 }
 
 }  // namespace UVLM

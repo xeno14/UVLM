@@ -50,21 +50,38 @@ TEST_F(BiotSavartLawTest, finite_length) {
 }
 
 
-TEST(VortexRingAssembleTest, Assemble) {
+class VortexRingTest : public ::testing::Test {
+ protected:
+  VortexRingTest() {}
+  ~VortexRingTest() {}
+  virtual void SetUp() {}
+  virtual void TearDown() { ring.Clear(); }
   UVLM::VortexRing ring;
+};
+
+TEST_F(VortexRingTest, Assemble) {
   ring.PushNode(Vector3d(0, 0, 0))
       .PushNode(Vector3d(1, 0, 0))
       .PushNode(Vector3d(1, 1, 0))
-      .PushNode(Vector3d(0, 1, 0))
-      .AssembleRing();
-  const auto& filaments = ring.filaments();
-  ASSERT_EQ(4, filaments.size());
-  EXPECT_EQ(Vector3d(0, 0, 0), filaments[0].start());
-  EXPECT_EQ(Vector3d(1, 0, 0), filaments[0].end());
-  EXPECT_EQ(Vector3d(1, 0, 0), filaments[1].start());
-  EXPECT_EQ(Vector3d(1, 1, 0), filaments[1].end());
-  EXPECT_EQ(Vector3d(1, 1, 0), filaments[2].start());
-  EXPECT_EQ(Vector3d(0, 1, 0), filaments[2].end());
-  EXPECT_EQ(Vector3d(0, 1, 0), filaments[3].start());
-  EXPECT_EQ(Vector3d(0, 0, 0), filaments[3].end());
+      .PushNode(Vector3d(0, 1, 0));
+  const auto& nodes = ring.nodes();
+  ASSERT_EQ(4, nodes.size());
+  EXPECT_EQ(Vector3d(0, 0, 0), nodes[0]);
+  EXPECT_EQ(Vector3d(1, 0, 0), nodes[1]);
+  EXPECT_EQ(Vector3d(1, 1, 0), nodes[2]);
+  EXPECT_EQ(Vector3d(0, 1, 0), nodes[3]);
+}
+
+TEST_F(VortexRingTest, BiotSavartLaw) {
+  ring.set_gamma(4*M_PI);
+  ring.PushNode(1, 1, 0)
+      .PushNode(-1, 1, 0)
+      .PushNode(-1, -1, 0)
+      .PushNode(1, -1, 0);
+  Vector3d result;
+  Vector3d pos(0, 0, 0);
+  ring.BiotSavartLaw(&result, pos);
+  EXPECT_DOUBLE_EQ(0, result.x());
+  EXPECT_DOUBLE_EQ(0, result.y());
+  EXPECT_DOUBLE_EQ(4*M_SQRT2, result.z());
 }
