@@ -48,3 +48,23 @@ TEST_F(BiotSavartLawTest, finite_length) {
   EXPECT_NEAR(M_SQRT2/4./M_PI, result.y(), EPS);
   EXPECT_NEAR(0, result.z(), EPS);
 }
+
+
+TEST(VortexRingAssembleTest, Assemble) {
+  UVLM::VortexRing ring;
+  ring.PushNode(Vector3d(0, 0, 0))
+      .PushNode(Vector3d(1, 0, 0))
+      .PushNode(Vector3d(1, 1, 0))
+      .PushNode(Vector3d(0, 1, 0))
+      .AssembleRing();
+  const auto& filaments = ring.filaments();
+  ASSERT_EQ(4, filaments.size());
+  EXPECT_EQ(Vector3d(0, 0, 0), filaments[0].start());
+  EXPECT_EQ(Vector3d(1, 0, 0), filaments[0].end());
+  EXPECT_EQ(Vector3d(1, 0, 0), filaments[1].start());
+  EXPECT_EQ(Vector3d(1, 1, 0), filaments[1].end());
+  EXPECT_EQ(Vector3d(1, 1, 0), filaments[2].start());
+  EXPECT_EQ(Vector3d(0, 1, 0), filaments[2].end());
+  EXPECT_EQ(Vector3d(0, 1, 0), filaments[3].start());
+  EXPECT_EQ(Vector3d(0, 0, 0), filaments[3].end());
+}
