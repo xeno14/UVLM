@@ -9,6 +9,8 @@
 #include "morphing.h"
 
 #include <cstdio>
+#include <chrono>
+#include <thread>
 #include <vector>
 
 const double DX = 0.1;
@@ -39,7 +41,7 @@ void InitWing(std::vector<Eigen::Vector3d>* points) {
   points->clear();
   for (int i=1; i<=10; i++) {
     for (int j=1; j<=40; j++) {
-      double x = -0.5 + i * DX;
+      double x = i * DX;
       double y = -DX/2 + j * DX;
       double z = 0;
       points->emplace_back(x, y, z);
@@ -57,12 +59,12 @@ int main() {
   // m.set_twist(Deformation());
   m.set_bend(Bend(0.2, 1, 1));
 
-  FILE* fp = stdout;
+  FILE* fp = popen("gnuplot", "w");
   fprintf(fp, "set xrange[-1:2]\n");
   fprintf(fp, "set yrange[-3:3]\n");
   fprintf(fp, "set zrange[-2:2]\n");
-  for (double t=0; t<10; t+=0.1) {
-    fprintf(fp, "splot \"-\" usi 1:2:3\n");
+  for (double t=0; t<1000; t+=0.1) {
+    fprintf(fp, "splot \"-\" usi 1:2:3 title \"t=%e\"\n", t);
     // Data
     for (const auto& x0 : wing) {
       Eigen::Vector3d x;
@@ -71,7 +73,8 @@ int main() {
       fprintf(fp, "%e\t%e\t%e\n", x.x(), -x.y(), x.z());
     }
     fprintf(fp, "end\n");
-    fprintf(fp, "pause -1\n");
+    fprintf(fp, "\n");
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
   return 0;
