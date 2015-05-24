@@ -12,6 +12,12 @@ add_definitions("-Wall -std=c++14")
 
 
 ###########################################################
+# dependencies
+###########################################################
+find_package(gflags REQUIRED)
+
+
+###########################################################
 # testing
 ###########################################################
 enable_testing()
@@ -24,9 +30,15 @@ endmacro(add_gtest)
 
 
 ###########################################################
-
-include_directories (./include)
-
 add_library(morphing src/morphing.cpp)
 add_executable(morphing_viewer src/morphing_viewer.cpp)
 target_link_libraries(morphing_viewer morphing)
+
+add_library(wing_main src/wing/main.cpp)
+target_link_libraries(wing_main gflags pthread)
+add_library(naca00XXlib src/wing/naca00XX.cpp)
+target_link_libraries(naca00XXlib gflags pthread)
+add_executable(naca00XX src/wing/naca00XX.cpp)
+target_link_libraries(naca00XX wing_main)
+
+add_subdirectory(test)
