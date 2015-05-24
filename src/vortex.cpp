@@ -35,9 +35,9 @@ void BiotSavartLaw(Eigen::Vector3d* result,
   *result *= (cos1 - cos2) / (4. * M_PI * h);
 }
 
-void VortexFilament::BiotSavart(Eigen::Vector3d* result,
+void VortexFilament::BiotSavartLaw(Eigen::Vector3d* result,
                                 const Eigen::Vector3d& pos) const {
-    BiotSavartLaw(result, start_, end_, pos);
+    ::UVLM::BiotSavartLaw(result, start_, end_, pos);
     *result *= gamma_;
 }
 

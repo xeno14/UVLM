@@ -28,7 +28,7 @@ class VortexFilament {
   VortexFilament(const VortexFilament& v)
       : gamma_(v.gamma_), start_(v.start_), end_(v.end_) {}
 
-  void BiotSavart(Eigen::Vector3d* result, const Eigen::Vector3d& pos) const;
+  void BiotSavartLaw(Eigen::Vector3d* result, const Eigen::Vector3d& pos) const;
 
  private:
   double gamma_;
