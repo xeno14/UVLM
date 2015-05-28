@@ -24,6 +24,7 @@ void InducedVelocityByVortices(Eigen::Vector3d* const result,
 
 void UVLMVortexRing::InitWing(const std::vector<Eigen::Vector3d>& pos,
                               std::size_t cols) {
+  const std::size_t cols_pos = cols + 1;
   cols_ = cols;
   rows_ = pos.size() / cols - 1;
 
@@ -31,10 +32,10 @@ void UVLMVortexRing::InitWing(const std::vector<Eigen::Vector3d>& pos,
     // y >= 0
     for (std::size_t j=0; j<cols_; j++) {  // loop for y
       std::size_t indices[4] = {
-          j + i * cols_,            // 0
-          j + 1 + (i + 1) * cols_,  // 1
-          j + (i + 1) * cols_,      // 2
-          j + 1 + i * cols_,        // 3
+          j + i * cols_pos,            // 0
+          j + (i + 1) * cols_pos,      // 1
+          j + 1 + (i + 1) * cols_pos,  // 2
+          j + 1 + i * cols_pos,        // 3
       };
       VortexRing vortex;
       for (auto idx : indices) vortex.nodes().push_back(pos[idx]);
@@ -42,18 +43,20 @@ void UVLMVortexRing::InitWing(const std::vector<Eigen::Vector3d>& pos,
       bound_vortices_.push_back(vortex);
     }
     // y <= 0
-    for (std::size_t j=0; j<cols_ - 1; j++) {  // loop for y
-      std::size_t indices[4] = {
-          j + 1 + i * cols_,        // 3
-          j + (i + 1) * cols_,      // 2
-          j + 1 + (i + 1) * cols_,  // 1
-          j + i * cols_,            // 0
-      };
+    for (std::size_t j = 0; j < cols_; j++) {  // loop for y
       VortexRing vortex;
-      for (auto idx : indices)
-        vortex.nodes().push_back([](const auto& x) {
-          return Eigen::Vector3d(x.x(), -x.y(), x.z());
-        }(pos[idx]));
+      const std::size_t idx = j + i * 2 * cols_;  // 対応する渦輪のindex
+
+      // y → -yの変換
+      auto f = [](const auto& p) {
+        return Eigen::Vector3d(p.x(), -p.y(), p.z());
+      };
+
+      // 順番が時計回りになるように入れる
+      vortex.nodes().push_back(f(bound_vortices_[idx].nodes()[3]));
+      vortex.nodes().push_back(f(bound_vortices_[idx].nodes()[2]));
+      vortex.nodes().push_back(f(bound_vortices_[idx].nodes()[1]));
+      vortex.nodes().push_back(f(bound_vortices_[idx].nodes()[0]));
       vortex.SaveReferenceNode();
       bound_vortices_.push_back(vortex);
     }
