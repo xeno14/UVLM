@@ -9,9 +9,9 @@
 namespace UVLM {
 namespace internal {
 
-void ShedSingleVortex(VortexRing* result, const VortexRing& target,
-                      const std::vector<VortexRing>& vortices,
-                      const std::vector<VortexRing>& wake, double dt) {
+void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
+                              const std::vector<VortexRing>& vortices,
+                              const std::vector<VortexRing>& wake, double dt) {
   //
   // 3--2=3'---2'
   // |   |     |
