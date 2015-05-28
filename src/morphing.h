@@ -34,6 +34,16 @@ class Morphing {
   void Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& x0,
                const double t) const;
 
+  /** @brief 変形速度
+   *
+   *  変形を行い、数値微分（中心差分）をして速度とする。
+   *  @param v 変形速度
+   *  @param x0 reference frameでの位置
+   *  @param t 時刻
+   */
+  void Velocity(Eigen::Vector3d* v, const Eigen::Vector3d& x0,
+                const double t, const double dt=1e-6) const;
+
   /** @brief 回転行列を用意する
    *  
    *  Ghommem (2012) Eq. (15)
@@ -50,6 +60,8 @@ class Morphing {
   void set_bend(std::function<double(const Eigen::Vector3d&, double)> f) {
     bend_ = f;
   }
+
+  void Clear();
 
  private:
   double alpha_;
