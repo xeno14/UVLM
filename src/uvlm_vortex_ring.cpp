@@ -22,6 +22,27 @@ void InducedVelocityByVortices(Eigen::Vector3d* const result,
 
 }  // namespace internal
 
+void UVLMVortexRing::InitWing(const std::vector<Eigen::Vector3d>& pos,
+                              std::size_t cols) {
+  cols_ = cols;
+  rows_ = pos.size() / cols;
+
+  for (std::size_t i=0; i<rows_ - 1; i++) {  // loop for x
+    for (std::size_t j=0; j<cols_ - 1; j++) {  // loop for y
+      std::size_t indices[4] = {
+          j + i * cols_,            //
+          j + 1 + (i + 1) * cols_,  //
+          j + (i + 1) * cols_,      //
+          j + 1 + i * cols_,        //
+      };
+      VortexRing vortex;
+      for (std::size_t idx : indices) {
+        vortex.nodes().push_back(pos[idx]);
+      }
+    }
+  }
+}
+
 void UVLMVortexRing::InducedVelocity(Eigen::Vector3d* const result,
                                      const Eigen::Vector3d& pos) const {
   Eigen::Vector3d v, w;

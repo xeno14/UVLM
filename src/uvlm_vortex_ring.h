@@ -32,8 +32,13 @@ void InducedVelocityByVortices(Eigen::Vector3d* const result,
  */
 class UVLMVortexRing {
  public:
-  UVLMVortexRing(std::size_t cols, std::size_t rows) : cols_(cols), rows_(rows) {}
+  UVLMVortexRing() {}
   ~UVLMVortexRing() = default;
+
+  /** @brief 翼上の点からbound vortexの節の位置を決める
+   *  @pre 右半分(y>0)で、左上(x,y=0,0)から右下(x,y=S,C)に走査する並びで、yが動く
+   */
+  void InitWing(const std::vector<Eigen::Vector3d>& pos, std::size_t cols); 
 
   /** @brief 全ての渦によりつくられる流れ */
   void InducedVelocity(Eigen::Vector3d* const result,
@@ -62,7 +67,7 @@ class UVLMVortexRing {
  private:
   std::vector<VortexRing> bound_vortices_;
   std::vector<VortexRing> wake_vortices_;
-  const std::size_t cols_, rows_;
+  std::size_t cols_, rows_;
 };
 
 }  // namespace UVLM
