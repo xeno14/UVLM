@@ -6,7 +6,7 @@
 #pragma once
 
 #include "morphing.h"
-#include "vortex.h"
+#include "uvlm_vortex_ring.h"
 
 #include <vector>
 
@@ -41,7 +41,7 @@ Eigen::VectorXd CalcRhsMorphing(const std::vector<VortexRing>& vortices,
 }  // namespace internal
 
 inline Eigen::VectorXd SolveLinearProblem(
-    const std::vector<VortexRing> vortices, const std::vector<VortexRing>& wake,
+    const UVLMVortexRing& rings,
     const Eigen::Vector3d Vinfty, const Morphing& morphing, const double t);
 
 }  // namespace UVLM

@@ -5,7 +5,6 @@
 
 #include "linear.h"
 
-
 namespace UVLM {
 namespace internal {
 
@@ -13,14 +12,13 @@ Eigen::MatrixXd CalcMatrix(const std::vector<VortexRing>& vortices) {
   Eigen::MatrixXd res(vortices.size(), vortices.size());
 
   Eigen::Vector3d tmp;
-  for (std::size_t i=0; i<vortices.size(); i++) {
-    for (std::size_t j=0; j<vortices.size(); j++) {
+  for (std::size_t i = 0; i < vortices.size(); i++) {
+    for (std::size_t j = 0; j < vortices.size(); j++) {
       const auto& vi = vortices[i];
       const auto& vj = vortices[j];
-      vj.BiotSavartLaw(
-        &tmp,
-        vi.Centroid(),    // 渦iの位置
-        1.);
+      vj.BiotSavartLaw(&tmp,
+                       vi.Centroid(),  // 渦iの位置
+                       1.);
       res(i, j) = tmp.dot(vi.Normal());  // 渦jが渦iに及ぼす影響
     }
   }
@@ -64,13 +62,15 @@ Eigen::VectorXd CalcRhsMorphing(const std::vector<VortexRing>& vortices,
 
 }  // namespace internal
 
-inline Eigen::VectorXd SolveLinearProblem(
-    const std::vector<VortexRing> vortices, const std::vector<VortexRing>& wake,
-    const Eigen::Vector3d Vinfty, const Morphing& morphing, const double t) {
-  Eigen::MatrixXd A = internal::CalcMatrix(vortices);
-  Eigen::VectorXd rhs = internal::CalcRhsUpStream(Vinfty, vortices) +
-                        internal::CalcRhsWake(vortices, wake) -
-                        internal::CalcRhsMorphing(vortices, morphing, t);
+inline Eigen::VectorXd SolveLinearProblem(const UVLMVortexRing& rings,
+                                          const Eigen::Vector3d Vinfty,
+                                          const Morphing& morphing,
+                                          const double t) {
+  Eigen::MatrixXd A = internal::CalcMatrix(rings.bound_vortices());
+  Eigen::VectorXd rhs =
+      internal::CalcRhsUpStream(Vinfty, rings.bound_vortices()) +
+      internal::CalcRhsWake(rings.bound_vortices(), rings.wake_vortices()) -
+      internal::CalcRhsMorphing(rings.bound_vortices(), morphing, t);
   Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
   return solver.solve(rhs);
 }
