@@ -67,10 +67,10 @@ Eigen::VectorXd CalcRhsMorphing(const std::vector<VortexRing>& vortices,
 inline Eigen::VectorXd SolveLinearProblem(
     const std::vector<VortexRing> vortices, const std::vector<VortexRing>& wake,
     const Eigen::Vector3d Vinfty, const Morphing& morphing, const double t) {
-  auto A = internal::CalcMatrix(vortices);
-  auto rhs = internal::CalcRhsUpStream(Vinfty, vortices) +
-             internal::CalcRhsWake(vortices, wake) -
-             internal::CalcRhsMorphing(vortices, morphing, t);
+  Eigen::MatrixXd A = internal::CalcMatrix(vortices);
+  Eigen::VectorXd rhs = internal::CalcRhsUpStream(Vinfty, vortices) +
+                        internal::CalcRhsWake(vortices, wake) -
+                        internal::CalcRhsMorphing(vortices, morphing, t);
   Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
   return solver.solve(rhs);
 }
