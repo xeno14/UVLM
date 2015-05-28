@@ -34,6 +34,17 @@ add_library(morphing src/morphing.cpp)
 add_executable(morphing_viewer src/morphing_viewer.cpp)
 target_link_libraries(morphing_viewer morphing)
 
+add_library(vortex src/vortex.cpp)
+
+add_library(shed src/shed.cpp)
+target_link_libraries(shed vortex)
+
+add_library(uvlm_vortex_ring src/uvlm_vortex_ring.cpp)
+target_link_libraries(uvlm_vortex_ring vortex)
+
+add_library(linear src/linear.cpp)
+target_link_libraries(linear uvlm_vortex_ring)
+
 add_library(wing_main src/wing/main.cpp)
 target_link_libraries(wing_main gflags pthread)
 add_library(naca00XXlib src/wing/naca00XX.cpp)

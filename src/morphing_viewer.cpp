@@ -76,6 +76,7 @@ int main() {
     fprintf(fp, "\n");
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+  fclose(fp);
 
   return 0;
 }
