@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include "morphing.h"
 #include "vortex.h"
 
 #include <vector>
@@ -31,15 +32,16 @@ Eigen::VectorXd CalcRhsUpStream(const Eigen::Vector3d& Vinfty,
 Eigen::VectorXd CalcRhsWake(const std::vector<VortexRing>& vortices,
                             const std::vector<VortexRing>& wake);
 
+/**
+ * @brief 右辺値の変形による寄与分
+ */
+Eigen::VectorXd CalcRhsMorphing(const std::vector<VortexRing>& vortices,
+                                const Morphing& morphing, double t);
+
 }  // namespace internal
 
 inline Eigen::VectorXd SolveLinearProblem(
     const std::vector<VortexRing> vortices, const std::vector<VortexRing>& wake,
-    const Eigen::Vector3d Vinfty) {
-  auto A = internal::CalcMatrix(vortices);
-  auto rhs = internal::CalcRhsUpStream(Vinfty, vortices) + internal::CalcRhsWake(vortices, wake);
-  Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
-  return solver.solve(rhs);
-}
+    const Eigen::Vector3d Vinfty, const Morphing& morphing, const double t);
 
 }  // namespace UVLM

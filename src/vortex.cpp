@@ -72,14 +72,11 @@ Vector3d VortexRing::Normal() const {
 }
 
 Vector3d VortexRing::Centroid() const {
-  // TODO ちゃんと交点を計算する
-  // Vector3d res;
-  // for (const auto& node : nodes_) {
-  //   res += node;
-  // }
-  // res /= nodes_.size();
-  // return res;
   return (nodes_[0] + nodes_[1] + nodes_[2] + nodes_[3]) / 4;
+}
+
+Vector3d VortexRing::ReferenceCentroid() const {
+  return (nodes0_[0] + nodes0_[1] + nodes0_[2] + nodes0_[3]) / 4;
 }
 
 }  // namespace UVLM

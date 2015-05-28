@@ -65,6 +65,7 @@ class VortexRing {
    *  @todo ちゃんと計算する
    */
   Vector3d Centroid() const;
+  Vector3d ReferenceCentroid() const;
 
   double gamma() const { return gamma_; }
   void set_gamma(double gamma) { gamma_ = gamma; }
