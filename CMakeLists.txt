@@ -39,6 +39,9 @@ add_library(vortex src/vortex.cpp)
 add_library(linear src/linear.cpp)
 target_link_libraries(linear vortex)
 
+add_library(shed src/shed.cpp)
+target_link_libraries(shed vortex)
+
 add_library(wing_main src/wing/main.cpp)
 target_link_libraries(wing_main gflags pthread)
 add_library(naca00XXlib src/wing/naca00XX.cpp)
