@@ -3,6 +3,7 @@
  * @brief Add description here
  */
 
+#include <iostream>
 #include "uvlm_vortex_ring.h"
 
 
@@ -39,28 +40,16 @@ void UVLMVortexRing::InitWing(const std::vector<Eigen::Vector3d>& pos,
       };
       VortexRing vortex;
       for (auto idx : indices) vortex.nodes().push_back(pos[idx]);
-      vortex.SaveReferenceNode();
       bound_vortices_.push_back(vortex);
     }
     // y <= 0
     for (std::size_t j = 0; j < cols_; j++) {  // loop for y
-      VortexRing vortex;
-      const std::size_t idx = j + i * 2 * cols_;  // 対応する渦輪のindex
-
-      // y → -yの変換
-      auto f = [](const auto& p) {
-        return Eigen::Vector3d(p.x(), -p.y(), p.z());
-      };
-
-      // 順番が時計回りになるように入れる
-      vortex.nodes().push_back(f(bound_vortices_[idx].nodes()[3]));
-      vortex.nodes().push_back(f(bound_vortices_[idx].nodes()[2]));
-      vortex.nodes().push_back(f(bound_vortices_[idx].nodes()[1]));
-      vortex.nodes().push_back(f(bound_vortices_[idx].nodes()[0]));
-      vortex.SaveReferenceNode();
-      bound_vortices_.push_back(vortex);
+      bound_vortices_.emplace_back();
+      bound_vortices_.rbegin()->nodes().resize(4);
     }
   }
+  PlaneSymmetry();
+  for (auto& vortex : bound_vortices_) vortex.SaveReferenceNode();
 }
 
 void UVLMVortexRing::InducedVelocity(Eigen::Vector3d* const result,
@@ -69,6 +58,20 @@ void UVLMVortexRing::InducedVelocity(Eigen::Vector3d* const result,
   InducedVelocityByBound(&v, pos);
   InducedVelocityByWake(&w, pos);
   *result = v + w;
+}
+
+void UVLMVortexRing::PlaneSymmetry() {
+  for (std::size_t i=0; i<rows(); i++) {
+    for (std::size_t j=0; j<cols(); j++) {
+      const std::size_t idx = j + i * 2 * cols();
+      auto& to = bound_vortices_[idx + cols()].nodes();
+      const auto& from = bound_vortices_[idx].nodes();
+      internal::CopySymmetry(&to[0], from[3]);
+      internal::CopySymmetry(&to[1], from[2]);
+      internal::CopySymmetry(&to[2], from[1]);
+      internal::CopySymmetry(&to[3], from[0]);
+    }
+  }
 }
 
 }  // namespace UVLM

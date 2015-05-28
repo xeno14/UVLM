@@ -20,6 +20,11 @@ void InducedVelocityByVortices(Eigen::Vector3d* const result,
                                const Eigen::Vector3d& pos,
                                const std::vector<VortexRing>& vortices);
 
+inline void CopySymmetry(Eigen::Vector3d* const to,
+                         const Eigen::Vector3d& from) {
+  *to << from.x(), -from.y(), from.z();
+}
+
 }  // internal
 
 /** @brief
@@ -65,6 +70,9 @@ class UVLMVortexRing {
                                     const Eigen::Vector3d& pos) const {
     internal::InducedVelocityByVortices(result, pos, wake_vortices_);
   }
+
+  /** @brief bound vorticesの位置を原点を通るx-z平面に対し面対称にする */
+  void PlaneSymmetry();
 
   std::vector<VortexRing>& bound_vortices() { return bound_vortices_; }
   std::vector<VortexRing>& wake_vortices() { return wake_vortices_; }
