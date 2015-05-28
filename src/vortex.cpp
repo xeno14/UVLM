@@ -37,16 +37,17 @@ void BiotSavartLaw(Vector3d* result,
   *result *= (cos1 - cos2) / (4. * M_PI * h);
 }
 
-void VortexRing::BiotSavartLaw(Vector3d* result, const Vector3d& pos) const {
+void VortexRing::BiotSavartLaw(Vector3d* result, const Vector3d& pos,
+                               double gamma) const {
   *result << 0, 0, 0;
   Vector3d tmp;
-  for (std::size_t i=0; i<nodes_.size(); i++) {
+  for (std::size_t i = 0; i < nodes_.size(); i++) {
     const Vector3d& start = nodes_[i];
-    const Vector3d& end = nodes_[(i+1) % nodes_.size()];
+    const Vector3d& end = nodes_[(i + 1) % nodes_.size()];
     ::UVLM::BiotSavartLaw(&tmp, start, end, pos);
     *result += tmp;
   }
-  *result *= gamma_;
+  *result *= gamma;
 }
 
 VortexRing& VortexRing::PushNode(const Vector3d& pos) {

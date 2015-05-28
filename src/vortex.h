@@ -41,13 +41,27 @@ class VortexRing {
   VortexRing(const VortexRing& v)
       : gamma_(v.gamma_), nodes_(v.nodes_), nodes0_(v.nodes0_) {}
 
-  void BiotSavartLaw(Vector3d* result, const Vector3d& pos) const;
+  /** @brief この渦がBiot-Savartの法則の法則によりつくる流れ
+   *  @param[out] result 結果
+   *  @param[in]  pos 流れの位置
+   *  @param[in]  循環の強さ
+   */
+  void BiotSavartLaw(Vector3d* result, const Vector3d& pos, double gamma) const;
+
+  /** @brief この渦の循環の値を使ったBiotSavartLaw */
+  inline void BiotSavartLaw(Vector3d* result, const Vector3d& pos) const {
+    BiotSavartLaw(result, pos, gamma_);
+  }
 
   VortexRing& PushNode(const Vector3d& pos);
   VortexRing& PushNode(double x, double y, double z);
   void SaveReferenceNode();
 
+  /** @brief 法線ベクトル */
   Vector3d Normal() const;
+  /** @brief 中心の位置 
+   *  @todo ちゃんと計算する
+   */
   Vector3d Centroid() const;
 
   double gamma() const { return gamma_; }
@@ -61,7 +75,7 @@ class VortexRing {
  private:
   double gamma_;
   std::vector<Vector3d> nodes_;
-  std::vector<Vector3d> nodes0_; // 基準の位置(immutable)
+  std::vector<Vector3d> nodes0_; // reference nodes (immutable)
 };
 
 }  // namespace UVLM
