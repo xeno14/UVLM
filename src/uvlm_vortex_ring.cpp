@@ -25,20 +25,37 @@ void InducedVelocityByVortices(Eigen::Vector3d* const result,
 void UVLMVortexRing::InitWing(const std::vector<Eigen::Vector3d>& pos,
                               std::size_t cols) {
   cols_ = cols;
-  rows_ = pos.size() / cols;
+  rows_ = pos.size() / cols - 1;
 
-  for (std::size_t i=0; i<rows_ - 1; i++) {  // loop for x
-    for (std::size_t j=0; j<cols_ - 1; j++) {  // loop for y
+  for (std::size_t i=0; i<rows_; i++) {  // loop for x
+    // y >= 0
+    for (std::size_t j=0; j<cols_; j++) {  // loop for y
       std::size_t indices[4] = {
-          j + i * cols_,            //
-          j + 1 + (i + 1) * cols_,  //
-          j + (i + 1) * cols_,      //
-          j + 1 + i * cols_,        //
+          j + i * cols_,            // 0
+          j + 1 + (i + 1) * cols_,  // 1
+          j + (i + 1) * cols_,      // 2
+          j + 1 + i * cols_,        // 3
       };
       VortexRing vortex;
-      for (std::size_t idx : indices) {
-        vortex.nodes().push_back(pos[idx]);
-      }
+      for (auto idx : indices) vortex.nodes().push_back(pos[idx]);
+      vortex.SaveReferenceNode();
+      bound_vortices_.push_back(vortex);
+    }
+    // y <= 0
+    for (std::size_t j=0; j<cols_ - 1; j++) {  // loop for y
+      std::size_t indices[4] = {
+          j + 1 + i * cols_,        // 3
+          j + (i + 1) * cols_,      // 2
+          j + 1 + (i + 1) * cols_,  // 1
+          j + i * cols_,            // 0
+      };
+      VortexRing vortex;
+      for (auto idx : indices)
+        vortex.nodes().push_back([](const auto& x) {
+          return Eigen::Vector3d(x.x(), -x.y(), x.z());
+        }(pos[idx]));
+      vortex.SaveReferenceNode();
+      bound_vortices_.push_back(vortex);
     }
   }
 }

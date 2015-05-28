@@ -24,6 +24,8 @@ void InducedVelocityByVortices(Eigen::Vector3d* const result,
 
 /** @brief
  *
+ *  @todo 位置は原点からの相対的な位置にする？
+ *
  *  こんなことができます
  *  - ある位置における流速の計算
  *  - 渦の世代管理
@@ -32,10 +34,20 @@ void InducedVelocityByVortices(Eigen::Vector3d* const result,
  */
 class UVLMVortexRing {
  public:
-  UVLMVortexRing() {}
+  UVLMVortexRing()
+      : bound_vortices_(),
+        wake_vortices_(),
+        cols_(0),
+        rows_(0),
+        origin_(Eigen::Vector3d::Zero()) {}
   ~UVLMVortexRing() = default;
 
   /** @brief 翼上の点からbound vortexの節の位置を決める
+   *
+   *  注意：cols は渦の個数を表す。なので、posは(cols+1)*(rows+1)個の
+   *  要素数でないといけない。
+   *  @param pos 位置
+   *  @param cols 渦の個数
    *  @pre 右半分(y>0)で、左上(x,y=0,0)から右下(x,y=S,C)に走査する並びで、yが動く
    */
   void InitWing(const std::vector<Eigen::Vector3d>& pos, std::size_t cols); 
@@ -68,6 +80,7 @@ class UVLMVortexRing {
   std::vector<VortexRing> bound_vortices_;
   std::vector<VortexRing> wake_vortices_;
   std::size_t cols_, rows_;
+  Eigen::Vector3d origin_;
 };
 
 }  // namespace UVLM
