@@ -57,7 +57,9 @@ class VortexRing {
   VortexRing& PushNode(double x, double y, double z);
   void SaveReferenceNode();
 
-  /** @brief 法線ベクトル */
+  /** @brief 法線ベクトル 
+   *  @todo キャッシュする
+   */
   Vector3d Normal() const;
   /** @brief 中心の位置 
    *  @todo ちゃんと計算する
