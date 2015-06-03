@@ -27,7 +27,7 @@ void UVLMVortexRing::InitWing(const std::vector<Eigen::Vector3d>& pos,
                               std::size_t cols) {
   const std::size_t cols_pos = cols + 1;
   cols_ = cols;
-  rows_ = pos.size() / cols - 1;
+  rows_ = pos.size() / cols_pos - 1;
 
   for (std::size_t i=0; i<rows_; i++) {  // loop for x
     // y >= 0

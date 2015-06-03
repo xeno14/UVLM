@@ -42,6 +42,14 @@ Eigen::VectorXd CalcRhsMorphing(const std::vector<VortexRing>& vortices,
 
 inline Eigen::VectorXd SolveLinearProblem(
     const UVLMVortexRing& rings,
-    const Eigen::Vector3d Vinfty, const Morphing& morphing, const double t);
+    const Eigen::Vector3d Vinfty, const Morphing& morphing, const double t) {
+  Eigen::MatrixXd A = internal::CalcMatrix(rings.bound_vortices());
+  Eigen::VectorXd rhs =
+      internal::CalcRhsUpStream(Vinfty, rings.bound_vortices()) +
+      internal::CalcRhsWake(rings.bound_vortices(), rings.wake_vortices()) -
+      internal::CalcRhsMorphing(rings.bound_vortices(), morphing, t);
+  Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
+  return solver.solve(rhs);
+}
 
 }  // namespace UVLM
