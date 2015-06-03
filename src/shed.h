@@ -24,8 +24,9 @@ template <class InputIterator, class OutputIterator>
 void ShedAtTrailingEdge(InputIterator first, InputIterator last,
                         OutputIterator result, const UVLMVortexRing& rings,
                         const double dt) {
-  for (auto it = first; it != last; ++it) {
-    ShedSingleAtTrailingEdge(&(*result), *it, rings, dt);
+  while (first != last) {
+    internal::ShedSingleAtTrailingEdge(&(*result), *first, rings, dt);
+    ++first; ++result;
   }
 }
 

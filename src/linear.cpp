@@ -11,15 +11,15 @@ namespace internal {
 Eigen::MatrixXd CalcMatrix(const std::vector<VortexRing>& vortices) {
   Eigen::MatrixXd res(vortices.size(), vortices.size());
 
-  Eigen::Vector3d tmp;
+  Eigen::Vector3d velocity;
   for (std::size_t i = 0; i < vortices.size(); i++) {
     for (std::size_t j = 0; j < vortices.size(); j++) {
       const auto& vi = vortices[i];
       const auto& vj = vortices[j];
-      vj.BiotSavartLaw(&tmp,
+      vj.BiotSavartLaw(&velocity,
                        vi.Centroid(),  // 渦iの位置
                        1.);
-      res(i, j) = tmp.dot(vi.Normal());  // 渦jが渦iに及ぼす影響
+      res(i, j) = velocity.dot(vi.Normal());  // 渦jが渦iに及ぼす影響
     }
   }
   return res;
