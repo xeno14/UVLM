@@ -75,10 +75,9 @@ class UVLMVortexRing {
   void PlaneSymmetry();
 
   std::vector<VortexRing>& bound_vortices() { return bound_vortices_; }
+  const std::vector<VortexRing>& bound_vortices() const { return bound_vortices_; }
+
   std::vector<VortexRing>& wake_vortices() { return wake_vortices_; }
-  const std::vector<VortexRing>& bound_vortices() const {
-    return bound_vortices_;
-  }
   const std::vector<VortexRing>& wake_vortices() const { return wake_vortices_; }
 
   std::size_t rows() const { return rows_; }

@@ -6,24 +6,27 @@
 #pragma once
 
 #include "vortex.h"
+#include "uvlm_vortex_ring.h"
 
 namespace UVLM {
 namespace internal {
 
-void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
-                              const std::vector<VortexRing>& vortices,
-                              const std::vector<VortexRing>& wake, double dt);
-
-}  // namespace internal
-
 void Advect(Eigen::Vector3d* target, const Eigen::Vector3d& vel,
             const double dt);
 
-void InducedVelocity(Eigen::Vector3d* const result, const Eigen::Vector3d& pos,
-              const std::vector<VortexRing>& vortices);
 
-void InducedVelocity(Eigen::Vector3d* const result, const Eigen::Vector3d& pos,
-              const std::vector<VortexRing>& vortices,
-              const std::vector<VortexRing>& wake);
+void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
+                              const UVLMVortexRing& rings, const double dt);
+
+}  // namespace internal
+
+template <class InputIterator, class OutputIterator>
+void ShedAtTrailingEdge(InputIterator first, InputIterator last,
+                        OutputIterator result, const UVLMVortexRing& rings,
+                        const double dt) {
+  for (auto it = first; it != last; ++it) {
+    ShedSingleAtTrailingEdge(&(*result), *it, rings, dt);
+  }
+}
 
 }  // namespace UVLM
