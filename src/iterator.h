@@ -29,6 +29,10 @@ class Iterator : public std::iterator<std::forward_iterator_tag,
   }
   bool operator==(const Iterator& it) const { return idx_ == it.idx_; }
   bool operator!=(const Iterator& it) const { return idx_ != it.idx_; }
+  /** @brief 引き算 (assume that lhs > rhs)
+   *  @pre 左辺＞右辺
+   */
+  std::size_t operator-(const Iterator& it) const { return idx_ - it.idx_; }
   auto& operator*() { return list_[idx_]; }
 
  private:

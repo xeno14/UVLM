@@ -37,7 +37,9 @@ void BiotSavartLaw(Vector3d* result,
  */
 class VortexRing {
  public:
-  VortexRing() {}
+  static const std::size_t DEFAULT_NODE_SIZE = 4;
+
+  VortexRing() : nodes_() {}
   VortexRing(const VortexRing& v)
       : gamma_(v.gamma_), nodes_(v.nodes_), nodes0_(v.nodes0_) {}
 

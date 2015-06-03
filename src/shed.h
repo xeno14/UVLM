@@ -14,19 +14,23 @@ namespace internal {
 void Advect(Eigen::Vector3d* target, const Eigen::Vector3d& vel,
             const double dt);
 
-
 void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
-                              const UVLMVortexRing& rings, const double dt);
+                              const UVLMVortexRing& rings,
+                              const Eigen::Vector3d& Vinfty, const double dt);
 
 }  // namespace internal
 
 template <class InputIterator, class OutputIterator>
 void ShedAtTrailingEdge(InputIterator first, InputIterator last,
                         OutputIterator result, const UVLMVortexRing& rings,
-                        const double dt) {
-  for (auto it = first; it != last; ++it) {
-    ShedSingleAtTrailingEdge(&(*result), *it, rings, dt);
+                        const Eigen::Vector3d& Vinfty, const double dt) {
+  while (first != last) {
+    internal::ShedSingleAtTrailingEdge(&(*result), *first, rings, Vinfty, dt);
+    ++first; ++result;
   }
 }
+
+void AdvectWake(UVLMVortexRing* rings, const Eigen::Vector3d& Vinfty,
+                const double dt);
 
 }  // namespace UVLM

@@ -45,6 +45,9 @@ target_link_libraries(linear uvlm_vortex_ring)
 add_library(shed src/shed.cpp)
 target_link_libraries(shed uvlm_vortex_ring)
 
+add_library(uvlm)
+target_link_libraries(uvlm uvlm_vortex_ring linear shed morphing)
+
 add_library(wing_main src/wing/main.cpp)
 target_link_libraries(wing_main gflags pthread)
 add_library(naca00XXlib src/wing/naca00XX.cpp)
@@ -53,3 +56,6 @@ add_executable(naca00XX src/wing/naca00XX.cpp)
 target_link_libraries(naca00XX wing_main)
 
 add_subdirectory(test)
+
+add_executable(plug src/plug_main.cpp)
+target_link_libraries(plug uvlm gflags pthread)

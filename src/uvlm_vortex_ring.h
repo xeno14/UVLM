@@ -84,6 +84,11 @@ class UVLMVortexRing {
                           iterator(bound_vortices_, last, 1));
   }
 
+  template <class InputIterator>
+  void AppendWake(InputIterator first, InputIterator last) {
+    wake_vortices_.insert(wake_vortices_.end(), first, last);
+  }
+
   std::vector<VortexRing>& bound_vortices() { return bound_vortices_; }
   const std::vector<VortexRing>& bound_vortices() const { return bound_vortices_; }
 

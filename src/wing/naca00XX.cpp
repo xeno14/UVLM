@@ -12,9 +12,10 @@
 #include <cmath>
 
 DEFINE_int32(XX, 12, "Digit of NACA00XX");
-DEFINE_double(chord, 1.0, "Chord length");
+DEFINE_double(chord, 1.0, "Chord length (x)");
 DEFINE_double(aspect_ratio, 4.0, "Aspect ratio of the wing");
 DEFINE_int32(rows, 10, "Number of rows (x).");
+DEFINE_int32(cols, 5, "Number of columns (y).");
 
 
 namespace UVLM {
@@ -30,10 +31,10 @@ double NACA00XX(double x, double c, int xx) {
 void Perfome(std::ostream& os) {
   const int xx = FLAGS_XX;
   const double chord = FLAGS_chord;
-  const double span = chord * FLAGS_aspect_ratio;
+  const double span = chord * FLAGS_aspect_ratio / 2;
   const int rows = FLAGS_rows;
+  const int cols = FLAGS_cols;
   const double dx = chord/rows;
-  const int cols = int(span/dx);
   const double dy = span / cols;
   std::cerr << "NACA00" << xx << std::endl;
   std::cerr << "Chord: " << chord << std::endl;
@@ -43,7 +44,7 @@ void Perfome(std::ostream& os) {
   for (int i=0; i<=rows; i++) {
     for (int j=0; j<=cols; j++) {
       double x = i * dx;
-      double y = -span/2 + j * dy;
+      double y = j * dy;
       double z = NACA00XX(x, chord, xx);
       output(os, x, y, z);
     }
