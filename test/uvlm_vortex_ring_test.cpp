@@ -62,3 +62,24 @@ TEST_F(InitWingTest, test1) {
     }
   }
 }
+
+TEST_F(InitWingTest, iterator) {
+  UVLMVortexRing rings;
+  rings.InitWing(pos, cols);
+
+  auto trailing_edge = rings.TrailingEdgeIterators();
+  std::size_t i = 0;
+  double yp = 0;  // y+
+  double yn = -1; // y-
+  for (auto it = trailing_edge.first; it != trailing_edge.second; ++it) {
+    if (i < cols) {
+      yp = i * dx;
+      EXPECT_DOUBLE_EQ(yp, (*it).nodes()[0].y());
+    } else {
+      yn = ((int)cols - (int)i) * dx;
+      EXPECT_DOUBLE_EQ(yn, (*it).nodes()[3].y());
+    }
+    ++i;
+  }
+  EXPECT_EQ(cols * 2, i);
+}

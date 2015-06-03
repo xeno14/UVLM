@@ -5,6 +5,7 @@
 #pragma once
 
 #include "vortex.h"
+#include "iterator.h"
 
 #include <vector>
 
@@ -39,6 +40,8 @@ inline void CopySymmetry(Eigen::Vector3d* const to,
  */
 class UVLMVortexRing {
  public:
+  typedef Iterator<std::vector<VortexRing>> iterator;
+
   UVLMVortexRing()
       : bound_vortices_(),
         wake_vortices_(),
@@ -73,6 +76,13 @@ class UVLMVortexRing {
 
   /** @brief bound vorticesの位置を原点を通るx-z平面に対し面対称にする */
   void PlaneSymmetry();
+
+  std::pair<iterator, iterator> TrailingEdgeIterators() {
+    std::size_t first = 0 + (rows_ - 1) * 2 * cols_;
+    std::size_t last =  0 + rows_ * 2 * cols_;
+    return std::make_pair(iterator(bound_vortices_, first, 1),
+                          iterator(bound_vortices_, last, 1));
+  }
 
   std::vector<VortexRing>& bound_vortices() { return bound_vortices_; }
   const std::vector<VortexRing>& bound_vortices() const { return bound_vortices_; }
