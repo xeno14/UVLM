@@ -81,8 +81,7 @@ void SimulationBody() {
     auto gamma = UVLM::SolveLinearProblem(rings, Vinfty, morphing, t);
     // std::cerr << gamma << std::endl;
     for (std::size_t i=0; i < rings.bound_vortices().size(); i++) {
-      rings.bound_vortices()[i].set_gamma(0);
-      // rings.bound_vortices()[i].set_gamma(gamma(i));
+      rings.bound_vortices()[i].set_gamma(gamma(i));
     }
     Output(ofs, rings);
 
