@@ -1,0 +1,26 @@
+package UVLM;
+
+// 点
+message Point {
+  optional double x = 1;
+  optional double y = 2;
+  optional double z = 3;
+}
+
+// 翼のデータ構造
+message Wing {
+  optional uint64 cols = 1;   // 列のサイズ
+  optional uint64 rows = 2;   // 行のサイズ
+
+  // 位置
+  // 順番はindex = j + i * cols
+  // . → x
+  // ↓
+  // y
+  // -------->
+  // -------->
+  // -------->
+  repeated Point points = 3;
+
+  optional Point origin = 4;  // 原点
+}
