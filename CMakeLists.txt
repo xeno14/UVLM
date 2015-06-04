@@ -30,6 +30,12 @@ endmacro(add_gtest)
 
 
 ###########################################################
+add_custom_command(
+  OUTPUT uvlm.pb.cc uvlm.pb.h
+  DEPENDS proto/uvlm.proto
+  COMMAND "protoc" "uvlm.proto" "--cpp_out=." "--python_out=."
+)
+
 add_library(morphing src/morphing.cpp)
 add_executable(morphing_viewer src/morphing_viewer.cpp)
 target_link_libraries(morphing_viewer morphing)
