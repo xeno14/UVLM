@@ -5,26 +5,16 @@
 
 #include "shed.h"
 
+#include <iostream>
 
 namespace UVLM {
 namespace internal {
 
-/** @brief Euler-methodで移流させる
- *  @param[out] target 位置
- *  @param[in]  vel 速度
- *  @param[in]  dt  時間刻み
- */
 void Advect(Eigen::Vector3d* target, const Eigen::Vector3d& vel,
             const double dt) {
-  *target += vel* dt;
+  *target = *target + vel * dt;
 }
 
-/** @biref Trailing edgeの渦を一つ放出する
- *  @param[out] result 放出された渦
- *  @param[in]  target 放出される前のtrailing edgeにある渦
- *  @param[in]  rings 渦
- *  @param[in]  dt 時間刻み
- */
 void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
                               const UVLMVortexRing& rings,
                               const Eigen::Vector3d& Vinfty, const double dt) {
@@ -33,6 +23,7 @@ void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
   // |   |     |
   // 0--1=0'---1'
   //     after
+  result->set_gamma(target.gamma());
   result->nodes().resize(VortexRing::DEFAULT_NODE_SIZE);
   result->nodes()[0] = target.nodes()[1];
   result->nodes()[3] = target.nodes()[2];
@@ -48,18 +39,27 @@ void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
   Advect(&result->nodes()[2], v2, dt);
 }
 
-}  // namespace internal
-
-void AdvectWake(UVLMVortexRing* rings, const Eigen::Vector3d& Vinfty,
-                const double dt) {
-  for (auto& wake : rings->wake_vortices()) {
+void AdvectWakeImpl(std::vector<VortexRing>* result,
+                    const UVLMVortexRing& rings, const Eigen::Vector3d& Vinfty,
+                    const double dt) {
+  for (auto& wake : *result) {
     Eigen::Vector3d velocity;
     for (auto& node : wake.nodes()) {
-      rings->InducedVelocity(&velocity, node);
+      rings.InducedVelocity(&velocity, node);
       velocity += Vinfty;
       internal::Advect(&node, velocity, dt);
     }
   }
+}
+
+}  // namespace internal
+
+void AdvectWake(UVLMVortexRing* rings, const Eigen::Vector3d& Vinfty,
+                const double dt) {
+  std::vector<VortexRing> new_wake;
+  new_wake = rings->wake_vortices();
+  internal::AdvectWakeImpl(&new_wake, *rings, Vinfty, dt);
+  rings->wake_vortices().swap(new_wake);
 }
 
 }  // namespace UVLM

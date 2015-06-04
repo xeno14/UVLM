@@ -58,7 +58,7 @@ void Output(std::ofstream& ofs, const UVLM::UVLMVortexRing& rings) {
 void SimulationBody() {
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;  // do nothing
-  Eigen::Vector3d Vinfty(0.1, 0, 0);
+  Eigen::Vector3d Vinfty(1, 0, 0.1);
 
   InitWing(&rings);
 
@@ -79,10 +79,11 @@ void SimulationBody() {
 
     // 連立方程式を解いて翼の上の循環を求める
     auto gamma = UVLM::SolveLinearProblem(rings, Vinfty, morphing, t);
-    std::cerr << gamma << std::endl;
+    // std::cerr << gamma << std::endl;
     for (std::size_t i=0; i < rings.bound_vortices().size(); i++) {
       rings.bound_vortices()[i].set_gamma(gamma(i));
     }
+    Output(ofs, rings);
 
     // 放出する渦を求める
     auto trailing_edge = rings.TrailingEdgeIterators();
@@ -95,7 +96,6 @@ void SimulationBody() {
 
     // 放出した渦を追加する 
     rings.AppendWake(std::begin(shed), std::end(shed));
-    Output(ofs, rings);
   }
 }
 
