@@ -58,7 +58,7 @@ void Output(std::ofstream& ofs, const UVLM::UVLMVortexRing& rings) {
 void SimulationBody() {
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;  // do nothing
-  Eigen::Vector3d Vinfty(1, 0, 0.1);
+  Eigen::Vector3d Vinfty(2, 0, 0.1);
 
   InitWing(&rings);
 
@@ -68,6 +68,8 @@ void SimulationBody() {
     std::exit(EXIT_FAILURE);
   }
 
+  // morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
+  morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
 
   Output(ofs, rings);
   const double dt = FLAGS_dt;
@@ -90,13 +92,21 @@ void SimulationBody() {
     auto trailing_edge = rings.TrailingEdgeIterators();
     std::vector<UVLM::VortexRing> shed(trailing_edge.second - trailing_edge.first);
     UVLM::ShedAtTrailingEdge(trailing_edge.first, trailing_edge.second,
-                             std::begin(shed), rings, Vinfty, dt);
+                             std::begin(shed), rings, morphing, Vinfty, t, dt);
 
     // 後流の移流
     UVLM::AdvectWake(&rings, Vinfty, dt);
 
     // 放出した渦を追加する 
     rings.AppendWake(std::begin(shed), std::end(shed));
+
+    // 変形する
+    // TODO 関数にする
+    for (auto& w : rings.bound_vortices()) {
+      for (int i=0; i<4; i++) {
+        morphing.Perfome(&w.nodes()[i], w.nodes0()[i], t);
+      }
+    }
   }
 }
 
