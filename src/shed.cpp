@@ -17,7 +17,9 @@ void Advect(Eigen::Vector3d* target, const Eigen::Vector3d& vel,
 
 void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
                               const UVLMVortexRing& rings,
-                              const Eigen::Vector3d& Vinfty, const double dt) {
+                              const Morphing& morphing,
+                              const Eigen::Vector3d& Vinfty, const double t,
+                              const double dt) {
   // before
   // 3--2=3'---2'
   // |   |     |
@@ -25,10 +27,17 @@ void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
   //     after
   result->set_gamma(target.gamma());
   result->nodes().resize(VortexRing::DEFAULT_NODE_SIZE);
+
+  // 翼の上のnode: 変形で動く
   result->nodes()[0] = target.nodes()[1];
   result->nodes()[3] = target.nodes()[2];
-  result->nodes()[1] = target.nodes()[1];  // 後で移流される
-  result->nodes()[2] = target.nodes()[2];  // 後で移流される
+  // Morphing
+  morphing.Perfome(&result->nodes()[0], target.nodes0()[1], t);
+  morphing.Perfome(&result->nodes()[3], target.nodes0()[2], t);
+
+  // 翼の後ろのnode: 後で移流される
+  result->nodes()[1] = target.nodes()[1];
+  result->nodes()[2] = target.nodes()[2];
 
   Eigen::Vector3d v1, v2;
   rings.InducedVelocity(&v1, result->nodes()[1]);

@@ -89,7 +89,7 @@ void SimulationBody() {
     auto trailing_edge = rings.TrailingEdgeIterators();
     std::vector<UVLM::VortexRing> shed(trailing_edge.second - trailing_edge.first);
     UVLM::ShedAtTrailingEdge(trailing_edge.first, trailing_edge.second,
-                             std::begin(shed), rings, Vinfty, dt);
+                             std::begin(shed), rings, morphing, Vinfty, t, dt);
 
     // 後流の移流
     UVLM::AdvectWake(&rings, Vinfty, dt);
