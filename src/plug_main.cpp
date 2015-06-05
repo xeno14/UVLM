@@ -58,7 +58,7 @@ void Output(std::ofstream& ofs, const UVLM::UVLMVortexRing& rings) {
 void SimulationBody() {
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;  // do nothing
-  Eigen::Vector3d Vinfty(1, 0, 0.1);
+  Eigen::Vector3d Vinfty(2, 0, 0.1);
 
   InitWing(&rings);
 
@@ -68,7 +68,8 @@ void SimulationBody() {
     std::exit(EXIT_FAILURE);
   }
 
-  morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
+  // morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
+  morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
 
   Output(ofs, rings);
   const double dt = FLAGS_dt;
@@ -105,7 +106,6 @@ void SimulationBody() {
         morphing.Perfome(&w.nodes()[i], w.nodes0()[i], t);
       }
     }
-    rings.PlaneSymmetry();
   }
 }
 
