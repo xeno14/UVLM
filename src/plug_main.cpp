@@ -86,6 +86,7 @@ void SimulationBody() {
     Output(ofs, rings);
 
     // 放出する渦を求める
+    // TODO 変形したときに位置が合わない
     auto trailing_edge = rings.TrailingEdgeIterators();
     std::vector<UVLM::VortexRing> shed(trailing_edge.second - trailing_edge.first);
     UVLM::ShedAtTrailingEdge(trailing_edge.first, trailing_edge.second,
