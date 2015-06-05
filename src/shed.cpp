@@ -32,6 +32,7 @@ void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
   // result->nodes()[0] = target.nodes()[1];
   // result->nodes()[3] = target.nodes()[2];
   // Morphing
+  // TODO x<0の変形のことを考えていないので破綻する
   morphing.Perfome(&result->nodes()[0], target.nodes0()[1], t);
   morphing.Perfome(&result->nodes()[3], target.nodes0()[2], t);
 
