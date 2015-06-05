@@ -40,9 +40,9 @@ struct Bend {
 void InitWing(std::vector<Eigen::Vector3d>* points) {
   points->clear();
   for (int i=1; i<=10; i++) {
-    for (int j=1; j<=40; j++) {
+    for (int j=-40; j<=40; j++) {
       double x = i * DX;
-      double y = -DX/2 + j * DX;
+      double y = j * DX;
       double z = 0;
       points->emplace_back(x, y, z);
     }
@@ -63,6 +63,9 @@ int main() {
   fprintf(fp, "set xrange[-1:2]\n");
   fprintf(fp, "set yrange[-3:3]\n");
   fprintf(fp, "set zrange[-2:2]\n");
+  fprintf(fp, "set xlabel 'x'\n");
+  fprintf(fp, "set ylabel 'y'\n");
+  fprintf(fp, "set zlabel 'z'\n");
   for (double t=0; t<1000; t+=0.1) {
     fprintf(fp, "splot \"-\" usi 1:2:3 title \"t=%e\"\n", t);
     // Data
@@ -70,7 +73,6 @@ int main() {
       Eigen::Vector3d x;
       m.Perfome(&x, x0, t);
       fprintf(fp, "%e\t%e\t%e\n", x.x(), x.y(), x.z());
-      fprintf(fp, "%e\t%e\t%e\n", x.x(), -x.y(), x.z());
     }
     fprintf(fp, "end\n");
     fprintf(fp, "\n");

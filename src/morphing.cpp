@@ -17,14 +17,21 @@ Morphing::Morphing() {
 
 void Morphing::Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& x0,
                        const double t) const {
+  Eigen::Vector3d x_ref = x0;
+  bool is_negative = x0.y() < 0;
+
+  if (is_negative) x_ref.y() *= -1;
+
   Eigen::Matrix3d T;
-  PrepareMatrix(&T, x0, t);
+  PrepareMatrix(&T, x_ref, t);
 
   const double gamma_z = plug_(t);
-  const double gamma_b = bend_(x0, t);
+  const double gamma_b = bend_(x_ref, t);
 
   *x = Eigen::Vector3d::UnitZ() * gamma_z +
-       T * (x0 + Eigen::Vector3d::UnitZ() * gamma_b);
+       T * (x_ref + Eigen::Vector3d::UnitZ() * gamma_b);
+
+  if (is_negative) x->y() *= -1;
 }
 
 void Morphing::Velocity(Eigen::Vector3d* v, const Eigen::Vector3d& x0,

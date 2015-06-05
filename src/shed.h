@@ -6,6 +6,7 @@
 #pragma once
 
 #include "vortex.h"
+#include "morphing.h"
 #include "uvlm_vortex_ring.h"
 
 namespace UVLM {
@@ -27,7 +28,9 @@ void Advect(Eigen::Vector3d* target, const Eigen::Vector3d& vel,
  */
 void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
                               const UVLMVortexRing& rings,
-                              const Eigen::Vector3d& Vinfty, const double dt);
+                              const Morphing& morphing,
+                              const Eigen::Vector3d& Vinfty, const double t,
+                              const double dt);
 
 /** @brief 移流の実装
  *
@@ -46,9 +49,10 @@ void AdvectWakeImpl(std::vector<VortexRing>* result,
 template <class InputIterator, class OutputIterator>
 void ShedAtTrailingEdge(InputIterator first, InputIterator last,
                         OutputIterator result, const UVLMVortexRing& rings,
-                        const Eigen::Vector3d& Vinfty, const double dt) {
+                        const Morphing& morphing,
+                        const Eigen::Vector3d& Vinfty, const double t, const double dt) {
   while (first != last) {
-    internal::ShedSingleAtTrailingEdge(&(*result), *first, rings, Vinfty, dt);
+    internal::ShedSingleAtTrailingEdge(&(*result), *first, rings, morphing, Vinfty, t, dt);
     ++first; ++result;
   }
 }
