@@ -29,8 +29,8 @@ void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
   result->nodes().resize(VortexRing::DEFAULT_NODE_SIZE);
 
   // 翼の上のnode: 変形で動く
-  result->nodes()[0] = target.nodes()[1];
-  result->nodes()[3] = target.nodes()[2];
+  // result->nodes()[0] = target.nodes()[1];
+  // result->nodes()[3] = target.nodes()[2];
   // Morphing
   morphing.Perfome(&result->nodes()[0], target.nodes0()[1], t);
   morphing.Perfome(&result->nodes()[3], target.nodes0()[2], t);

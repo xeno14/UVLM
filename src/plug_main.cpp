@@ -68,6 +68,7 @@ void SimulationBody() {
     std::exit(EXIT_FAILURE);
   }
 
+  morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
 
   Output(ofs, rings);
   const double dt = FLAGS_dt;
@@ -96,6 +97,15 @@ void SimulationBody() {
 
     // 放出した渦を追加する 
     rings.AppendWake(std::begin(shed), std::end(shed));
+
+    // 変形する
+    // TODO 関数にする
+    for (auto& w : rings.bound_vortices()) {
+      for (int i=0; i<4; i++) {
+        morphing.Perfome(&w.nodes()[i], w.nodes0()[i], t);
+      }
+    }
+    rings.PlaneSymmetry();
   }
 }
 
