@@ -28,7 +28,7 @@ double NACA00XX(double x, double c, int xx) {
                       0.2843 * z * z * z + (-0.1015) * z * z * z * z);
 }
 
-void Perfome(std::ostream& os) {
+void Perfome(UVLM::proto::Wing* wing) {
   const int xx = FLAGS_XX;
   const double chord = FLAGS_chord;
   const double span = chord * FLAGS_aspect_ratio / 2;
@@ -41,12 +41,18 @@ void Perfome(std::ostream& os) {
   std::cerr << "Span: " << span<< std::endl;
   std::cerr << rows << "x" << cols << std::endl;
   std::cerr << dx << "@" << dy <<"\n";
+
+  wing->set_cols(cols);
+  wing->set_rows(rows);
   for (int i=0; i<=rows; i++) {
     for (int j=0; j<=cols; j++) {
       double x = i * dx;
       double y = j * dy;
       double z = NACA00XX(x, chord, xx);
-      output(os, x, y, z);
+      auto* point = wing->add_points();
+      point->set_x(x);
+      point->set_y(y);
+      point->set_z(z);
     }
   }
 }

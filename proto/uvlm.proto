@@ -1,4 +1,4 @@
-package UVLM;
+package UVLM.proto;
 
 // 点
 message Point {

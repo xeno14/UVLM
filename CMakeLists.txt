@@ -30,10 +30,14 @@ endmacro(add_gtest)
 
 
 ###########################################################
+set(PROTO_DIR "${PROJECT_SOURCE_DIR}/proto")
+message(${PROTO_DIR})
+
 add_custom_command(
-  OUTPUT uvlm.pb.cc uvlm.pb.h
-  DEPENDS uvlm.proto
-  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/proto
+  OUTPUT ${PROTO_DIR}/uvlm.pb.cc ${PROTO_DIR}/uvlm.pb.h
+  WORKING_DIRECTORY ${PROTO_DIR}
+  DEPENDS ${PROTO_DIR}/uvlm.proto
+  # COMMAND "protoc" "-I" "${PROTO_DIR}" "${PROTO_DIR}/uvlm.proto" "--cpp_out=." "--python_out=."
   COMMAND "protoc" "uvlm.proto" "--cpp_out=." "--python_out=."
 )
 
@@ -42,21 +46,28 @@ add_executable(morphing_viewer src/morphing_viewer.cpp)
 target_link_libraries(morphing_viewer morphing)
 
 add_library(uvlm
-            ${PROJECT_SOURCE_DIR}/proto/uvlm.pb.cc
+            uvlm.pb.cc
             src/linear.cpp
             src/shed.cpp
             src/vortex.cpp
             src/uvlm_vortex_ring.cpp)
-target_link_libraries(uvlm morphing)
+target_link_libraries(uvlm morphing protobuf)
 
-add_library(wing_main src/wing/main.cpp)
-target_link_libraries(wing_main gflags pthread)
-add_library(naca00XXlib src/wing/naca00XX.cpp)
-target_link_libraries(naca00XXlib gflags pthread)
-add_executable(naca00XX src/wing/naca00XX.cpp)
-target_link_libraries(naca00XX wing_main)
 
-add_subdirectory(test)
+add_library(wing_main
+            src/wing/main.cpp
+            ${PROJECT_SOURCE_DIR}/proto/uvlm.pb.cc)
+target_link_libraries(wing_main gflags pthread protobuf)
 
-add_executable(plug src/plug_main.cpp)
-target_link_libraries(plug uvlm gflags pthread)
+# add_library(naca00XXlib
+#             src/wing/naca00XX.cpp 
+#             uvlm.pb.cc)
+# target_link_libraries(naca00XXlib gflags pthread protobuf)
+#
+# add_executable(naca00XX src/wing/naca00XX.cpp)
+# target_link_libraries(naca00XX wing_main)
+#
+# add_subdirectory(test)
+#
+# add_executable(plug src/plug_main.cpp)
+# target_link_libraries(plug uvlm gflags pthread)

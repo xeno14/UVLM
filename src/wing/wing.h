@@ -5,16 +5,11 @@
  */
 #pragma once
 
-#include <iostream>
+#include "../../proto/uvlm.pb.h"
+
 
 namespace UVLM {
 namespace wing {
-
-inline std::ostream& output(std::ostream& os, double x, double y, double z) {
-  return os << x << "\t" << y << "\t" << z << std::endl;
-}
-
-void Perfome(std::ostream& os);
-
+void Perfome(UVLM::proto::Wing* wing);
 }
 }
