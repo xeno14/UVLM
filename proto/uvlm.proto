@@ -24,3 +24,10 @@ message Wing {
 
   optional Point origin = 4;  // 原点
 }
+
+// 渦輪
+message VortexRing {
+  optional double gamma = 1;
+  repeated Point nodes = 2;
+  repeated Point nodes0 = 3;
+}

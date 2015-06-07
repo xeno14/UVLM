@@ -42,12 +42,9 @@ void InitWing(UVLM::UVLMVortexRing* rings) {
   }
   UVLM::proto::Wing wing;
   wing.ParseFromIstream(&ifs);
-  std::vector<Eigen::Vector3d> pos;
-  for (const auto& point : wing.points()) {
-    Eigen::Vector3d p;
-    UVLM::PointToVector3d(&p, point);
-    pos.push_back(p);
-  }
+  std::vector<Eigen::Vector3d> pos(wing.points().size());
+  std::transform(wing.points().begin(), wing.points().end(), pos.begin(),
+                 UVLM::PointToVector3d);
   rings->InitWing(pos, wing.cols());
 }
 
