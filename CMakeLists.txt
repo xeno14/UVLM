@@ -30,8 +30,12 @@ endmacro(add_gtest)
 
 
 ###########################################################
+# targets
+###########################################################
 set(PROTO_DIR "${PROJECT_SOURCE_DIR}/proto")
-message(${PROTO_DIR})
+macro(enable_gflags target)
+  target_link_libraries(${target} gflags pthread)
+endmacro(enable_gflags)
 
 add_custom_command(
   OUTPUT ${PROTO_DIR}/uvlm.pb.cc ${PROTO_DIR}/uvlm.pb.h
@@ -45,10 +49,10 @@ add_library(morphing src/morphing.cpp)
 add_executable(morphing_viewer
                ${PROTO_DIR}/uvlm.pb.cc
                src/morphing_viewer.cpp)
-target_link_libraries(morphing_viewer morphing protobuf gflags pthread)
+enable_gflags(morphing_viewer)
+target_link_libraries(morphing_viewer morphing protobuf)
 
 add_library(uvlm
-            uvlm.pb.cc
             src/linear.cpp
             src/shed.cpp
             src/vortex.cpp
@@ -62,10 +66,14 @@ add_library(wing
 target_link_libraries(wing protobuf)
 
 add_executable(naca00XX src/wing/naca00XX_main.cpp)
-target_link_libraries(naca00XX wing gflags pthread)
+enable_gflags(naca00XX)
+target_link_libraries(naca00XX wing)
 
 
 add_subdirectory(test)
 
-add_executable(plug src/plug_main.cpp)
-target_link_libraries(plug uvlm gflags pthread)
+add_executable(plug
+               ${PROTO_DIR}/uvlm.pb.cc
+               src/plug_main.cpp)
+enable_gflags(plug)
+target_link_libraries(plug uvlm protobuf)

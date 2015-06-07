@@ -12,7 +12,7 @@ namespace UVLM {
 
 inline void PointToVector3d(Eigen::Vector3d* result,
                             const proto::Point& point) {
-  *result << point.x() << point.y() << point.z();
+  *result << point.x(), point.y(), point.z();
 }
 
 }  // namespace UVLM

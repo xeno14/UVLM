@@ -3,10 +3,12 @@
  * @brief Add description here
  */
 
+#include "../proto/uvlm.pb.h"
 #include "uvlm_vortex_ring.h"
 #include "morphing.h"
 #include "linear.h"
 #include "shed.h"
+#include "proto_adaptor.h"
 
 #include <gflags/gflags.h>
 #include <iostream>
@@ -14,9 +16,7 @@
 #include <cstdlib>
 
 DEFINE_string(output, "", "output path");
-//DEFINE_string(format, "tsv", "file format");
-DEFINE_string(wing_tsv, "", "tsv file");
-DEFINE_int32(cols, 0, "number of columns of vertices");
+DEFINE_string(wing, "", "wing data");
 DEFINE_double(dt, 0.01, "delta t");
 
 std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
@@ -35,8 +35,20 @@ std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
 }
 
 void InitWing(UVLM::UVLMVortexRing* rings) {
-  auto pos = ReadWingTsv(FLAGS_wing_tsv);
-  rings->InitWing(pos, FLAGS_cols);
+  std::ifstream ifs(FLAGS_wing, std::ios::binary);
+  if (!ifs) {
+    std::cerr << "Cannot open " << FLAGS_wing << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  UVLM::proto::Wing wing;
+  wing.ParseFromIstream(&ifs);
+  std::vector<Eigen::Vector3d> pos;
+  for (const auto& point : wing.points()) {
+    Eigen::Vector3d p;
+    UVLM::PointToVector3d(&p, point);
+    pos.push_back(p);
+  }
+  rings->InitWing(pos, wing.cols());
 }
 
 void Output(std::ofstream& ofs, const UVLM::UVLMVortexRing& rings) {
