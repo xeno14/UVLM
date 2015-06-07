@@ -7,13 +7,21 @@
  */
 
 #include "morphing.h"
+#include "../proto/uvlm.pb.h"
 
+#include <gflags/gflags.h>
 #include <cstdio>
 #include <chrono>
+#include <fstream>
+#include <iostream>
 #include <thread>
 #include <vector>
 
 const double DX = 0.1;
+
+
+DEFINE_string(wing, "", "Wing proto bin file");
+
 
 struct SineCurve {
   double A, omega, phi;
@@ -39,17 +47,34 @@ struct Bend {
 
 void InitWing(std::vector<Eigen::Vector3d>* points) {
   points->clear();
-  for (int i=1; i<=10; i++) {
-    for (int j=-40; j<=40; j++) {
-      double x = i * DX;
-      double y = j * DX;
-      double z = 0;
-      points->emplace_back(x, y, z);
+
+  if (FLAGS_wing.size()) {
+    std::ifstream ifs(FLAGS_wing, std::ios::binary);
+    if (!ifs) {
+      std::cerr << "Cannot open " << FLAGS_wing << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+    UVLM::proto::Wing wing;
+    wing.ParseFromIstream(&ifs);
+    for (const auto& point : wing.points()) {
+      points->emplace_back(point.x(), point.y(), point.z());
+      points->emplace_back(point.x(), -point.y(), point.z());
+    }
+  } else {
+    for (int i=1; i<=10; i++) {
+      for (int j=-40; j<=40; j++) {
+        double x = i * DX;
+        double y = j * DX;
+        double z = 0;
+        points->emplace_back(x, y, z);
+      }
     }
   }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
   std::vector<Eigen::Vector3d> wing;
   InitWing(&wing);
 

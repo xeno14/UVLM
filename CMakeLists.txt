@@ -42,8 +42,10 @@ add_custom_command(
 )
 
 add_library(morphing src/morphing.cpp)
-add_executable(morphing_viewer src/morphing_viewer.cpp)
-target_link_libraries(morphing_viewer morphing)
+add_executable(morphing_viewer
+               ${PROTO_DIR}/uvlm.pb.cc
+               src/morphing_viewer.cpp)
+target_link_libraries(morphing_viewer morphing protobuf gflags pthread)
 
 add_library(uvlm
             uvlm.pb.cc
