@@ -1,6 +1,6 @@
 project(UVLM)
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
 ###########################################################
 # setting
@@ -32,7 +32,8 @@ endmacro(add_gtest)
 ###########################################################
 add_custom_command(
   OUTPUT uvlm.pb.cc uvlm.pb.h
-  DEPENDS proto/uvlm.proto
+  DEPENDS uvlm.proto
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/proto
   COMMAND "protoc" "uvlm.proto" "--cpp_out=." "--python_out=."
 )
 
@@ -41,6 +42,7 @@ add_executable(morphing_viewer src/morphing_viewer.cpp)
 target_link_libraries(morphing_viewer morphing)
 
 add_library(uvlm
+            ${PROJECT_SOURCE_DIR}/proto/uvlm.pb.cc
             src/linear.cpp
             src/shed.cpp
             src/vortex.cpp
