@@ -57,21 +57,13 @@ target_link_libraries(uvlm morphing protobuf)
 add_library(wing
             ${PROTO_DIR}/uvlm.pb.cc
             src/wing/naca00XX.cpp)
+target_link_libraries(wing protobuf)
 
-# add_library(wing_main
-#             src/wing/main.cpp
-#             ${PROJECT_SOURCE_DIR}/proto/uvlm.pb.cc)
-# target_link_libraries(wing_main gflags pthread protobuf)
+add_executable(naca00XX src/wing/naca00XX_main.cpp)
+target_link_libraries(naca00XX wing gflags pthread)
 
-# add_library(naca00XXlib
-#             src/wing/naca00XX.cpp 
-#             uvlm.pb.cc)
-# target_link_libraries(naca00XXlib gflags pthread protobuf)
-#
-# add_executable(naca00XX src/wing/naca00XX.cpp)
-# target_link_libraries(naca00XX wing_main)
-#
-# add_subdirectory(test)
-#
-# add_executable(plug src/plug_main.cpp)
-# target_link_libraries(plug uvlm gflags pthread)
+
+add_subdirectory(test)
+
+add_executable(plug src/plug_main.cpp)
+target_link_libraries(plug uvlm gflags pthread)

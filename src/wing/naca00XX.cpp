@@ -23,16 +23,19 @@ double NACA00XX(double x, double c, int xx) {
 void NACA00XXGenerator::Generate(UVLM::proto::Wing* wing) {
   const int xx = digit_;
   const double chord = chord_;
-  const double span = chord * aspect_ratio_ / 2;
+  const double span = span_;
   const int rows = rows_;
   const int cols = cols_;
   const double dx = chord / rows;
   const double dy = span / cols;
-  std::cerr << "NACA00" << xx << std::endl;
-  std::cerr << "Chord: " << chord << std::endl;
-  std::cerr << "Span: " << span << std::endl;
-  std::cerr << rows << "x" << cols << std::endl;
-  std::cerr << dx << "@" << dy << "\n";
+
+  if (verbose_) {
+    std::cerr << "NACA00" << xx << std::endl;
+    std::cerr << "Chord: " << chord << std::endl;
+    std::cerr << "Span: " << span << std::endl;
+    std::cerr << rows << "x" << cols << std::endl;
+    std::cerr << dx << "@" << dy << "\n";
+  }
 
   wing->set_cols(cols);
   wing->set_rows(rows);

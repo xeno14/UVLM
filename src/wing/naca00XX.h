@@ -20,17 +20,20 @@ double NACA00XX(double x, double c, int xx);
 
 class NACA00XXGenerator : public WingGenerator {
  public:
-  NACA00XXGenerator(int digit, double chord, double ar, std::size_t rows,
+  NACA00XXGenerator(int digit, double chord, double span, std::size_t rows,
                     std::size_t cols)
       : WingGenerator(rows, cols),
         digit_(digit),
         chord_(chord),
-        aspect_ratio_(ar) {}
+        span_(span),
+        verbose_(false) {}
   void Generate(UVLM::proto::Wing* wing);
+  void set_verbose(bool flag) { verbose_ = flag; }
 
  private:
   int digit_;
-  double chord_, aspect_ratio_;
+  double chord_, span_;
+  bool verbose_;
 };
 
 }  // namespace wing
