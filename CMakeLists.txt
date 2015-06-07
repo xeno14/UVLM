@@ -54,10 +54,14 @@ add_library(uvlm
 target_link_libraries(uvlm morphing protobuf)
 
 
-add_library(wing_main
-            src/wing/main.cpp
-            ${PROJECT_SOURCE_DIR}/proto/uvlm.pb.cc)
-target_link_libraries(wing_main gflags pthread protobuf)
+add_library(wing
+            ${PROTO_DIR}/uvlm.pb.cc
+            src/wing/naca00XX.cpp)
+
+# add_library(wing_main
+#             src/wing/main.cpp
+#             ${PROJECT_SOURCE_DIR}/proto/uvlm.pb.cc)
+# target_link_libraries(wing_main gflags pthread protobuf)
 
 # add_library(naca00XXlib
 #             src/wing/naca00XX.cpp 

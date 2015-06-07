@@ -5,6 +5,8 @@
  */
 #pragma once
 
+#include "wing_generator.h"
+
 namespace UVLM {
 namespace wing {
 
@@ -15,6 +17,21 @@ namespace wing {
  * @param xx number
  */
 double NACA00XX(double x, double c, int xx);
+
+class NACA00XXGenerator : public WingGenerator {
+ public:
+  NACA00XXGenerator(int digit, double chord, double ar, std::size_t rows,
+                    std::size_t cols)
+      : WingGenerator(rows, cols),
+        digit_(digit),
+        chord_(chord),
+        aspect_ratio_(ar) {}
+  void Generate(UVLM::proto::Wing* wing);
+
+ private:
+  int digit_;
+  double chord_, aspect_ratio_;
+};
 
 }  // namespace wing
 }  // namespace UVLM
