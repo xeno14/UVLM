@@ -65,18 +65,14 @@ void Output(std::ofstream& ofs, const UVLM::UVLMVortexRing& rings) {
   ofs << std::endl << std::endl;
 }
 
-void OutputTimestamp(const int index, const double t, const UVLM::UVLMVortexRing& rings) {
-  UVLM::proto::TimeStamp timestamp;
-  timestamp.set_t(t);
 
-  for (const auto& v : rings.bound_vortices()) {
-    auto* target = timestamp.add_bound_vortices();
-    *target = VortexRingToProto(v);
-  }
-  for (const auto& v : rings.wake_vortices()) {
-    auto* target = timestamp.add_wake_vortices();
-    *target = VortexRingToProto(v);
-  }
+void OutputSnapshot(const int index, const double t, const UVLM::UVLMVortexRing& rings) {
+  UVLM::proto::Snapshot snapshot;
+  snapshot.set_t(t);
+
+  auto* bird = snapshot.add_birds();
+  UVLMVortexRingToBird(bird, rings);
+
   char filename[256];
   sprintf(filename, "%s/%08d", FLAGS_output.c_str(), index); 
   std::ofstream ofs(filename, std::ios::binary);
@@ -84,7 +80,7 @@ void OutputTimestamp(const int index, const double t, const UVLM::UVLMVortexRing
     std::cerr << "Open error " << filename << std::endl;
     std::exit(EXIT_FAILURE);
   }
-  timestamp.SerializeToOstream(&ofs);
+  snapshot.SerializeToOstream(&ofs);
 }
 
 void SimulationBody() {
@@ -118,7 +114,7 @@ void SimulationBody() {
       rings.bound_vortices()[i].set_gamma(gamma(i));
     }
     // Output(ofs, rings);
-    OutputTimestamp(i, t, rings);
+    OutputSnapshot(i, t, rings);
 
     // 放出する渦を求める
     // TODO 変形したときに位置が合わない

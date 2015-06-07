@@ -36,4 +36,19 @@ inline proto::VortexRing VortexRingToProto(const VortexRing& v) {
   return res;
 }
 
+inline void UVLMVortexRingToBird(proto::Bird* bird,
+                                 const UVLMVortexRing& rings) {
+  bird->Clear();
+  for (const auto& v : rings.bound_vortices()) {
+    auto* target = bird->add_bound_vortices();
+    *target = VortexRingToProto(v);
+  }
+  for (const auto& v : rings.wake_vortices()) {
+    auto* target = bird->add_wake_vortices();
+    *target = VortexRingToProto(v);
+  }
+  auto* origin = bird->mutable_origin();
+  *origin = Vector3dToPoint(rings.origin());
+}
+
 }  // namespace UVLM

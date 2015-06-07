@@ -32,10 +32,16 @@ message VortexRing {
   repeated Point nodes0 = 3;
 }
 
+// 個体
+message Bird {
+  repeated VortexRing bound_vortices = 1;
+  repeated VortexRing wake_vortices = 2;
+  optional Point origin = 3;
+}
 
-message TimeStamp {
+// スナップショット
+// 変数についてはこのバイナリから全て復元できる
+message Snapshot {
   optional double t = 1;
-  
-  repeated VortexRing bound_vortices = 2;
-  repeated VortexRing wake_vortices = 3;
+  repeated Bird birds = 2;
 }
