@@ -14,4 +14,26 @@ inline Eigen::Vector3d PointToVector3d(const proto::Point& point) {
   return Eigen::Vector3d(point.x(), point.y(), point.z());
 }
 
+inline proto::Point Vector3dToPoint(const Eigen::Vector3d& vec) {
+  proto::Point res;
+  res.set_x(vec.x());
+  res.set_y(vec.y());
+  res.set_z(vec.z());
+  return res;
+}
+
+inline proto::VortexRing VortexRingToProto(const VortexRing& v) {
+  proto::VortexRing res;
+  res.set_gamma(v.gamma());
+  for (const auto& node : v.nodes()) {
+    auto* target = res.add_nodes();
+    *target = Vector3dToPoint(node);
+  }
+  for (const auto& node : v.nodes0()) {
+    auto* target = res.add_nodes0();
+    *target = Vector3dToPoint(node);
+  }
+  return res;
+}
+
 }  // namespace UVLM

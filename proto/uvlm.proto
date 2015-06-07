@@ -31,3 +31,11 @@ message VortexRing {
   repeated Point nodes = 2;
   repeated Point nodes0 = 3;
 }
+
+
+message TimeStamp {
+  optional double t = 1;
+  
+  repeated VortexRing bound_vortices = 2;
+  repeated VortexRing wake_vortices = 3;
+}

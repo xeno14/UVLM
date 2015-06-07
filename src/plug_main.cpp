@@ -49,6 +49,7 @@ void InitWing(UVLM::UVLMVortexRing* rings) {
 }
 
 void Output(std::ofstream& ofs, const UVLM::UVLMVortexRing& rings) {
+  ofs << std::scientific;
   for (const auto& v : rings.bound_vortices()) {
     for (const auto& vertex : v.nodes()) {
       ofs << vertex.x() << "\t" << vertex.y() << "\t" << vertex.z() << "\t"
@@ -64,6 +65,28 @@ void Output(std::ofstream& ofs, const UVLM::UVLMVortexRing& rings) {
   ofs << std::endl << std::endl;
 }
 
+void OutputTimestamp(const int index, const double t, const UVLM::UVLMVortexRing& rings) {
+  UVLM::proto::TimeStamp timestamp;
+  timestamp.set_t(t);
+
+  for (const auto& v : rings.bound_vortices()) {
+    auto* target = timestamp.add_bound_vortices();
+    *target = VortexRingToProto(v);
+  }
+  for (const auto& v : rings.wake_vortices()) {
+    auto* target = timestamp.add_wake_vortices();
+    *target = VortexRingToProto(v);
+  }
+  char filename[256];
+  sprintf(filename, "%s/%08d", FLAGS_output.c_str(), index); 
+  std::ofstream ofs(filename, std::ios::binary);
+  if (!ofs) {
+    std::cerr << "Open error " << filename << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  timestamp.SerializeToOstream(&ofs);
+}
+
 void SimulationBody() {
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;  // do nothing
@@ -71,20 +94,20 @@ void SimulationBody() {
 
   InitWing(&rings);
 
-  std::ofstream ofs(FLAGS_output);
-  if (!ofs) {
-    std::cerr << "output open error" << std::endl; 
-    std::exit(EXIT_FAILURE);
-  }
+  // std::ofstream ofs(FLAGS_output);
+  // if (!ofs) {
+  //   std::cerr << "output open error" << std::endl; 
+  //   std::exit(EXIT_FAILURE);
+  // }
 
   // morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
   morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
 
-  Output(ofs, rings);
+  // Output(ofs, rings);
   const double dt = FLAGS_dt;
 
   // main loop
-  for(int i=0; i<100; i++) {
+  for(std::size_t i=0; i<100; i++) {
     std::cerr << i << std::endl;
     const double t = i * dt;
 
@@ -94,7 +117,8 @@ void SimulationBody() {
     for (std::size_t i=0; i < rings.bound_vortices().size(); i++) {
       rings.bound_vortices()[i].set_gamma(gamma(i));
     }
-    Output(ofs, rings);
+    // Output(ofs, rings);
+    OutputTimestamp(i, t, rings);
 
     // 放出する渦を求める
     // TODO 変形したときに位置が合わない
