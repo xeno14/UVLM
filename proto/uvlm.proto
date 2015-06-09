@@ -33,7 +33,7 @@ message VortexRing {
 }
 
 // 個体
-message Bird {
+message FlyingWing {
   repeated VortexRing bound_vortices = 1;
   repeated VortexRing wake_vortices = 2;
   optional Point origin = 3;
@@ -43,5 +43,5 @@ message Bird {
 // 変数についてはこのバイナリから全て復元できる
 message Snapshot {
   optional double t = 1;
-  repeated Bird birds = 2;
+  repeated FlyingWing flying_wings = 2;
 }

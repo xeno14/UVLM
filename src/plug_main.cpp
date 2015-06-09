@@ -70,8 +70,8 @@ void OutputSnapshot(const int index, const double t, const UVLM::UVLMVortexRing&
   UVLM::proto::Snapshot snapshot;
   snapshot.set_t(t);
 
-  auto* bird = snapshot.add_birds();
-  UVLMVortexRingToBird(bird, rings);
+  auto* flying_wing = snapshot.add_flying_wings();
+  UVLMVortexRingToBird(flying_wing, rings);
 
   char filename[256];
   sprintf(filename, "%s/%08d", FLAGS_output.c_str(), index); 

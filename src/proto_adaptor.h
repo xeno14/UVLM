@@ -36,7 +36,7 @@ inline proto::VortexRing VortexRingToProto(const VortexRing& v) {
   return res;
 }
 
-inline void UVLMVortexRingToBird(proto::Bird* bird,
+inline void UVLMVortexRingToBird(proto::FlyingWing* bird,
                                  const UVLMVortexRing& rings) {
   bird->Clear();
   for (const auto& v : rings.bound_vortices()) {
