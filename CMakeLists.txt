@@ -41,7 +41,6 @@ add_custom_command(
   OUTPUT ${PROTO_DIR}/uvlm.pb.cc ${PROTO_DIR}/uvlm.pb.h
   WORKING_DIRECTORY ${PROTO_DIR}
   DEPENDS ${PROTO_DIR}/uvlm.proto
-  # COMMAND "protoc" "-I" "${PROTO_DIR}" "${PROTO_DIR}/uvlm.proto" "--cpp_out=." "--python_out=."
   COMMAND "protoc" "uvlm.proto" "--cpp_out=." "--python_out=."
 )
 
@@ -51,6 +50,12 @@ add_executable(morphing_viewer
                src/morphing_viewer.cpp)
 enable_gflags(morphing_viewer)
 target_link_libraries(morphing_viewer morphing protobuf)
+
+add_executable(result_viewer
+               ${PROTO_DIR}/uvlm.pb.cc
+               src/result_viewer.cpp)
+enable_gflags(result_viewer)
+target_link_libraries(result_viewer protobuf)
 
 add_library(uvlm
             src/linear.cpp
