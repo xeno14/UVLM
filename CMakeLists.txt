@@ -51,11 +51,11 @@ add_executable(morphing_viewer
 enable_gflags(morphing_viewer)
 target_link_libraries(morphing_viewer morphing protobuf)
 
-add_executable(result_viewer
+add_executable(result_to_gnuplot
                ${PROTO_DIR}/uvlm.pb.cc
-               src/result_viewer.cpp)
-enable_gflags(result_viewer)
-target_link_libraries(result_viewer protobuf)
+               src/result_to_gnuplot.cpp)
+enable_gflags(result_to_gnuplot)
+target_link_libraries(result_to_gnuplot protobuf)
 
 add_library(uvlm
             src/linear.cpp
