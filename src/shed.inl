@@ -48,17 +48,15 @@ void ShedAtTrailingEdge(InputIterator1 edge_first, InputIterator1 edge_last,
                         InputIterator2 vortices_last,
                         const Eigen::Vector3d& Vinfty, const double t,
                         const double dt) {
-  while (edge_first != edge_last) {
-    result->set_gamma(edge_first->gamma());
-    for (std::size_t i=0; i < result->nodes().size(); i++) {
-      Eigen::Vector3d velocity;
-      InducedVelocity(&velocity, edge_first->nodes()[i], vortices_first,
-                      vortices_last);
+  for (auto edge = edge_first; edge != edge_last; ++edge, ++result) {
+    *result = *edge;
+    Eigen::Vector3d velocity;
+    // 移流する
+    for (auto& node : result->nodes()) {
+      InducedVelocity(&velocity, node, vortices_first, vortices_last);
       velocity += Vinfty;
-      result->nodes()[i] = edge_first->nodes()[i];
-      internal::Advect(&result->nodes()[i], velocity, dt);
+      internal::Advect(&node, velocity, dt);
     }
-    ++edge_first; ++result;
   }
 }
 
