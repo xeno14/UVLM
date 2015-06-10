@@ -20,20 +20,35 @@ DEFINE_string(output, "stdout", "output destination [stdout, path to file]");
 
 using namespace UVLM;
 
-template <class InputIterator>
-void PlotVortexRings(FILE* fp, InputIterator first, InputIterator last) {
-  while(first != last) {
-    for (const auto& node : first->nodes()) {
-      fprintf(fp, "%e %e %e\n", node.x(), node.y(), node.z()); 
-    }
+
+template <class InputIterator, class F>
+void ForEachVortexRingImpl(InputIterator first, InputIterator last, F&& op) {
+  while (first != last) {
+    op(*first);
     ++first;
   }
 }
 
+template <class F>
+void ForEachVortexRing(const proto::FlyingWing& wing, F&& op) {
+  ForEachVortexRingImpl(wing.bound_vortices().begin(),
+                        wing.bound_vortices().end(), op);
+  ForEachVortexRingImpl(wing.wake_vortices().begin(),
+                        wing.wake_vortices().end(), op);
+}
+
 void PlotFlyingWing(FILE* fp, const proto::FlyingWing& wing) {
-  PlotVortexRings(fp, wing.bound_vortices().begin(),
-                  wing.bound_vortices().end());
-  PlotVortexRings(fp, wing.wake_vortices().begin(), wing.wake_vortices().end());
+  ForEachVortexRing(wing, [fp](const auto& ring) {
+    for (const auto& node : ring.nodes()) {
+      fprintf(fp, "%e %e %e\n", node.x(), node.y(), node.z()); 
+    }
+  });
+}
+
+void PlotGamma(FILE* fp, const proto::FlyingWing& wing) {
+  ForEachVortexRing(wing, [fp](const auto& ring) {
+    fprintf(fp, "%e\n", ring.gamma());
+  });
 }
 
 template <class Range>
@@ -71,6 +86,15 @@ void FlyingWingsToVtk(FILE* fp, const Range& flying_wings) {
   for (std::size_t i = 0; i < total_size; ++i) {
     fprintf(fp, "9\n");
   }
+
+  // CELL_DATA
+  fprintf(fp, "CELL_DATA %lu\n", total_size);
+  fprintf(fp, "SCALARS cell_scalars float\n");
+  fprintf(fp, "LOOKUP_TABLE default\n");
+  for (const auto& wing : flying_wings) {
+    PlotGamma(fp, wing);
+  }
+  fprintf(fp, "\n");
 }
 
 int main(int argc, char* argv[]) {
@@ -91,12 +115,14 @@ int main(int argc, char* argv[]) {
   proto::Snapshot snapshot;
   snapshot.ParseFromIstream(&ifs);
 
+  // header
   fprintf(fp, "# vtk DataFile Version 2.0\n");
   fprintf(fp, "quad\n");
   fprintf(fp, "ASCII\n");
   fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
+
+  // body
   FlyingWingsToVtk(fp, snapshot.flying_wings());
 
   return 0;
 }
-
