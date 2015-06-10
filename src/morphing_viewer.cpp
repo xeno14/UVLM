@@ -87,6 +87,7 @@ int main(int argc, char* argv[]) {
   m.set_plug(SineCurve(0.5, 1, 0));
   // m.set_twist(Deformation());
   m.set_bend(Bend(0.2, 1, 1));
+  m.set_origin(origin);
 
   FILE* fp = popen("gnuplot", "w");
   fprintf(fp, "set xrange[-1:2]\n");
@@ -100,7 +101,7 @@ int main(int argc, char* argv[]) {
     // Data
     for (const auto& x0 : wing) {
       Eigen::Vector3d x;
-      m.Perfome(&x, origin, x0, t, dt);
+      m.Perfome(&x, x0, t, dt);
       fprintf(fp, "%e\t%e\t%e\n", x.x(), x.y(), x.z());
     }
     fprintf(fp, "end\n");
