@@ -10,11 +10,6 @@
 namespace UVLM {
 namespace internal {
 
-void Advect(Eigen::Vector3d* target, const Eigen::Vector3d& vel,
-            const double dt) {
-  *target = *target + vel * dt;
-}
-
 void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
                               const UVLMVortexRing& rings,
                               const Morphing& morphing,

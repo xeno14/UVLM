@@ -97,7 +97,6 @@ void SimulationBody() {
     // 連立方程式を解いて翼の上の循環を求める
     auto gamma = UVLM::SolveLinearProblem(
         container.begin(), container.end(),
-        // vortices->begin(), vortices->begin() + rings.bound_vortices().size(),
         vortices->cbegin() + container.size(), vortices->cend(),
         Vinfty, morphing, t);
     // std::cerr << gamma << std::endl;
@@ -112,6 +111,7 @@ void SimulationBody() {
 
     // 放出する渦を求める
     // TODO 変形したときに位置が合わない
+    // TODO remove rings
     auto edge_first = container.edge_begin();
     auto edge_last = container.edge_end();
     std::vector<UVLM::VortexRing> shed(std::distance(edge_first, edge_last));
@@ -119,16 +119,21 @@ void SimulationBody() {
                              std::begin(shed), rings, morphing, Vinfty, t, dt);
 
     // 後流の移流
+    // TODO remove rings
     UVLM::AdvectWake(&rings, Vinfty, dt);
     // UVLM::AdvectWake(vortices->begin() + container.size(), vortices->end(),
     //                  vortices->cbegin(), vortices->cend(), Vinfty, dt);
+    // UVLM::AdvectWake(rings.wake_vortices().begin(), rings.wake_vortices().end(),
+    //                  vortices->cbegin(), vortices->cend(), Vinfty, dt);
 
     // 放出した渦の追加
-    vortices->insert(vortices->end(), std::begin(shed), std::end(shed));
-    std::cerr << vortices->size() << ">\n";
+    vortices->insert(vortices->end(), shed.cbegin(), shed.cend());
 
     // 放出した渦を追加する 
-    rings.AppendWake(std::begin(shed), std::end(shed));
+    rings.AppendWake(shed.cbegin(), shed.cend());
+
+    std::cerr << container.size() << "\n";
+    std::cerr << vortices->size() - container.size() << " vs " << rings.wake_vortices().size() << ">\n";
 
     // 変形する
     // TODO 関数にする
@@ -139,9 +144,10 @@ void SimulationBody() {
     }
 
     // TODO remove rings
+    std::copy(rings.wake_vortices().begin(), rings.wake_vortices().end(),
+              vortices->begin() + container.size());
     std::copy(rings.bound_vortices().begin(), rings.bound_vortices().end(),
-              container.begin());
-    std::copy(rings.wake_vortices().begin(), rings.wake_vortices().end(), vortices->begin() + container.size());
+              vortices->begin());
   }
 }
 

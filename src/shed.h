@@ -17,8 +17,10 @@ namespace internal {
  *  @param[in]  vel 速度
  *  @param[in]  dt  時間刻み
  */
-void Advect(Eigen::Vector3d* target, const Eigen::Vector3d& vel,
-            const double dt);
+inline void Advect(Eigen::Vector3d* target, const Eigen::Vector3d& vel,
+            const double dt) {
+  *target = *target + vel * dt;
+}
 
 /** @biref Trailing edgeの渦を一つ放出する
  *  @param[out] result 放出された渦
@@ -69,6 +71,11 @@ template <class InputIterator, class OutputIterator>
 void AdvectWake(OutputIterator wake_first, OutputIterator wake_last,
                 InputIterator vortices_first, InputIterator vortices_last,
                 const Eigen::Vector3d& Vinfty, const double dt);
+
+template <class InputIterator>
+void InducedVelocity(Eigen::Vector3d* const result,
+                     const Eigen::Vector3d& pos,
+                     InputIterator first, InputIterator last);
 
 }  // namespace UVLM
 
