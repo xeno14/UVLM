@@ -16,6 +16,7 @@ namespace UVLM {
 namespace internal {
 inline double DefaultFunc(double) { return 0; }
 inline double DefaultFunc2(const Eigen::Vector3d&, double) { return 0; }
+// inline void DefaultFunc3(Eigen::Vector3d*, double) {}
 }
 
 /**
@@ -28,21 +29,25 @@ class Morphing {
 
   /** @brief 変形を行う
    *  @param x  変形後の位置
+   *  @param origin 原点の位置
    *  @param x0 reference frameでの座標
    *  @param t  時刻
    */
-  void Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& x0,
-               const double t) const;
+  void Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& origin,
+               const Eigen::Vector3d& x0, const double t,
+               const double dt) const;
 
   /** @brief 変形速度
    *
    *  変形を行い、数値微分（中心差分）をして速度とする。
    *  @param v 変形速度
+   *  @param origin 原点の位置
    *  @param x0 reference frameでの位置
    *  @param t 時刻
    */
-  void Velocity(Eigen::Vector3d* v, const Eigen::Vector3d& x0,
-                const double t, const double dt=1e-6) const;
+  void Velocity(Eigen::Vector3d* v, const Eigen::Vector3d& origin,
+                const Eigen::Vector3d& x0, const double t,
+                const double dt = 1e-6) const;
 
   /** @brief 回転行列を用意する
    *  
@@ -69,6 +74,7 @@ class Morphing {
   std::function<double(double)> flap_;
   std::function<double(const Eigen::Vector3d&, double)> twist_;
   std::function<double(const Eigen::Vector3d&, double)> bend_;
+  // std::function<void(Eigen::Vector3d*, double)> thrust_;
 };
 
 }  // namespace UVLM

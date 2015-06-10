@@ -85,7 +85,7 @@ void OutputSnapshot(const int index, const double t, const UVLM::UVLMVortexRing&
 
 void SimulationBody() {
   UVLM::UVLMVortexRing rings;
-  UVLM::Morphing morphing;  // do nothing
+  UVLM::Morphing morphing;
   Eigen::Vector3d Vinfty(2, 0, 0.1);
 
   InitWing(&rings);
@@ -133,7 +133,7 @@ void SimulationBody() {
     // TODO 関数にする
     for (auto& w : rings.bound_vortices()) {
       for (int i=0; i<4; i++) {
-        morphing.Perfome(&w.nodes()[i], w.nodes0()[i], t);
+        morphing.Perfome(&w.nodes()[i], rings.origin(), w.nodes0()[i], t);
       }
     }
   }
