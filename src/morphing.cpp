@@ -16,7 +16,7 @@ void Morphing::Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& origin,
                        const Eigen::Vector3d& x0, const double t,
                        const double dt) const {
   Eigen::Vector3d x_ref = x0 - origin;
-  bool is_negative = x0.y() < 0;
+  bool is_negative = x_ref.y() < 0;
 
   if (is_negative) x_ref.y() *= -1;
 

@@ -6,6 +6,7 @@
  * @todo パラメータの設定
  */
 
+#include "util.h"
 #include "morphing.h"
 #include "../proto/uvlm.pb.h"
 
@@ -45,28 +46,28 @@ struct Bend {
   Bend(double A, double k, double omega) : A(A), k(k), omega(omega) {}
 };
 
-void InitWing(std::vector<Eigen::Vector3d>* points) {
+void InitWing(std::vector<Eigen::Vector3d>* points, const Eigen::Vector3d& origin) {
   points->clear();
 
   if (FLAGS_wing.size()) {
     std::ifstream ifs(FLAGS_wing, std::ios::binary);
-    if (!ifs) {
-      std::cerr << "Cannot open " << FLAGS_wing << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
+    CHECK_OPEN(ifs);
     UVLM::proto::Wing wing;
     wing.ParseFromIstream(&ifs);
     for (const auto& point : wing.points()) {
       points->emplace_back(point.x(), point.y(), point.z());
+      *points->rbegin() += origin;
       points->emplace_back(point.x(), -point.y(), point.z());
+      *points->rbegin() += origin;
     }
   } else {
     for (int i=1; i<=10; i++) {
-      for (int j=-40; j<=40; j++) {
+      for (int j=-20; j<=20; j++) {
         double x = i * DX;
         double y = j * DX;
         double z = 0;
         points->emplace_back(x, y, z);
+        *points->rbegin() += origin;
       }
     }
   }
@@ -75,8 +76,11 @@ void InitWing(std::vector<Eigen::Vector3d>* points) {
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
+  Eigen::Vector3d origin {0, 1, 0};
+  const double dt = 0.1;
+
   std::vector<Eigen::Vector3d> wing;
-  InitWing(&wing);
+  InitWing(&wing, origin);
 
   UVLM::Morphing m;
   m.set_flap(SineCurve(M_PI/6, 1, M_PI/2));
@@ -91,12 +95,12 @@ int main(int argc, char* argv[]) {
   fprintf(fp, "set xlabel 'x'\n");
   fprintf(fp, "set ylabel 'y'\n");
   fprintf(fp, "set zlabel 'z'\n");
-  for (double t=0; t<1000; t+=0.1) {
+  for (double t=0; t<1000; t+=dt) {
     fprintf(fp, "splot \"-\" usi 1:2:3 title \"t=%e\"\n", t);
     // Data
     for (const auto& x0 : wing) {
       Eigen::Vector3d x;
-      m.Perfome(&x, x0, t);
+      m.Perfome(&x, origin, x0, t, dt);
       fprintf(fp, "%e\t%e\t%e\n", x.x(), x.y(), x.z());
     }
     fprintf(fp, "end\n");
