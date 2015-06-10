@@ -48,23 +48,6 @@ void InitWing(UVLM::UVLMVortexRing* rings) {
   rings->InitWing(pos, wing.cols());
 }
 
-void Output(std::ofstream& ofs, const UVLM::UVLMVortexRing& rings) {
-  ofs << std::scientific;
-  for (const auto& v : rings.bound_vortices()) {
-    for (const auto& vertex : v.nodes()) {
-      ofs << vertex.x() << "\t" << vertex.y() << "\t" << vertex.z() << "\t"
-          << v.gamma() << std::endl;
-    }
-  }
-  for (const auto& v : rings.wake_vortices()) {
-    for (const auto& vertex : v.nodes()) {
-      ofs << vertex.x() << "\t" << vertex.y() << "\t" << vertex.z() << "\t"
-          << v.gamma() << std::endl;
-    }
-  }
-  ofs << std::endl << std::endl;
-}
-
 
 void OutputSnapshot(const int index, const double t, const UVLM::UVLMVortexRing& rings) {
   UVLM::proto::Snapshot snapshot;
@@ -97,7 +80,6 @@ void SimulationBody() {
   // morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
   morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
 
-  // Output(ofs, rings);
   const double dt = FLAGS_dt;
 
   // main loop
@@ -114,7 +96,6 @@ void SimulationBody() {
     for (std::size_t i=0; i < rings.bound_vortices().size(); i++) {
       rings.bound_vortices()[i].set_gamma(gamma(i));
     }
-    // Output(ofs, rings);
     OutputSnapshot(i, t, rings);
 
     // 放出する渦を求める
