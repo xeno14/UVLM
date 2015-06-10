@@ -65,6 +65,42 @@ TEST_F(MorphingPerfomeTest, plug_origin) {
   EXPECT_NEAR(4, x.z(), EPS);
 }
 
+TEST_F(MorphingPerfomeTest, flap) {
+  morphing.set_flap([](double t) { return M_PI_4 * sin(t);});
+  Eigen::Vector3d origin {0,0,0};
+
+  // y(t) = r0*sin(phi0 + π/4 * sin(t));
+  Eigen::Vector3d x;
+  morphing.Perfome(&x, origin, {0, 1, 0}, 0, dt);
+  EXPECT_NEAR(0, x.x(), EPS);
+  EXPECT_NEAR(1, x.y(), EPS);
+  EXPECT_NEAR(0, x.z(), EPS);
+
+  morphing.Perfome(&x, origin, {0, 1, 0}, M_PI_2, dt);
+  EXPECT_NEAR(0, x.x(), EPS);
+  EXPECT_NEAR(M_SQRT1_2, x.y(), EPS);
+  EXPECT_NEAR(-M_SQRT1_2, x.z(), EPS);
+}
+
+TEST_F(MorphingPerfomeTest, flap_origin) {
+  morphing.set_flap([](double t) { return M_PI_4 * sin(t);});
+  Eigen::Vector3d origin {0,1,0};
+
+  // y(t) = y0 + r0*sin(phi0 + π/4 * sin(t));
+  Eigen::Vector3d x;
+  morphing.Perfome(&x, origin, {0, 2, 0}, 0, dt);
+  EXPECT_NEAR(0, x.x(), EPS);
+  EXPECT_NEAR(2, x.y(), EPS);
+  EXPECT_NEAR(0, x.z(), EPS);
+
+  morphing.Perfome(&x, origin, {0, 2, 0}, M_PI_2, dt);
+  EXPECT_NEAR(0, x.x(), EPS);
+  EXPECT_NEAR(1 + M_SQRT1_2, x.y(), EPS);
+  EXPECT_NEAR(-M_SQRT1_2, x.z(), EPS);
+}
+
+
+// MorphingPerfomeTest が通っていれば、plugのみ確かめれば大丈夫なはず
 class MorphingVelocityTest : public MorphingTestBase {
  protected:
   const double dx;
@@ -101,31 +137,3 @@ TEST_F(MorphingVelocityTest, plug) {
   EXPECT_NEAR(0, v.y(), EPS);
   EXPECT_NEAR(0, v.z(), EPS);
 }
-
-// TEST_F(MorphingVelocityTest, flap) {
-//   auto phi = [](double t) { return sin(t); };
-//   morphing.set_flap(phi);
-//   for (double t = 0; t < M_PI; t += 0.1) {
-//     for (const auto& x0 : span) {
-//       Eigen::Vector3d v;
-//       morphing.Velocity(&v, origin0, x0, t);
-//       EXPECT_DOUBLE_EQ(0, v.x());
-//       EXPECT_NEAR(-x0.y() * sin(phi(t)) * cos(t), v.y(), EPS);
-//       EXPECT_NEAR( x0.y() * cos(phi(t)) * cos(t), v.y(), EPS);
-//     }
-//   }
-// }
-//
-// TEST_F(MorphingVelocityTest, flap_negative) {
-//   auto phi = [](double t) { return sin(t); };
-//   morphing.set_flap(phi);
-//   for (double t = 0; t < M_PI; t += 0.1) {
-//     for (const auto& x0 : span_n) {
-//       Eigen::Vector3d v;
-//       morphing.Velocity(&v, origin0, x0, t);
-//       EXPECT_DOUBLE_EQ(0, v.x());
-//       EXPECT_NEAR(-x0.y() * sin(phi(t)) * cos(t), v.y(), EPS);
-//       EXPECT_NEAR( x0.y() * cos(phi(t)) * cos(t), v.y(), EPS);
-//     }
-//   }
-// }

@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
 
   UVLM::Morphing m;
   m.set_flap(SineCurve(M_PI/6, 1, M_PI/2));
-  m.set_plug(SineCurve(0.5, 1, M_PI/2));
+  m.set_plug(SineCurve(0.5, 1, 0));
   // m.set_twist(Deformation());
   m.set_bend(Bend(0.2, 1, 1));
 
