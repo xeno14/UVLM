@@ -3,20 +3,12 @@
  * @brief Add description here
  */
 
-
 #include "naca00XX.h"
 #include "wing.h"
 
 #include <gflags/gflags.h>
-
 #include <cmath>
-
-DEFINE_int32(XX, 12, "Digit of NACA00XX");
-DEFINE_double(chord, 1.0, "Chord length (x)");
-DEFINE_double(aspect_ratio, 4.0, "Aspect ratio of the wing");
-DEFINE_int32(rows, 10, "Number of rows (x).");
-DEFINE_int32(cols, 5, "Number of columns (y).");
-
+#include <iostream>
 
 namespace UVLM {
 namespace wing {
@@ -28,25 +20,34 @@ double NACA00XX(double x, double c, int xx) {
                       0.2843 * z * z * z + (-0.1015) * z * z * z * z);
 }
 
-void Perfome(std::ostream& os) {
-  const int xx = FLAGS_XX;
-  const double chord = FLAGS_chord;
-  const double span = chord * FLAGS_aspect_ratio / 2;
-  const int rows = FLAGS_rows;
-  const int cols = FLAGS_cols;
-  const double dx = chord/rows;
+void NACA00XXGenerator::Generate(UVLM::proto::Wing* wing) {
+  const int xx = digit_;
+  const double chord = chord_;
+  const double span = span_;
+  const int rows = rows_;
+  const int cols = cols_;
+  const double dx = chord / rows;
   const double dy = span / cols;
-  std::cerr << "NACA00" << xx << std::endl;
-  std::cerr << "Chord: " << chord << std::endl;
-  std::cerr << "Span: " << span<< std::endl;
-  std::cerr << rows << "x" << cols << std::endl;
-  std::cerr << dx << "@" << dy <<"\n";
-  for (int i=0; i<=rows; i++) {
-    for (int j=0; j<=cols; j++) {
+
+  if (verbose_) {
+    std::cerr << "NACA00" << xx << std::endl;
+    std::cerr << "Chord: " << chord << std::endl;
+    std::cerr << "Span: " << span << std::endl;
+    std::cerr << rows << "x" << cols << std::endl;
+    std::cerr << dx << "@" << dy << "\n";
+  }
+
+  wing->set_cols(cols);
+  wing->set_rows(rows);
+  for (int i = 0; i <= rows; i++) {
+    for (int j = 0; j <= cols; j++) {
       double x = i * dx;
       double y = j * dy;
       double z = NACA00XX(x, chord, xx);
-      output(os, x, y, z);
+      auto* point = wing->add_points();
+      point->set_x(x);
+      point->set_y(y);
+      point->set_z(z);
     }
   }
 }

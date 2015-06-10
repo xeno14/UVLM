@@ -1,6 +1,6 @@
 project(UVLM)
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
 ###########################################################
 # setting
@@ -30,25 +30,61 @@ endmacro(add_gtest)
 
 
 ###########################################################
+# targets
+###########################################################
+set(PROTO_DIR "${PROJECT_SOURCE_DIR}/proto")
+macro(enable_gflags target)
+  target_link_libraries(${target} gflags pthread)
+endmacro(enable_gflags)
+
+add_custom_command(
+  OUTPUT ${PROTO_DIR}/uvlm.pb.cc ${PROTO_DIR}/uvlm.pb.h
+  WORKING_DIRECTORY ${PROTO_DIR}
+  DEPENDS ${PROTO_DIR}/uvlm.proto
+  COMMAND "protoc" "uvlm.proto" "--cpp_out=." "--python_out=."
+)
+
 add_library(morphing src/morphing.cpp)
-add_executable(morphing_viewer src/morphing_viewer.cpp)
-target_link_libraries(morphing_viewer morphing)
+add_executable(morphing_viewer
+               ${PROTO_DIR}/uvlm.pb.cc
+               src/morphing_viewer.cpp)
+enable_gflags(morphing_viewer)
+target_link_libraries(morphing_viewer morphing protobuf)
+
+add_executable(result_to_gnuplot
+               ${PROTO_DIR}/uvlm.pb.cc
+               src/result_to_gnuplot.cpp)
+enable_gflags(result_to_gnuplot)
+target_link_libraries(result_to_gnuplot protobuf)
+
+add_executable(result_to_vtk
+               ${PROTO_DIR}/uvlm.pb.cc
+               src/result_to_vtk.cpp)
+enable_gflags(result_to_vtk)
+target_link_libraries(result_to_vtk protobuf)
 
 add_library(uvlm
             src/linear.cpp
             src/shed.cpp
             src/vortex.cpp
             src/uvlm_vortex_ring.cpp)
-target_link_libraries(uvlm morphing)
+target_link_libraries(uvlm morphing protobuf)
 
-add_library(wing_main src/wing/main.cpp)
-target_link_libraries(wing_main gflags pthread)
-add_library(naca00XXlib src/wing/naca00XX.cpp)
-target_link_libraries(naca00XXlib gflags pthread)
-add_executable(naca00XX src/wing/naca00XX.cpp)
-target_link_libraries(naca00XX wing_main)
+
+add_library(wing
+            ${PROTO_DIR}/uvlm.pb.cc
+            src/wing/naca00XX.cpp)
+target_link_libraries(wing protobuf)
+
+add_executable(naca00XX src/wing/naca00XX_main.cpp)
+enable_gflags(naca00XX)
+target_link_libraries(naca00XX wing)
+
 
 add_subdirectory(test)
 
-add_executable(plug src/plug_main.cpp)
-target_link_libraries(plug uvlm gflags pthread)
+add_executable(plug
+               ${PROTO_DIR}/uvlm.pb.cc
+               src/plug_main.cpp)
+enable_gflags(plug)
+target_link_libraries(plug uvlm protobuf)

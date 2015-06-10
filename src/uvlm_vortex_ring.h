@@ -95,6 +95,7 @@ class UVLMVortexRing {
   std::vector<VortexRing>& wake_vortices() { return wake_vortices_; }
   const std::vector<VortexRing>& wake_vortices() const { return wake_vortices_; }
 
+  const Eigen::Vector3d& origin() const { return origin_; }
   std::size_t rows() const { return rows_; }
   std::size_t cols() const { return cols_; }
 

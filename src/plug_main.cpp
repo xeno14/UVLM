@@ -3,10 +3,12 @@
  * @brief Add description here
  */
 
+#include "../proto/uvlm.pb.h"
 #include "uvlm_vortex_ring.h"
 #include "morphing.h"
 #include "linear.h"
 #include "shed.h"
+#include "proto_adaptor.h"
 
 #include <gflags/gflags.h>
 #include <iostream>
@@ -14,9 +16,7 @@
 #include <cstdlib>
 
 DEFINE_string(output, "", "output path");
-//DEFINE_string(format, "tsv", "file format");
-DEFINE_string(wing_tsv, "", "tsv file");
-DEFINE_int32(cols, 0, "number of columns of vertices");
+DEFINE_string(wing, "", "wing data");
 DEFINE_double(dt, 0.01, "delta t");
 
 std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
@@ -35,11 +35,21 @@ std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
 }
 
 void InitWing(UVLM::UVLMVortexRing* rings) {
-  auto pos = ReadWingTsv(FLAGS_wing_tsv);
-  rings->InitWing(pos, FLAGS_cols);
+  std::ifstream ifs(FLAGS_wing, std::ios::binary);
+  if (!ifs) {
+    std::cerr << "Cannot open " << FLAGS_wing << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  UVLM::proto::Wing wing;
+  wing.ParseFromIstream(&ifs);
+  std::vector<Eigen::Vector3d> pos(wing.points().size());
+  std::transform(wing.points().begin(), wing.points().end(), pos.begin(),
+                 UVLM::PointToVector3d);
+  rings->InitWing(pos, wing.cols());
 }
 
 void Output(std::ofstream& ofs, const UVLM::UVLMVortexRing& rings) {
+  ofs << std::scientific;
   for (const auto& v : rings.bound_vortices()) {
     for (const auto& vertex : v.nodes()) {
       ofs << vertex.x() << "\t" << vertex.y() << "\t" << vertex.z() << "\t"
@@ -55,6 +65,24 @@ void Output(std::ofstream& ofs, const UVLM::UVLMVortexRing& rings) {
   ofs << std::endl << std::endl;
 }
 
+
+void OutputSnapshot(const int index, const double t, const UVLM::UVLMVortexRing& rings) {
+  UVLM::proto::Snapshot snapshot;
+  snapshot.set_t(t);
+
+  auto* flying_wing = snapshot.add_flying_wings();
+  UVLMVortexRingToBird(flying_wing, rings);
+
+  char filename[256];
+  sprintf(filename, "%s/%08d", FLAGS_output.c_str(), index); 
+  std::ofstream ofs(filename, std::ios::binary);
+  if (!ofs) {
+    std::cerr << "Open error " << filename << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  snapshot.SerializeToOstream(&ofs);
+}
+
 void SimulationBody() {
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;  // do nothing
@@ -62,20 +90,20 @@ void SimulationBody() {
 
   InitWing(&rings);
 
-  std::ofstream ofs(FLAGS_output);
-  if (!ofs) {
-    std::cerr << "output open error" << std::endl; 
-    std::exit(EXIT_FAILURE);
-  }
+  // std::ofstream ofs(FLAGS_output);
+  // if (!ofs) {
+  //   std::cerr << "output open error" << std::endl; 
+  //   std::exit(EXIT_FAILURE);
+  // }
 
   // morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
   morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
 
-  Output(ofs, rings);
+  // Output(ofs, rings);
   const double dt = FLAGS_dt;
 
   // main loop
-  for(int i=0; i<100; i++) {
+  for(std::size_t i=0; i<100; i++) {
     std::cerr << i << std::endl;
     const double t = i * dt;
 
@@ -85,9 +113,11 @@ void SimulationBody() {
     for (std::size_t i=0; i < rings.bound_vortices().size(); i++) {
       rings.bound_vortices()[i].set_gamma(gamma(i));
     }
-    Output(ofs, rings);
+    // Output(ofs, rings);
+    OutputSnapshot(i, t, rings);
 
     // 放出する渦を求める
+    // TODO 変形したときに位置が合わない
     auto trailing_edge = rings.TrailingEdgeIterators();
     std::vector<UVLM::VortexRing> shed(trailing_edge.second - trailing_edge.first);
     UVLM::ShedAtTrailingEdge(trailing_edge.first, trailing_edge.second,

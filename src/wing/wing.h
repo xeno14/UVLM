@@ -5,16 +5,4 @@
  */
 #pragma once
 
-#include <iostream>
-
-namespace UVLM {
-namespace wing {
-
-inline std::ostream& output(std::ostream& os, double x, double y, double z) {
-  return os << x << "\t" << y << "\t" << z << std::endl;
-}
-
-void Perfome(std::ostream& os);
-
-}
-}
+#include "naca00XX.h"
