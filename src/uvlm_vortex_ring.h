@@ -21,6 +21,20 @@ void InducedVelocityByVortices(Eigen::Vector3d* const result,
                                const Eigen::Vector3d& pos,
                                const std::vector<VortexRing>& vortices);
 
+template <class InputIterator>
+void InducedVelocity(Eigen::Vector3d* const result,
+                     const Eigen::Vector3d& pos,
+                     InputIterator first, InputIterator last) {
+  *result = Eigen::Vector3d::Zero();
+  Eigen::Vector3d tmp;
+  while (first != last) {
+    first->BiotSavartLaw(&tmp, pos);
+    *result += tmp;
+    ++first;
+  }
+}
+
+
 inline void CopySymmetry(Eigen::Vector3d* const to,
                          const Eigen::Vector3d& from) {
   *to << from.x(), -from.y(), from.z();

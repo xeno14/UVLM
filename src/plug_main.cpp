@@ -112,7 +112,6 @@ void SimulationBody() {
 
     // 放出する渦を求める
     // TODO 変形したときに位置が合わない
-    auto trailing_edge = rings.TrailingEdgeIterators();
     auto edge_first = container.edge_begin();
     auto edge_last = container.edge_end();
     std::vector<UVLM::VortexRing> shed(std::distance(edge_first, edge_last));
@@ -121,6 +120,12 @@ void SimulationBody() {
 
     // 後流の移流
     UVLM::AdvectWake(&rings, Vinfty, dt);
+    // UVLM::AdvectWake(vortices->begin() + container.size(), vortices->end(),
+    //                  vortices->cbegin(), vortices->cend(), Vinfty, dt);
+
+    // 放出した渦の追加
+    vortices->insert(vortices->end(), std::begin(shed), std::end(shed));
+    std::cerr << vortices->size() << ">\n";
 
     // 放出した渦を追加する 
     rings.AppendWake(std::begin(shed), std::end(shed));
@@ -134,12 +139,9 @@ void SimulationBody() {
     }
 
     // TODO remove rings
-    // std::cerr << rings.bound_vortices().size() << " " << container.size() << "\n";
     std::copy(rings.bound_vortices().begin(), rings.bound_vortices().end(),
               container.begin());
-    std::copy(std::begin(shed), std::end(shed), std::back_inserter(*vortices));
-    std::copy(rings.wake_vortices().begin(), rings.wake_vortices().end(),
-              vortices->begin() + container.size());
+    std::copy(rings.wake_vortices().begin(), rings.wake_vortices().end(), vortices->begin() + container.size());
   }
 }
 
