@@ -85,16 +85,14 @@ void OutputSnapshot(const int index, const double t, const UVLM::UVLMVortexRing&
 
 void SimulationBody() {
   UVLM::UVLMVortexRing rings;
-  UVLM::Morphing morphing;  // do nothing
+  UVLM::Morphing morphing;
   Eigen::Vector3d Vinfty(2, 0, 0.1);
 
-  InitWing(&rings);
+  const Eigen::Vector3d origin(0, 1, 0);
+  morphing.set_origin(origin);
+  rings.set_origin(origin);
 
-  // std::ofstream ofs(FLAGS_output);
-  // if (!ofs) {
-  //   std::cerr << "output open error" << std::endl; 
-  //   std::exit(EXIT_FAILURE);
-  // }
+  InitWing(&rings);
 
   // morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
   morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
@@ -133,7 +131,7 @@ void SimulationBody() {
     // TODO 関数にする
     for (auto& w : rings.bound_vortices()) {
       for (int i=0; i<4; i++) {
-        morphing.Perfome(&w.nodes()[i], w.nodes0()[i], t);
+        morphing.Perfome(&w.nodes()[i], w.nodes0()[i], t, dt);
       }
     }
   }
