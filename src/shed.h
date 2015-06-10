@@ -16,7 +16,7 @@ namespace internal {
  *  @param[in]  vel 速度
  *  @param[in]  dt  時間刻み
  */
-inline void Advect(Eigen::Vector3d* target, const Eigen::Vector3d& vel,
+inline void Advect(Eigen::Vector3d* const target, const Eigen::Vector3d& vel,
             const double dt) {
   *target = *target + vel * dt;
 }

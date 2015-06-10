@@ -131,7 +131,6 @@ void SimulationBody() {
     //                  vortices->cbegin(), vortices->cend(), Vinfty, dt);
     std::vector<UVLM::VortexRing> advected_wake = rings.wake_vortices();
 
-    std::cerr << container.size() << "\n";
     std::cerr << vortices->size() - wake_offset << " vs " << rings.wake_vortices().size() << ">\n";
 
     // 変形する
@@ -148,19 +147,16 @@ void SimulationBody() {
     // 放出した渦の追加
     vortices->insert(vortices->end(), shed.cbegin(), shed.cend());
 
-    // 放出した渦を追加する 
-    // rings.AppendWake(shed.cbegin(), shed.cend());
-
     // TODO remove rings
     std::copy(advected_wake.begin(), advected_wake.end(),
               vortices->begin() + container.size());
     rings.wake_vortices().resize(vortices->size() - wake_offset);
     std::copy(vortices->begin() + wake_offset, vortices->end(),
               rings.wake_vortices().begin());
-    for (std::size_t i = 0; i < container.size(); i++) {
-      std::cerr << vortices->at(i).gamma() << " vs " << container[i].gamma()
-                << " vs " << rings.bound_vortices()[i].gamma() << std::endl;
-    }
+    // for (std::size_t i = 0; i < container.size(); i++) {
+    //   std::cerr << vortices->at(i).gamma() << " vs " << container[i].gamma()
+    //             << " vs " << rings.bound_vortices()[i].gamma() << std::endl;
+    // }
   }
 }
 
