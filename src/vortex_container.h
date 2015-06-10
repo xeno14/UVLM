@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 
+#include <iostream>
 
 namespace UVLM {
 
@@ -35,7 +36,7 @@ class VortexContainer {
 
   // vorticesの始点からのオフセット
   std::size_t Offset() const {
-    return rows_ * cols_;
+    return id_ * rows_ * cols_;
   }
 
   // vorticesのindexへの変換
@@ -73,6 +74,8 @@ class VortexContainer {
     cols_ = c;
     id_ = i;
   }
+
+  std::size_t size() const { return cols_ * rows_; }
 
   auto begin() {
     return vortices_->begin() + Index(0);
