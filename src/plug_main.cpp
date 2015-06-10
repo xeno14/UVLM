@@ -74,7 +74,7 @@ void SimulationBody() {
   UVLM::Morphing morphing;
   Eigen::Vector3d Vinfty(2, 0, 0.1);
 
-  const Eigen::Vector3d origin(0, 1, 0);
+  const Eigen::Vector3d origin(0, 0, 0);
   morphing.set_origin(origin);
   rings.set_origin(origin);
 
@@ -89,6 +89,8 @@ void SimulationBody() {
 
   const double dt = FLAGS_dt;
 
+  const std::size_t wake_offset = container.size();
+
   // main loop
   for(std::size_t i=0; i<100; i++) {
     std::cerr << i << std::endl;
@@ -97,9 +99,8 @@ void SimulationBody() {
     // 連立方程式を解いて翼の上の循環を求める
     auto gamma = UVLM::SolveLinearProblem(
         container.begin(), container.end(),
-        vortices->cbegin() + container.size(), vortices->cend(),
+        vortices->cbegin() + wake_offset, vortices->cend(),
         Vinfty, morphing, t);
-    // std::cerr << gamma << std::endl;
     for (std::size_t i=0; i<container.size(); i++) {
       container[i].set_gamma(gamma(i));
     }
@@ -121,7 +122,7 @@ void SimulationBody() {
     // 後流の移流
     // TODO remove rings
     UVLM::AdvectWake(&rings, Vinfty, dt);
-    // UVLM::AdvectWake(vortices->begin() + container.size(), vortices->end(),
+    // UVLM::AdvectWake(vortices->begin() + wake_offset, vortices->end(),
     //                  vortices->cbegin(), vortices->cend(), Vinfty, dt);
     // UVLM::AdvectWake(rings.wake_vortices().begin(), rings.wake_vortices().end(),
     //                  vortices->cbegin(), vortices->cend(), Vinfty, dt);
@@ -133,21 +134,23 @@ void SimulationBody() {
     rings.AppendWake(shed.cbegin(), shed.cend());
 
     std::cerr << container.size() << "\n";
-    std::cerr << vortices->size() - container.size() << " vs " << rings.wake_vortices().size() << ">\n";
+    std::cerr << vortices->size() - wake_offset << " vs " << rings.wake_vortices().size() << ">\n";
 
     // 変形する
-    // TODO 関数にする
-    for (auto& w : rings.bound_vortices()) {
-      for (int i=0; i<4; i++) {
-        morphing.Perfome(&w.nodes()[i], w.nodes0()[i], t, dt);
+    for (auto& vortex : container) {
+      for (std::size_t i=0; i<vortex.nodes().size(); i++) {
+        morphing.Perfome(&vortex.nodes()[i], vortex.nodes0()[i], t, dt);
       }
     }
 
     // TODO remove rings
     std::copy(rings.wake_vortices().begin(), rings.wake_vortices().end(),
               vortices->begin() + container.size());
-    std::copy(rings.bound_vortices().begin(), rings.bound_vortices().end(),
-              vortices->begin());
+    for (std::size_t i=0; i<container.size(); i++) {
+      std::cerr << vortices->at(i).gamma() << " vs " << container[i].gamma() << " vs " << rings.bound_vortices()[i].gamma() << std::endl;
+    }
+    // std::copy(rings.bound_vortices().begin(), rings.bound_vortices().end(),
+    //           vortices->begin());
   }
 }
 
