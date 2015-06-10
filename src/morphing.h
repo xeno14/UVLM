@@ -29,11 +29,10 @@ class Morphing {
 
   /** @brief 変形を行う
    *  @param x  変形後の位置
-   *  @param origin 原点の位置
    *  @param x0 reference frameでの座標
    *  @param t  時刻
    */
-  void Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& origin,
+  void Perfome(Eigen::Vector3d* x,
                const Eigen::Vector3d& x0, const double t,
                const double dt) const;
 
@@ -41,11 +40,10 @@ class Morphing {
    *
    *  変形を行い、数値微分（中心差分）をして速度とする。
    *  @param v 変形速度
-   *  @param origin 原点の位置
    *  @param x0 reference frameでの位置
    *  @param t 時刻
    */
-  void Velocity(Eigen::Vector3d* v, const Eigen::Vector3d& origin,
+  void Velocity(Eigen::Vector3d* v,
                 const Eigen::Vector3d& x0, const double t,
                 const double dt = 1e-6) const;
 
@@ -65,6 +63,7 @@ class Morphing {
   void set_bend(std::function<double(const Eigen::Vector3d&, double)> f) {
     bend_ = f;
   }
+  void set_origin(const Eigen::Vector3d& origin) { origin_ = origin; }
 
   void Clear();
 
@@ -75,6 +74,8 @@ class Morphing {
   std::function<double(const Eigen::Vector3d&, double)> twist_;
   std::function<double(const Eigen::Vector3d&, double)> bend_;
   // std::function<void(Eigen::Vector3d*, double)> thrust_;
+
+  Eigen::Vector3d origin_;
 };
 
 }  // namespace UVLM

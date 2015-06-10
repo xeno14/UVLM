@@ -7,15 +7,15 @@
 
 namespace UVLM {
 
-Morphing::Morphing() {
+Morphing::Morphing() : origin_(0, 0, 0)  {
   alpha_ = 0;
   Clear();
 }
 
-void Morphing::Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& origin,
+void Morphing::Perfome(Eigen::Vector3d* x,
                        const Eigen::Vector3d& x0, const double t,
                        const double dt) const {
-  Eigen::Vector3d x_ref = x0 - origin;
+  Eigen::Vector3d x_ref = x0 - origin_;
   bool is_negative = x_ref.y() < 0;
 
   if (is_negative) x_ref.y() *= -1;
@@ -31,15 +31,15 @@ void Morphing::Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& origin,
 
   if (is_negative) x->y() *= -1;
 
-  *x += origin;
+  *x += origin_;
 }
 
-void Morphing::Velocity(Eigen::Vector3d* v, const Eigen::Vector3d& origin,
+void Morphing::Velocity(Eigen::Vector3d* v,
                         const Eigen::Vector3d& x0, const double t,
                         const double dt) const {
   Eigen::Vector3d x1, x2;   // x(t-dt), x(t+dt)
-  Perfome(&x1, origin, x0, t - dt, dt);
-  Perfome(&x2, origin, x0, t + dt, dt);
+  Perfome(&x1, x0, t - dt, dt);
+  Perfome(&x2, x0, t + dt, dt);
   *v = (x2 - x1) / (2*dt);
 }
 
