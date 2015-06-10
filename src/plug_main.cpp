@@ -106,7 +106,10 @@ void SimulationBody() {
     const double t = i * dt;
 
     // 連立方程式を解いて翼の上の循環を求める
-    auto gamma = UVLM::SolveLinearProblem(rings, Vinfty, morphing, t);
+    auto gamma = UVLM::SolveLinearProblem(
+        rings.bound_vortices().cbegin(), rings.bound_vortices().cend(),
+        rings.wake_vortices().cbegin(), rings.wake_vortices().cend(), Vinfty,
+        morphing, t);
     // std::cerr << gamma << std::endl;
     for (std::size_t i=0; i < rings.bound_vortices().size(); i++) {
       rings.bound_vortices()[i].set_gamma(gamma(i));
