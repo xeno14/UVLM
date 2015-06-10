@@ -7,10 +7,63 @@ using UVLM::Morphing;
 class MorphingTestBase : public ::testing::Test {
  protected:
   const double EPS;
-  MorphingTestBase() : EPS(1e-6) {}
+  const double dt;
+  MorphingTestBase() : EPS(1e-6), dt(1e-6) {}
   virtual void TearDown() { morphing.Clear(); }
   Morphing morphing;
+
+  // Morphing functions
+  static double Sine(double t) { return sin(t); }
 };
+
+
+class MorphingPerfomeTest : public MorphingTestBase {
+ 
+};
+
+TEST_F(MorphingPerfomeTest, plug) {
+  morphing.set_plug(Sine);
+  Eigen::Vector3d origin {0, 0, 0};
+
+  // z(t) = sin(t)
+  Eigen::Vector3d x;
+  morphing.Perfome(&x, origin, {1, 0, 0}, 0, dt);
+  EXPECT_NEAR(1, x.x(), EPS);
+  EXPECT_NEAR(0, x.y(), EPS);
+  EXPECT_NEAR(0, x.z(), EPS);
+
+  morphing.Perfome(&x, origin, {2, 0, 0}, 0, dt);
+  EXPECT_NEAR(2, x.x(), EPS);
+  EXPECT_NEAR(0, x.y(), EPS);
+  EXPECT_NEAR(0, x.z(), EPS);
+
+  morphing.Perfome(&x, origin, {1, 0, 0}, M_PI/2, dt);
+  EXPECT_NEAR(1, x.x(), EPS);
+  EXPECT_NEAR(0, x.y(), EPS);
+  EXPECT_NEAR(1, x.z(), EPS);
+}
+
+TEST_F(MorphingPerfomeTest, plug_origin) {
+  morphing.set_plug(Sine);
+  Eigen::Vector3d origin {1, 2, 3};
+
+  // z(t) = sin(t)
+  Eigen::Vector3d x;
+  morphing.Perfome(&x, origin, {2, 2, 3}, 0, dt);
+  EXPECT_NEAR(2, x.x(), EPS);
+  EXPECT_NEAR(2, x.y(), EPS);
+  EXPECT_NEAR(3, x.z(), EPS);
+
+  morphing.Perfome(&x, origin, {3, 2, 3}, 0, dt);
+  EXPECT_NEAR(3, x.x(), EPS);
+  EXPECT_NEAR(2, x.y(), EPS);
+  EXPECT_NEAR(3, x.z(), EPS);
+
+  morphing.Perfome(&x, origin, {2, 2, 3}, M_PI/2, dt);
+  EXPECT_NEAR(2, x.x(), EPS);
+  EXPECT_NEAR(2, x.y(), EPS);
+  EXPECT_NEAR(4, x.z(), EPS);
+}
 
 class MorphingVelocityTest : public MorphingTestBase {
  protected:
@@ -29,7 +82,7 @@ class MorphingVelocityTest : public MorphingTestBase {
 };
 
 TEST_F(MorphingVelocityTest, plug) {
-  morphing.set_plug([](double t) { return sin(t); });
+  morphing.set_plug(Sine);
   // z(t)  = sin(t)
   // vz(t) = cos(t)
   Eigen::Vector3d v;
