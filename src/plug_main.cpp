@@ -9,11 +9,13 @@
 #include "linear.h"
 #include "shed.h"
 #include "proto_adaptor.h"
+#include "vortex_container.h"
 
 #include <gflags/gflags.h>
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
+#include <memory>
 
 DEFINE_string(output, "", "output path");
 DEFINE_string(wing, "", "wing data");
@@ -67,6 +69,7 @@ void OutputSnapshot(const int index, const double t, const UVLM::UVLMVortexRing&
 }
 
 void SimulationBody() {
+  auto vortices = std::make_shared<std::vector<UVLM::VortexRing>>();
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;
   Eigen::Vector3d Vinfty(2, 0, 0.1);
@@ -75,7 +78,11 @@ void SimulationBody() {
   morphing.set_origin(origin);
   rings.set_origin(origin);
 
+  // TODO ringsを取り除く
   InitWing(&rings);
+  *vortices = rings.bound_vortices();
+
+  UVLM::VortexContainer container(vortices, rings.rows(), rings.cols() * 2, 0);
 
   // morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
   morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
@@ -89,20 +96,27 @@ void SimulationBody() {
 
     // 連立方程式を解いて翼の上の循環を求める
     auto gamma = UVLM::SolveLinearProblem(
-        rings.bound_vortices().cbegin(), rings.bound_vortices().cend(),
-        rings.wake_vortices().cbegin(), rings.wake_vortices().cend(), Vinfty,
-        morphing, t);
+        container.begin(), container.end(),
+        // vortices->begin(), vortices->begin() + rings.bound_vortices().size(),
+        vortices->cbegin() + container.size(), vortices->cend(),
+        Vinfty, morphing, t);
     // std::cerr << gamma << std::endl;
-    for (std::size_t i=0; i < rings.bound_vortices().size(); i++) {
-      rings.bound_vortices()[i].set_gamma(gamma(i));
+    for (std::size_t i=0; i<container.size(); i++) {
+      container[i].set_gamma(gamma(i));
     }
+
+    // TODO remove rings
+    std::copy(container.begin(), container.end(),
+              rings.bound_vortices().begin());
     OutputSnapshot(i, t, rings);
 
     // 放出する渦を求める
     // TODO 変形したときに位置が合わない
     auto trailing_edge = rings.TrailingEdgeIterators();
-    std::vector<UVLM::VortexRing> shed(trailing_edge.second - trailing_edge.first);
-    UVLM::ShedAtTrailingEdge(trailing_edge.first, trailing_edge.second,
+    auto edge_first = container.edge_begin();
+    auto edge_last = container.edge_end();
+    std::vector<UVLM::VortexRing> shed(std::distance(edge_first, edge_last));
+    UVLM::ShedAtTrailingEdge(edge_first, edge_last,
                              std::begin(shed), rings, morphing, Vinfty, t, dt);
 
     // 後流の移流
@@ -118,6 +132,14 @@ void SimulationBody() {
         morphing.Perfome(&w.nodes()[i], w.nodes0()[i], t, dt);
       }
     }
+
+    // TODO remove rings
+    // std::cerr << rings.bound_vortices().size() << " " << container.size() << "\n";
+    std::copy(rings.bound_vortices().begin(), rings.bound_vortices().end(),
+              container.begin());
+    std::copy(std::begin(shed), std::end(shed), std::back_inserter(*vortices));
+    std::copy(rings.wake_vortices().begin(), rings.wake_vortices().end(),
+              vortices->begin() + container.size());
   }
 }
 
