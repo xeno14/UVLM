@@ -12,7 +12,6 @@ namespace internal {
 
 void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
                               const UVLMVortexRing& rings,
-                              const Morphing& morphing,
                               const Eigen::Vector3d& Vinfty, const double t,
                               const double dt) {
   // before
@@ -21,14 +20,7 @@ void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
   // 0--1=0'---1'
   //     after
   result->set_gamma(target.gamma());
-  result->nodes().resize(VortexRing::DEFAULT_NODE_SIZE);
-
-  // 翼の上のnode: 変形で動く
-  // result->nodes()[0] = target.nodes()[1];
-  // result->nodes()[3] = target.nodes()[2];
-  // Morphing
-  morphing.Perfome(&result->nodes()[0], target.nodes0()[1], t, dt);
-  morphing.Perfome(&result->nodes()[3], target.nodes0()[2], t, dt);
+  result->nodes().resize(target.nodes().size());
 
   // 翼の後ろのnode: 後で移流される
   result->nodes()[1] = target.nodes()[1];

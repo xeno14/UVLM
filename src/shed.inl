@@ -42,4 +42,34 @@ void InducedVelocity(Eigen::Vector3d* const result,
   }
 }
 
+template <class InputIterator1, class InputIterator2, class OutputIterator>
+void ShedAtTrailingEdge(InputIterator1 edge_first, InputIterator1 edge_last,
+                        OutputIterator result, InputIterator2 vortices_first,
+                        InputIterator2 vortices_last,
+                        const Eigen::Vector3d& Vinfty, const double t,
+                        const double dt) {
+  while (edge_first != edge_last) {
+    result->set_gamma(edge_first->gamma());
+    for (std::size_t i=0; i < result->nodes().size(); i++) {
+      Eigen::Vector3d velocity;
+      InducedVelocity(&velocity, edge_first->nodes()[i], vortices_first,
+                      vortices_last);
+      velocity += Vinfty;
+      result->nodes()[i] = edge_first->nodes()[i];
+      internal::Advect(&result->nodes()[i], velocity, dt);
+    }
+    ++edge_first; ++result;
+  }
+}
+
+template <class InputIterator, class OutputIterator>
+void AttachShedVorticesToEdge(InputIterator edge_first, InputIterator edge_last,
+                              OutputIterator result) {
+  while (edge_first != edge_last) {
+    result->nodes()[0] = edge_first->nodes()[1];
+    result->nodes()[3] = edge_first->nodes()[2];
+    ++edge_first; ++result;
+  }
+}
+
 }  // namespace UVLM

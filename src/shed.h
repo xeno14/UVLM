@@ -6,7 +6,6 @@
 #pragma once
 
 #include "vortex.h"
-#include "morphing.h"
 #include "uvlm_vortex_ring.h"
 
 namespace UVLM {
@@ -30,7 +29,6 @@ inline void Advect(Eigen::Vector3d* target, const Eigen::Vector3d& vel,
  */
 void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
                               const UVLMVortexRing& rings,
-                              const Morphing& morphing,
                               const Eigen::Vector3d& Vinfty, const double t,
                               const double dt);
 
@@ -56,13 +54,23 @@ void AdvectWakeImpl(OutputIterator wake_first, OutputIterator wake_last,
 template <class InputIterator, class OutputIterator>
 void ShedAtTrailingEdge(InputIterator first, InputIterator last,
                         OutputIterator result, const UVLMVortexRing& rings,
-                        const Morphing& morphing,
                         const Eigen::Vector3d& Vinfty, const double t, const double dt) {
   while (first != last) {
-    internal::ShedSingleAtTrailingEdge(&(*result), *first, rings, morphing, Vinfty, t, dt);
+    internal::ShedSingleAtTrailingEdge(&(*result), *first, rings, Vinfty, t, dt);
     ++first; ++result;
   }
 }
+
+template <class InputIterator1, class InputIterator2, class OutputIterator>
+void ShedAtTrailingEdge(InputIterator1 edge_first, InputIterator1 edge_last,
+                        OutputIterator result, InputIterator2 vortices_first,
+                        InputIterator2 vortices_last,
+                        const Eigen::Vector3d& Vinfty, const double t,
+                        const double dt);
+
+template <class InputIterator, class OutputIterator>
+void AttachShedVorticesToEdge(InputIterator edge_first, InputIterator edge_last,
+                              OutputIterator result);
 
 void AdvectWake(UVLMVortexRing* rings, const Eigen::Vector3d& Vinfty,
                 const double dt);

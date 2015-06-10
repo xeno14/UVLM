@@ -117,7 +117,11 @@ void SimulationBody() {
     auto edge_last = container.edge_end();
     std::vector<UVLM::VortexRing> shed(std::distance(edge_first, edge_last));
     UVLM::ShedAtTrailingEdge(edge_first, edge_last,
-                             std::begin(shed), rings, morphing, Vinfty, t, dt);
+                             std::begin(shed), rings, Vinfty, t, dt);
+    // UVLM::ShedAtTrailingEdge(edge_first, edge_last, std::begin(shed),
+    //                          vortices->cbegin(), vortices->cend(), Vinfty, t,
+    //                          dt);
+    std::cerr << "@@" << shed.size() << "\n";
 
     // 後流の移流
     // TODO remove rings
@@ -130,9 +134,6 @@ void SimulationBody() {
     // 放出した渦の追加
     vortices->insert(vortices->end(), shed.cbegin(), shed.cend());
 
-    // 放出した渦を追加する 
-    rings.AppendWake(shed.cbegin(), shed.cend());
-
     std::cerr << container.size() << "\n";
     std::cerr << vortices->size() - wake_offset << " vs " << rings.wake_vortices().size() << ">\n";
 
@@ -142,13 +143,17 @@ void SimulationBody() {
         morphing.Perfome(&vortex.nodes()[i], vortex.nodes0()[i], t, dt);
       }
     }
+    UVLM::AttachShedVorticesToEdge(container.edge_begin(), container.edge_end(),
+                                   shed.begin());
+    // 放出した渦を追加する 
+    rings.AppendWake(shed.cbegin(), shed.cend());
 
     // TODO remove rings
     std::copy(rings.wake_vortices().begin(), rings.wake_vortices().end(),
               vortices->begin() + container.size());
-    for (std::size_t i=0; i<container.size(); i++) {
-      std::cerr << vortices->at(i).gamma() << " vs " << container[i].gamma() << " vs " << rings.bound_vortices()[i].gamma() << std::endl;
-    }
+    // for (std::size_t i=0; i<container.size(); i++) {
+    //   std::cerr << vortices->at(i).gamma() << " vs " << container[i].gamma() << " vs " << rings.bound_vortices()[i].gamma() << std::endl;
+    // }
     // std::copy(rings.bound_vortices().begin(), rings.bound_vortices().end(),
     //           vortices->begin());
   }
