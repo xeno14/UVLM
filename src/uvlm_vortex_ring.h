@@ -99,6 +99,8 @@ class UVLMVortexRing {
   std::size_t rows() const { return rows_; }
   std::size_t cols() const { return cols_; }
 
+  void set_origin(const Eigen::Vector3d& pos) { origin_ = pos; }
+
  private:
   std::vector<VortexRing> bound_vortices_;
   std::vector<VortexRing> wake_vortices_;

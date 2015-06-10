@@ -49,6 +49,14 @@ void UVLMVortexRing::InitWing(const std::vector<Eigen::Vector3d>& pos,
     }
   }
   PlaneSymmetry();
+
+  // 原点の位置を考慮する
+  for (auto& vortex : bound_vortices_) {
+    for (auto& node : vortex.nodes()) {
+      node += origin_;
+    }
+  }
+
   for (auto& vortex : bound_vortices_) vortex.SaveReferenceNode();
 }
 
