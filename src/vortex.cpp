@@ -44,7 +44,7 @@ void BiotSavartLaw(Vector3d* result,
 
 void VortexRing::BiotSavartLaw(Vector3d* result, const Vector3d& pos,
                                double gamma) const {
-  *result << 0, 0, 0;
+  *result = Eigen::Vector3d::Zero();
   Vector3d tmp;
   for (std::size_t i = 0; i < nodes_.size(); i++) {
     const Vector3d& start = nodes_[i];

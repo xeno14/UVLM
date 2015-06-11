@@ -53,6 +53,7 @@ void ShedAtTrailingEdge(InputIterator1 edge_first, InputIterator1 edge_last,
     Eigen::Vector3d velocity;
     // 移流する
     for (auto& node : result->nodes()) {
+      // TODO ここがおかしい
       InducedVelocity(&velocity, node, vortices_first, vortices_last);
       velocity += Vinfty;
       internal::Advect(&node, velocity, dt);

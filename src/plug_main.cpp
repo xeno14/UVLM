@@ -119,9 +119,9 @@ void SimulationBody() {
     UVLM::ShedAtTrailingEdge(edge_first, edge_last,
                              std::begin(shed), rings, Vinfty, t, dt);
     // UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed.begin(),
-    //                          vortices->cbegin(), vortices->cend(), Vinfty, t,
+    //                          vortices->cbegin(), vortices->cend(), 
+    //                          Vinfty, t,
     //                          dt);
-    std::cerr << "@@" << shed.size() << "\n";
 
     // TODO remove rings
     UVLM::AdvectWake(&rings, Vinfty, dt);
@@ -129,7 +129,8 @@ void SimulationBody() {
     //                  vortices->cbegin(), vortices->cend(), Vinfty, dt);
     // UVLM::AdvectWake(rings.wake_vortices().begin(), rings.wake_vortices().end(),
     //                  vortices->cbegin(), vortices->cend(), Vinfty, dt);
-    std::vector<UVLM::VortexRing> advected_wake = rings.wake_vortices();
+    std::vector<UVLM::VortexRing> advected_wake(vortices->size() - wake_offset);
+    advected_wake = rings.wake_vortices();
 
     std::cerr << vortices->size() - wake_offset << " vs " << rings.wake_vortices().size() << ">\n";
 
@@ -149,7 +150,7 @@ void SimulationBody() {
 
     // TODO remove rings
     std::copy(advected_wake.begin(), advected_wake.end(),
-              vortices->begin() + container.size());
+              vortices->begin() + wake_offset);
     rings.wake_vortices().resize(vortices->size() - wake_offset);
     std::copy(vortices->begin() + wake_offset, vortices->end(),
               rings.wake_vortices().begin());
