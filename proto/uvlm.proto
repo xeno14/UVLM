@@ -45,3 +45,19 @@ message Snapshot {
   optional double t = 1;
   repeated FlyingWing flying_wings = 2;
 }
+
+
+// スナップショットver2 （案）
+message Snapshot2 {
+  optional double t = 1;
+
+  message ContainerShape {
+    required uint32 rows = 1;
+    required uint32 cols = 2;
+    optional uint32 id = 3;
+    optional Point origin = 4;
+  }
+  repeated ContainerShape container_shapes = 2;
+
+  repeated VortexRing vortices = 3;
+}

@@ -9,7 +9,7 @@ SET(CMAKE_CXX_FLAGS_RELEASE "-O2")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 SET(CMAKE_BUILD_TYPE Release)
 add_definitions("-Wall -std=c++14")
-#set(CMAKE_VERBOSE_MAKEFILE 1)
+# set(CMAKE_VERBOSE_MAKEFILE 1)
 
 
 ###########################################################
