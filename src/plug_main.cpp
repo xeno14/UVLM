@@ -58,21 +58,27 @@ void InitWing(UVLM::WingBuilder* builder) {
   builder->AddWing(wing).Build();
 }
 
-
-void OutputSnapshot(const int index, const double t, const UVLM::UVLMVortexRing& rings) {
-  UVLM::proto::Snapshot snapshot;
+template <class InputIterator1, class InputIterator2>
+void OutputSnapshot(const std::size_t index, InputIterator1 container_first,
+                    InputIterator1 container_last, InputIterator2 vortex_first,
+                    InputIterator2 vortex_last, const double t) {
+  UVLM::proto::Snapshot2 snapshot;
   snapshot.set_t(t);
 
-  auto* flying_wing = snapshot.add_flying_wings();
-  UVLMVortexRingToBird(flying_wing, rings);
-
-  char filename[256];
-  sprintf(filename, "%s/%08d", FLAGS_output.c_str(), index); 
-  std::ofstream ofs(filename, std::ios::binary);
-  if (!ofs) {
-    std::cerr << "Open error " << filename << std::endl;
-    std::exit(EXIT_FAILURE);
+  for(auto container = container_first; container != container_last; ++container) {
+    auto* shape = snapshot.add_container_shapes();
+    shape->set_rows(container->rows());
+    shape->set_cols(container->cols());
+    shape->set_id(container->id());
+    // shape->set_origin(Vector3dToPoint(container->origin()));
   }
+  for (auto vortex = vortex_first; vortex != vortex_last; ++vortex) {
+    snapshot.add_vortices()->CopyFrom(VortexRingToProto(*vortex));
+  }
+  char filename[256];
+  sprintf(filename, "%s/%08lu", FLAGS_output.c_str(), index); 
+  std::ofstream ofs(filename, std::ios::binary);
+  CHECK_OPEN(ofs);
   snapshot.SerializeToOstream(&ofs);
 }
 
@@ -92,7 +98,7 @@ void SimulationBody() {
   auto& container = containers[0];
 
   morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
-  morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
+  // morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
 
   const double dt = FLAGS_dt;
 
@@ -118,7 +124,8 @@ void SimulationBody() {
     std::cerr << "Output" << std::endl;
     std::copy(container.begin(), container.end(),
               rings.bound_vortices().begin());
-    OutputSnapshot(i, t, rings);
+    OutputSnapshot(i, containers.begin(), containers.end(), vortices->begin(),
+                   vortices->end(), t);
 
     std::cerr << "Shed" << std::endl;
     // 放出する渦を求める
