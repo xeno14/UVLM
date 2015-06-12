@@ -27,9 +27,9 @@ message Wing {
 
 // 渦輪
 message VortexRing {
-  optional double gamma = 1;
-  repeated Point nodes = 2;
-  repeated Point nodes0 = 3;
+  optional double gamma = 1;    // 循環
+  repeated Point nodes = 2;     // 節の位置
+  repeated Point nodes0 = 3;    // 節の基準位置（原点固定の場合、初期位置に相当）
 }
 
 // 個体

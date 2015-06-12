@@ -6,7 +6,6 @@
 #pragma once
 
 #include "vortex.h"
-#include "morphing.h"
 #include "uvlm_vortex_ring.h"
 
 namespace UVLM {
@@ -17,8 +16,10 @@ namespace internal {
  *  @param[in]  vel 速度
  *  @param[in]  dt  時間刻み
  */
-void Advect(Eigen::Vector3d* target, const Eigen::Vector3d& vel,
-            const double dt);
+inline void Advect(Eigen::Vector3d* const target, const Eigen::Vector3d& vel,
+            const double dt) {
+  *target = *target + vel * dt;
+}
 
 /** @biref Trailing edgeの渦を一つ放出する
  *  @param[out] result 放出された渦
@@ -28,7 +29,6 @@ void Advect(Eigen::Vector3d* target, const Eigen::Vector3d& vel,
  */
 void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
                               const UVLMVortexRing& rings,
-                              const Morphing& morphing,
                               const Eigen::Vector3d& Vinfty, const double t,
                               const double dt);
 
@@ -44,20 +44,49 @@ void AdvectWakeImpl(std::vector<VortexRing>* result,
                     const UVLMVortexRing& rings, const Eigen::Vector3d& Vinfty,
                     const double dt);
 
+template <class InputIterator, class OutputIterator>
+void AdvectWakeImpl(OutputIterator wake_first, OutputIterator wake_last,
+                    InputIterator vortices_first, InputIterator vortices_last,
+                    const Eigen::Vector3d& Vinfty, const double dt);
+
 }  // namespace internal
 
 template <class InputIterator, class OutputIterator>
 void ShedAtTrailingEdge(InputIterator first, InputIterator last,
                         OutputIterator result, const UVLMVortexRing& rings,
-                        const Morphing& morphing,
                         const Eigen::Vector3d& Vinfty, const double t, const double dt) {
   while (first != last) {
-    internal::ShedSingleAtTrailingEdge(&(*result), *first, rings, morphing, Vinfty, t, dt);
+    internal::ShedSingleAtTrailingEdge(&(*result), *first, rings, Vinfty, t, dt);
     ++first; ++result;
   }
 }
 
+template <class InputIterator1, class InputIterator2, class OutputIterator>
+void ShedAtTrailingEdge(InputIterator1 edge_first, InputIterator1 edge_last,
+                        OutputIterator result, InputIterator2 vortices_first,
+                        InputIterator2 vortices_last,
+                        const UVLMVortexRing& rings,
+                        const Eigen::Vector3d& Vinfty, const double t,
+                        const double dt);
+
+template <class InputIterator, class OutputIterator>
+void AttachShedVorticesToEdge(InputIterator edge_first, InputIterator edge_last,
+                              OutputIterator result);
+
 void AdvectWake(UVLMVortexRing* rings, const Eigen::Vector3d& Vinfty,
                 const double dt);
 
+template <class InputIterator, class OutputIterator>
+void AdvectWake(OutputIterator wake_first, OutputIterator wake_last,
+                InputIterator vortices_first, InputIterator vortices_last,
+                const UVLMVortexRing& rings,
+                const Eigen::Vector3d& Vinfty, const double dt);
+
+template <class InputIterator>
+void InducedVelocity(Eigen::Vector3d* const result,
+                     const Eigen::Vector3d& pos,
+                     InputIterator first, InputIterator last);
+
 }  // namespace UVLM
+
+#include "shed.inl"

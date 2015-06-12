@@ -9,6 +9,7 @@ SET(CMAKE_CXX_FLAGS_RELEASE "-O2")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 SET(CMAKE_BUILD_TYPE Release)
 add_definitions("-Wall -std=c++14")
+#set(CMAKE_VERBOSE_MAKEFILE 1)
 
 
 ###########################################################
@@ -64,10 +65,11 @@ enable_gflags(result_to_vtk)
 target_link_libraries(result_to_vtk protobuf)
 
 add_library(uvlm
-            src/linear.cpp
+            ${PROTO_DIR}/uvlm.pb.cc
             src/shed.cpp
             src/vortex.cpp
-            src/uvlm_vortex_ring.cpp)
+            src/uvlm_vortex_ring.cpp
+            src/wing_builder.cpp)
 target_link_libraries(uvlm morphing protobuf)
 
 

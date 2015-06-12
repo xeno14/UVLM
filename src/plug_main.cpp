@@ -3,17 +3,22 @@
  * @brief Add description here
  */
 
+
 #include "../proto/uvlm.pb.h"
 #include "uvlm_vortex_ring.h"
 #include "morphing.h"
 #include "linear.h"
 #include "shed.h"
 #include "proto_adaptor.h"
+#include "util.h"
+#include "vortex_container.h"
+#include "wing_builder.h"
 
 #include <gflags/gflags.h>
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
+#include <memory>
 
 DEFINE_string(output, "", "output path");
 DEFINE_string(wing, "", "wing data");
@@ -36,10 +41,7 @@ std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
 
 void InitWing(UVLM::UVLMVortexRing* rings) {
   std::ifstream ifs(FLAGS_wing, std::ios::binary);
-  if (!ifs) {
-    std::cerr << "Cannot open " << FLAGS_wing << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
+  CHECK_OPEN(ifs);
   UVLM::proto::Wing wing;
   wing.ParseFromIstream(&ifs);
   std::vector<Eigen::Vector3d> pos(wing.points().size());
@@ -48,21 +50,12 @@ void InitWing(UVLM::UVLMVortexRing* rings) {
   rings->InitWing(pos, wing.cols());
 }
 
-void Output(std::ofstream& ofs, const UVLM::UVLMVortexRing& rings) {
-  ofs << std::scientific;
-  for (const auto& v : rings.bound_vortices()) {
-    for (const auto& vertex : v.nodes()) {
-      ofs << vertex.x() << "\t" << vertex.y() << "\t" << vertex.z() << "\t"
-          << v.gamma() << std::endl;
-    }
-  }
-  for (const auto& v : rings.wake_vortices()) {
-    for (const auto& vertex : v.nodes()) {
-      ofs << vertex.x() << "\t" << vertex.y() << "\t" << vertex.z() << "\t"
-          << v.gamma() << std::endl;
-    }
-  }
-  ofs << std::endl << std::endl;
+void InitWing(UVLM::WingBuilder* builder) {
+  std::ifstream ifs(FLAGS_wing, std::ios::binary);
+  CHECK_OPEN(ifs);
+  UVLM::proto::Wing wing;
+  wing.ParseFromIstream(&ifs);
+  builder->AddWing(wing).Build();
 }
 
 
@@ -84,56 +77,97 @@ void OutputSnapshot(const int index, const double t, const UVLM::UVLMVortexRing&
 }
 
 void SimulationBody() {
+  auto vortices = std::make_shared<std::vector<UVLM::VortexRing>>();
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;
   Eigen::Vector3d Vinfty(2, 0, 0.1);
 
-  const Eigen::Vector3d origin(0, 1, 0);
-  morphing.set_origin(origin);
-  rings.set_origin(origin);
+  std::vector<UVLM::VortexContainer> containers;
 
-  InitWing(&rings);
+  UVLM::WingBuilder builder(&containers, vortices);
+  InitWing(&builder);
 
-  // morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
+  rings.bound_vortices() = *vortices;
+
+  auto& container = containers[0];
+
+  morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
   morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
 
-  // Output(ofs, rings);
   const double dt = FLAGS_dt;
 
+  const std::size_t wake_offset = container.size();
+
+  std::cerr << vortices->size() <<"aa\n";
   // main loop
   for(std::size_t i=0; i<100; i++) {
     std::cerr << i << std::endl;
     const double t = i * dt;
 
     // 連立方程式を解いて翼の上の循環を求める
-    auto gamma = UVLM::SolveLinearProblem(rings, Vinfty, morphing, t);
-    // std::cerr << gamma << std::endl;
-    for (std::size_t i=0; i < rings.bound_vortices().size(); i++) {
-      rings.bound_vortices()[i].set_gamma(gamma(i));
+    std::cerr << "Solve linear problem" << std::endl;
+    auto gamma = UVLM::SolveLinearProblem(
+        container.begin(), container.end(),
+        vortices->cbegin() + wake_offset, vortices->cend(),
+        Vinfty, morphing, t);
+    for (std::size_t i=0; i<wake_offset; i++) {
+      vortices->at(i).set_gamma(gamma(i));
     }
-    // Output(ofs, rings);
+
+    // TODO remove rings
+    std::cerr << "Output" << std::endl;
+    std::copy(container.begin(), container.end(),
+              rings.bound_vortices().begin());
     OutputSnapshot(i, t, rings);
 
+    std::cerr << "Shed" << std::endl;
     // 放出する渦を求める
     // TODO 変形したときに位置が合わない
-    auto trailing_edge = rings.TrailingEdgeIterators();
-    std::vector<UVLM::VortexRing> shed(trailing_edge.second - trailing_edge.first);
-    UVLM::ShedAtTrailingEdge(trailing_edge.first, trailing_edge.second,
-                             std::begin(shed), rings, morphing, Vinfty, t, dt);
+    // TODO remove rings
+    auto edge_first = container.edge_begin();
+    auto edge_last = container.edge_end();
+    std::vector<UVLM::VortexRing> shed(std::distance(edge_first, edge_last));
+    UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed.begin(),
+                             vortices->cbegin(), vortices->cend(), 
+                             rings,
+                             Vinfty, t,
+                             dt);
 
-    // 後流の移流
-    UVLM::AdvectWake(&rings, Vinfty, dt);
+    std::cerr << "Advect" << std::endl;
+    // TODO remove rings
+    UVLM::AdvectWake(vortices->begin() + wake_offset, vortices->end(),
+                     vortices->cbegin(), vortices->cend(), 
+                     rings,
+                     Vinfty, dt);
 
-    // 放出した渦を追加する 
-    rings.AppendWake(std::begin(shed), std::end(shed));
-
+    std::cerr << "Morphing" << std::endl;
     // 変形する
-    // TODO 関数にする
-    for (auto& w : rings.bound_vortices()) {
-      for (int i=0; i<4; i++) {
-        morphing.Perfome(&w.nodes()[i], w.nodes0()[i], t, dt);
+    for (auto& vortex : container) {
+      for (std::size_t i=0; i<vortex.nodes().size(); i++) {
+        morphing.Perfome(&vortex.nodes()[i], vortex.nodes0()[i], t, dt);
       }
     }
+
+    std::cerr << "Edge" << std::endl;
+    // 変形後のedgeの位置とshedを合わせる
+    UVLM::AttachShedVorticesToEdge(container.edge_begin(), container.edge_end(),
+                                   shed.begin());
+
+    std::cerr << "Append shed" << std::endl;
+    // 放出した渦の追加
+    vortices->insert(vortices->end(), shed.cbegin(), shed.cend());
+
+    std::cerr << "copy" << std::endl;
+    // TODO remove rings
+    // std::copy(advected_wake.begin(), advected_wake.end(),
+    //           vortices->begin() + wake_offset);
+    rings.wake_vortices().resize(vortices->size() - wake_offset);
+    std::copy(vortices->begin() + wake_offset, vortices->end(),
+              rings.wake_vortices().begin());
+    // for (std::size_t i = 0; i < container.size(); i++) {
+    //   std::cerr << vortices->at(i).gamma() << " vs " << container[i].gamma()
+    //             << " vs " << rings.bound_vortices()[i].gamma() << std::endl;
+    // }
   }
 }
 
