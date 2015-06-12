@@ -65,6 +65,7 @@ enable_gflags(result_to_vtk)
 target_link_libraries(result_to_vtk protobuf)
 
 add_library(uvlm
+            ${PROTO_DIR}/uvlm.pb.cc
             src/shed.cpp
             src/vortex.cpp
             src/uvlm_vortex_ring.cpp

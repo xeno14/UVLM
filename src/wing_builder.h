@@ -12,6 +12,7 @@ namespace internal {
 
 struct WingHolder {
   std::vector<Eigen::Vector3d> points;
+  Eigen::Vector3d origin;
   std::size_t rows, cols;
 };
 
@@ -27,7 +28,7 @@ std::vector<Eigen::Vector3d> TransfromRow(InputIterator first,
 
   std::vector<Eigen::Vector3d> res;
   res.insert(res.end(), reversed_row.begin(), reversed_row.end());
-  res.insert(res.end(), row.begin(), row.end());
+  res.insert(res.end(), row.begin() + 1, row.end());
   return res;
 }
 
@@ -37,21 +38,29 @@ class WingBuilder {
  public:
   WingBuilder(std::vector<VortexContainer>* containers,
               std::shared_ptr<std::vector<VortexRing>> vortices)
-      : containers_(containers), vortices_(vortices) {}
+      : containers_(containers), vortices_(vortices), is_built_(false) {}
+
+  ~WingBuilder() {
+    if (!is_built_) Build();
+  }
 
   WingBuilder& AddWing(const proto::Wing& wing);
+
   void Build();
 
-  static void BuildWing(VortexContainer* container,
-                        const internal::WingHolder& holder) ;
+  void BuildWing(VortexContainer* container,
+                 const internal::WingHolder holder) const;
 
   static std::size_t CountTotalSize(
       const std::vector<internal::WingHolder>& holders_);
+
+  const std::vector<internal::WingHolder>& holders() const { return holders_; }
 
  private:
   std::vector<VortexContainer>* containers_;
   std::shared_ptr<std::vector<VortexRing>> vortices_;
   std::vector<internal::WingHolder> holders_;
+  bool is_built_;
 };
 
 }  // namespace UVLM
