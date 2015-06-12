@@ -6,6 +6,8 @@
 #include "wing_builder.h"
 #include "proto_adaptor.h"
 
+#include <iostream>
+
 namespace UVLM {
 
 WingBuilder& WingBuilder::AddWing(const proto::Wing& wing) {
@@ -21,9 +23,9 @@ WingBuilder& WingBuilder::AddWing(const proto::Wing& wing) {
   else holder.origin = Eigen::Vector3d::Zero();
 
   // ランダムアクセス可能なvectorに変形する
-  std::vector<Eigen::Vector3d> points(wing.points().size());
-  std::transform(wing.points().begin(), wing.points().end(), points.begin(),
-                 PointToVector3d);
+  std::vector<Eigen::Vector3d> points;
+  std::transform(wing.points().begin(), wing.points().end(),
+                 std::back_inserter(points), PointToVector3d);
 
   for (std::size_t i = 0; i < point_rows; i++) {
     auto first = points.begin() + i * point_cols;
@@ -54,7 +56,7 @@ void WingBuilder::Build() {
 }
 
 void WingBuilder::BuildWing(VortexContainer* container,
-                            const internal::WingHolder holder) const {
+                            const internal::WingHolder& holder) {
   const std::size_t point_cols = holder.cols + 1;
   for (std::size_t i = 0; i < holder.rows; i++) {
     for (std::size_t j = 0; j < holder.cols; j++) {

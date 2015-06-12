@@ -20,7 +20,7 @@ template <class InputIterator>
 std::vector<Eigen::Vector3d> TransfromRow(InputIterator first,
                                           InputIterator last) {
   std::vector<Eigen::Vector3d> row(first, last);
-  std::vector<Eigen::Vector3d> reversed_row = row;
+  std::vector<Eigen::Vector3d> reversed_row(first + 1, last);
 
   std::reverse(reversed_row.begin(), reversed_row.end());
   std::for_each(reversed_row.begin(), reversed_row.end(),
@@ -28,7 +28,7 @@ std::vector<Eigen::Vector3d> TransfromRow(InputIterator first,
 
   std::vector<Eigen::Vector3d> res;
   res.insert(res.end(), reversed_row.begin(), reversed_row.end());
-  res.insert(res.end(), row.begin() + 1, row.end());
+  res.insert(res.end(), row.begin(), row.end());
   return res;
 }
 
@@ -48,8 +48,8 @@ class WingBuilder {
 
   void Build();
 
-  void BuildWing(VortexContainer* container,
-                 const internal::WingHolder holder) const;
+  static void BuildWing(VortexContainer* container,
+                        const internal::WingHolder& holder);
 
   static std::size_t CountTotalSize(
       const std::vector<internal::WingHolder>& holders_);
