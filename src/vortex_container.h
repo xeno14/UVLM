@@ -62,6 +62,12 @@ class VortexContainer {
     return (*vortices_)[Index(i, j)];
   }
 
+  void alloc(std::size_t sz) {
+    if (vortices_->size() < sz) {
+      vortices_->resize(sz);
+    }
+  }
+
   const vortices_ptr_t& vortices() const { return vortices_; }
   std::size_t cols() const { return cols_; }
   std::size_t rows() const { return rows_; }

@@ -65,6 +65,7 @@ template <class InputIterator1, class InputIterator2, class OutputIterator>
 void ShedAtTrailingEdge(InputIterator1 edge_first, InputIterator1 edge_last,
                         OutputIterator result, InputIterator2 vortices_first,
                         InputIterator2 vortices_last,
+                        const UVLMVortexRing& rings,
                         const Eigen::Vector3d& Vinfty, const double t,
                         const double dt);
 
@@ -78,6 +79,7 @@ void AdvectWake(UVLMVortexRing* rings, const Eigen::Vector3d& Vinfty,
 template <class InputIterator, class OutputIterator>
 void AdvectWake(OutputIterator wake_first, OutputIterator wake_last,
                 InputIterator vortices_first, InputIterator vortices_last,
+                const UVLMVortexRing& rings,
                 const Eigen::Vector3d& Vinfty, const double dt);
 
 template <class InputIterator>

@@ -81,11 +81,13 @@ void SimulationBody() {
   // TODO ringsを取り除く
   InitWing(&rings);
   *vortices = rings.bound_vortices();
+  // TODO segmentation fault なぜ？
+  // vortices->resize(rings.bound_vortices().size());
 
   UVLM::VortexContainer container(vortices, rings.rows(), rings.cols() * 2, 0);
 
   morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
-  // morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
+  morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
 
   const double dt = FLAGS_dt;
 
@@ -116,23 +118,17 @@ void SimulationBody() {
     auto edge_first = container.edge_begin();
     auto edge_last = container.edge_end();
     std::vector<UVLM::VortexRing> shed(std::distance(edge_first, edge_last));
-    UVLM::ShedAtTrailingEdge(edge_first, edge_last,
-                             std::begin(shed), rings, Vinfty, t, dt);
-    // UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed.begin(),
-    //                          vortices->cbegin(), vortices->cend(), 
-    //                          Vinfty, t,
-    //                          dt);
+    UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed.begin(),
+                             vortices->cbegin(), vortices->cend(), 
+                             rings,
+                             Vinfty, t,
+                             dt);
 
     // TODO remove rings
-    UVLM::AdvectWake(&rings, Vinfty, dt);
-    // UVLM::AdvectWake(vortices->begin() + wake_offset, vortices->end(),
-    //                  vortices->cbegin(), vortices->cend(), Vinfty, dt);
-    // UVLM::AdvectWake(rings.wake_vortices().begin(), rings.wake_vortices().end(),
-    //                  vortices->cbegin(), vortices->cend(), Vinfty, dt);
-    std::vector<UVLM::VortexRing> advected_wake(vortices->size() - wake_offset);
-    advected_wake = rings.wake_vortices();
-
-    std::cerr << vortices->size() - wake_offset << " vs " << rings.wake_vortices().size() << ">\n";
+    UVLM::AdvectWake(vortices->begin() + wake_offset, vortices->end(),
+                     vortices->cbegin(), vortices->cend(), 
+                     rings,
+                     Vinfty, dt);
 
     // 変形する
     for (auto& vortex : container) {
@@ -149,8 +145,8 @@ void SimulationBody() {
     vortices->insert(vortices->end(), shed.cbegin(), shed.cend());
 
     // TODO remove rings
-    std::copy(advected_wake.begin(), advected_wake.end(),
-              vortices->begin() + wake_offset);
+    // std::copy(advected_wake.begin(), advected_wake.end(),
+    //           vortices->begin() + wake_offset);
     rings.wake_vortices().resize(vortices->size() - wake_offset);
     std::copy(vortices->begin() + wake_offset, vortices->end(),
               rings.wake_vortices().begin());
