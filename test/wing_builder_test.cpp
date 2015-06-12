@@ -74,6 +74,8 @@ TEST_F(WingBuilderTest, AddWing) {
 TEST_F(WingBuilderTest, add_multiple_wings) {
   WingBuilder builder(&containers, vortices);
 
+  EXPECT_EQ(0, vortices->size());
+
   proto::Wing wing2;
   wing2.CopyFrom(wing);
   auto* origin = wing2.mutable_origin();
@@ -98,9 +100,16 @@ TEST_F(WingBuilderTest, add_multiple_wings) {
 
 TEST_F(WingBuilderTest, build) {
   WingBuilder builder(&containers, vortices);
-  builder.AddWing(wing).Build();
+  proto::Wing wing2;
+  wing2.CopyFrom(wing);
+  auto* origin = wing2.mutable_origin();
+  origin->set_x(0); origin->set_y(0); origin->set_z(1);
 
-  ASSERT_EQ(1, containers.size());
+  builder.AddWing(wing).AddWing(wing2).Build();
+
+  ASSERT_EQ(24, vortices->size());
+
+  ASSERT_EQ(2, containers.size());
   auto& container = containers[0];
   EXPECT_EQ(2, container.rows());
   EXPECT_EQ(6, container.cols());
@@ -108,4 +117,5 @@ TEST_F(WingBuilderTest, build) {
   EXPECT_EQ(0, container.at(0, 0).nodes()[0].x());
   EXPECT_EQ(-3, container.at(0, 0).nodes()[0].y());
   EXPECT_EQ(0, container.at(0, 0).nodes()[0].z());
+
 }
