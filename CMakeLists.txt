@@ -67,7 +67,8 @@ target_link_libraries(result_to_vtk protobuf)
 add_library(uvlm
             src/shed.cpp
             src/vortex.cpp
-            src/uvlm_vortex_ring.cpp)
+            src/uvlm_vortex_ring.cpp
+            src/wing_builder.cpp)
 target_link_libraries(uvlm morphing protobuf)
 
 
