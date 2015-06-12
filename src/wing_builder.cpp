@@ -11,7 +11,7 @@
 namespace UVLM {
 
 WingBuilder& WingBuilder::AddWing(const proto::Wing& wing) {
-  is_built_ = false;
+  is_modified_ = true;
 
   const std::size_t point_rows = wing.rows() + 1;
   const std::size_t point_cols = wing.cols() + 1;
@@ -42,7 +42,8 @@ WingBuilder& WingBuilder::AddWing(const proto::Wing& wing) {
 }
 
 void WingBuilder::Build() {
-  if (is_built_) return;
+  if (!is_modified_) return;
+
   vortices_->resize(CountTotalSize(holders_));
   containers_->resize(holders_.size());
 
@@ -52,7 +53,7 @@ void WingBuilder::Build() {
     BuildWing(&containers_->at(i), holders_[i]);
   }
 
-  is_built_ = true;
+  is_modified_ = false;
 }
 
 void WingBuilder::BuildWing(VortexContainer* container,
@@ -68,6 +69,7 @@ void WingBuilder::BuildWing(VortexContainer* container,
       };
       VortexRing vortex;
       for (auto idx : indices) vortex.nodes().push_back(holder.points[idx]);
+      vortex.SaveReferenceNode();
       container->at(i, j) = vortex;
     }
   }

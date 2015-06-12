@@ -118,4 +118,7 @@ TEST_F(WingBuilderTest, build) {
   EXPECT_EQ(-3, container.at(0, 0).nodes()[0].y());
   EXPECT_EQ(0, container.at(0, 0).nodes()[0].z());
 
+  EXPECT_EQ(0, container.at(0, 0).nodes0()[0].x());
+  EXPECT_EQ(-3, container.at(0, 0).nodes0()[0].y());
+  EXPECT_EQ(0, container.at(0, 0).nodes0()[0].z());
 }

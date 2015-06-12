@@ -38,10 +38,10 @@ class WingBuilder {
  public:
   WingBuilder(std::vector<VortexContainer>* containers,
               std::shared_ptr<std::vector<VortexRing>> vortices)
-      : containers_(containers), vortices_(vortices), is_built_(false) {}
+      : containers_(containers), vortices_(vortices), is_modified_(false) {}
 
   ~WingBuilder() {
-    if (!is_built_) Build();
+    if (!is_modified_) Build();
   }
 
   WingBuilder& AddWing(const proto::Wing& wing);
@@ -60,7 +60,7 @@ class WingBuilder {
   std::vector<VortexContainer>* containers_;
   std::shared_ptr<std::vector<VortexRing>> vortices_;
   std::vector<internal::WingHolder> holders_;
-  bool is_built_;
+  bool is_modified_;
 };
 
 }  // namespace UVLM
