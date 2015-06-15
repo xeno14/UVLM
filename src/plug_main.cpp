@@ -23,6 +23,9 @@
 DEFINE_string(output, "", "output path");
 DEFINE_string(wing, "", "wing data");
 DEFINE_double(dt, 0.01, "delta t");
+#ifdef _OPENMP
+DEFINE_int32(threads, 1, "openmp threads");
+#endif
 
 std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
   std::vector<Eigen::Vector3d> res;
@@ -87,7 +90,7 @@ void SimulationBody() {
   auto vortices = std::make_shared<std::vector<UVLM::VortexRing>>();
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;
-  Eigen::Vector3d Vinfty(2, 0, 0.1);
+  Eigen::Vector3d Vinfty(2, 0, 0);
 
   std::vector<UVLM::VortexContainer> containers;
   std::vector<Eigen::Vector3d> origins;
@@ -101,8 +104,8 @@ void SimulationBody() {
   rings.bound_vortices() = *vortices;
 
 
-  morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
-  // morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
+  // morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
+  morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
 
   const double dt = FLAGS_dt;
 
@@ -198,6 +201,10 @@ void SimulationBody() {
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+#ifdef _OPENMP
+  std::cerr << "work with " << FLAGS_threads << " threads." << std::endl;
+  omp_set_num_threads(FLAGS_threads);
+#endif
   SimulationBody();
   return 0;
 }
