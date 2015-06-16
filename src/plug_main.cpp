@@ -23,6 +23,7 @@
 DEFINE_string(output, "", "output path");
 DEFINE_string(wing, "", "wing data");
 DEFINE_double(dt, 0.01, "delta t");
+DEFINE_int32(steps, 100, "number of time steps");
 
 std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
   std::vector<Eigen::Vector3d> res;
@@ -115,7 +116,7 @@ void SimulationBody() {
 
   std::cerr << vortices->size() <<"aa\n";
   // main loop
-  for(std::size_t i=0; i<200; i++) {
+  for(int i=0; i<FLAGS_steps; i++) {
     std::cerr << i << std::endl;
     const double t = i * dt;
 
