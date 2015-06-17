@@ -75,4 +75,21 @@ Eigen::VectorXd CalcRhsMorphing(InputIterator1 bound_first,
 }
 
 }  // namespace internal
+
+template <class InputIterator1, class InputIterator2>
+Eigen::VectorXd SolveLinearProblem(InputIterator1 bound_first,
+                                   InputIterator1 bound_last,
+                                   InputIterator2 wake_first,
+                                   InputIterator2 wake_last,
+                                   const Eigen::Vector3d Vinfty,
+                                   const Morphing& morphing, const double t) {
+  Eigen::MatrixXd A = internal::CalcMatrix(bound_first, bound_last);
+  Eigen::VectorXd rhs =
+      internal::CalcRhsUpStream(Vinfty, bound_first, bound_last) +
+      internal::CalcRhsWake(bound_first, bound_last, wake_first, wake_last) -
+      internal::CalcRhsMorphing(bound_first, bound_last, morphing, t);
+  Eigen::PartialPivLU<Eigen::MatrixXd> solver(A);
+  return solver.solve(rhs);
+}
+
 }  // namespace UVLM

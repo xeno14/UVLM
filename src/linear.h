@@ -84,18 +84,12 @@ inline Eigen::VectorXd CalcRhsMorphing(const std::vector<VortexRing>& vortices,
 /** @brief 連立方程式を解いて循環を求める
  */
 template <class InputIterator1, class InputIterator2>
-inline Eigen::VectorXd SolveLinearProblem(
-    InputIterator1 bound_first, InputIterator1 bound_last,
-    InputIterator2 wake_first, InputIterator2 wake_last,
-    const Eigen::Vector3d Vinfty, const Morphing& morphing, const double t) {
-  Eigen::MatrixXd A = internal::CalcMatrix(bound_first, bound_last);
-  Eigen::VectorXd rhs = 
-      internal::CalcRhsUpStream(Vinfty, bound_first, bound_last) +
-      internal::CalcRhsWake(bound_first, bound_last, wake_first, wake_last) -
-      internal::CalcRhsMorphing(bound_first, bound_last, morphing, t);
-  Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
-  return solver.solve(rhs);
-}
+Eigen::VectorXd SolveLinearProblem(InputIterator1 bound_first,
+                                   InputIterator1 bound_last,
+                                   InputIterator2 wake_first,
+                                   InputIterator2 wake_last,
+                                   const Eigen::Vector3d Vinfty,
+                                   const Morphing& morphing, const double t);
 
 }  // namespace UVLM
 
