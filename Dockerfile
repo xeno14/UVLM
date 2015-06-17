@@ -15,7 +15,7 @@ RUN yes | pacman -S \
       gflags
 
 ADD . /tmp/uvlm
-RUN cd /tmp/uvlm && cmake . && make
+RUN cd /tmp/uvlm && cmake . && make -j && make install
 
 VOLUME ["/data"]
 
