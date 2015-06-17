@@ -27,7 +27,13 @@ void ShedSingleAtTrailingEdge(VortexRing* result, const VortexRing& target,
 void AdvectWakeImpl(std::vector<VortexRing>* result,
                     const UVLMVortexRing& rings, const Eigen::Vector3d& Vinfty,
                     const double dt) {
-  for (auto& wake : *result) {
+  const std::size_t sz = result->size();
+  std::size_t i = 0;
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (i=0; i < sz; i++) {
+    auto& wake = result->at(i);
     Eigen::Vector3d velocity;
     for (auto& node : wake.nodes()) {
       rings.InducedVelocity(&velocity, node);

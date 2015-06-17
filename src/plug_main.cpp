@@ -23,6 +23,9 @@
 DEFINE_string(output, "", "output path");
 DEFINE_string(wing, "", "wing data");
 DEFINE_double(dt, 0.01, "delta t");
+#ifdef _OPENMP
+DEFINE_int32(threads, 1, "openmp threads");
+#endif
 DEFINE_int32(steps, 100, "number of time steps");
 
 std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
@@ -204,6 +207,10 @@ void SimulationBody() {
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+#ifdef _OPENMP
+  std::cerr << "work with " << FLAGS_threads << " threads." << std::endl;
+  omp_set_num_threads(FLAGS_threads);
+#endif
   SimulationBody();
   return 0;
 }
