@@ -26,6 +26,7 @@ DEFINE_double(dt, 0.01, "delta t");
 #ifdef _OPENMP
 DEFINE_int32(threads, 1, "openmp threads");
 #endif
+DEFINE_int32(steps, 100, "number of time steps");
 
 std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
   std::vector<Eigen::Vector3d> res;
@@ -90,7 +91,13 @@ void SimulationBody() {
   auto vortices = std::make_shared<std::vector<UVLM::VortexRing>>();
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;
-  Eigen::Vector3d Vinfty(2, 0, 0);
+  const double ALPHA = M_PI * 2 / 360 * 4;
+  const double U = 5;
+  const double K = 0.1;
+  const double C = 1;
+  const double OMEGA = 2 * U * K / C;
+  const double PHI = M_PI * 2 / 360 * 15;
+  Eigen::Vector3d Vinfty(U * cos(ALPHA), 0, sin(ALPHA));
 
   std::vector<UVLM::VortexContainer> containers;
   std::vector<Eigen::Vector3d> origins;
@@ -103,9 +110,8 @@ void SimulationBody() {
 
   rings.bound_vortices() = *vortices;
 
-
   // morphing.set_plug([](double t) { return 0.2 * sin(5*t); });
-  morphing.set_flap([](double t) { return M_PI/6 * sin(4*t); });
+  morphing.set_flap([OMEGA, PHI](double t) { return PHI * sin(OMEGA * t); });
 
   const double dt = FLAGS_dt;
 
@@ -113,7 +119,7 @@ void SimulationBody() {
 
   std::cerr << vortices->size() <<"aa\n";
   // main loop
-  for(std::size_t i=0; i<100; i++) {
+  for(int i=0; i<FLAGS_steps; i++) {
     std::cerr << i << std::endl;
     const double t = i * dt;
 
