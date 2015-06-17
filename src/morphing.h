@@ -9,8 +9,8 @@
 #include <functional>
 
 // Eigen
-#include <Eigen/Core>
-#include <Eigen/Geometry>
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry>
 
 namespace UVLM {
 namespace internal {
