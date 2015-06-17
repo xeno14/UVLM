@@ -10,10 +10,13 @@ RUN yes | pacman -S \
       make \
       cmake \
       eigen \
+      protobuf \
       gtest \
       gflags
 
 ADD . /tmp/uvlm
-# RUN cd /tmp/uvlm && cmake . && make
+RUN cd /tmp/uvlm && cmake . && make
+
+VOLUME ["/data"]
 
 CMD ["/bin/bash"]
