@@ -5,8 +5,8 @@
  */
 #pragma once
 
-#include <Eigen/Core>
-#include <Eigen/Geometry>
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry>
 
 #include <initializer_list>
 #include <vector>

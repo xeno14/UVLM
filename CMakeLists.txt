@@ -95,3 +95,11 @@ add_executable(plug
                src/plug_main.cpp)
 enable_gflags(plug)
 target_link_libraries(plug uvlm protobuf)
+
+
+###########################################################
+# install
+###########################################################
+install (
+  TARGETS morphing_viewer result_to_gnuplot result_to_vtk naca00XX plug
+  DESTINATION /usr/local/bin)
