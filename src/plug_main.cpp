@@ -95,8 +95,7 @@ void SimulationBody() {
   const double U = 1;
   const double K = 0.1;
   const double C = 1;
-  // const double OMEGA = 2 * U * K / C;
-  const double OMEGA = 4;
+  const double OMEGA = 2 * U * K / C;
   const double PHI = M_PI * 2 / 360 * 15;
   Eigen::Vector3d Vinfty(U * cos(ALPHA), 0, sin(ALPHA));
 
@@ -111,7 +110,7 @@ void SimulationBody() {
 
   rings.bound_vortices() = *vortices;
 
-  morphing.set_plug([OMEGA](double t) { return 0.2 * sin(OMEGA*t); });
+  // morphing.set_plug([OMEGA](double t) { return 0.2 * sin(OMEGA*t); });
   morphing.set_flap([OMEGA, PHI](double t) { return PHI * sin(OMEGA * t); });
 
   const double dt = FLAGS_dt;
