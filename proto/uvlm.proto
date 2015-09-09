@@ -1,0 +1,63 @@
+package UVLM.proto;
+
+// 点
+message Point {
+  optional double x = 1;
+  optional double y = 2;
+  optional double z = 3;
+}
+
+// 翼のデータ構造
+message Wing {
+  optional uint64 cols = 1;   // 列のサイズ
+  optional uint64 rows = 2;   // 行のサイズ
+
+  // 位置
+  // 順番はindex = j + i * cols
+  // . → x
+  // ↓
+  // y
+  // -------->
+  // -------->
+  // -------->
+  repeated Point points = 3;
+
+  optional Point origin = 4;  // 原点
+}
+
+// 渦輪
+message VortexRing {
+  optional double gamma = 1;    // 循環
+  repeated Point nodes = 2;     // 節の位置
+  repeated Point nodes0 = 3;    // 節の基準位置（原点固定の場合、初期位置に相当）
+}
+
+// 個体
+message FlyingWing {
+  repeated VortexRing bound_vortices = 1;
+  repeated VortexRing wake_vortices = 2;
+  optional Point origin = 3;
+}
+
+// スナップショット
+// 変数についてはこのバイナリから全て復元できる
+message Snapshot {
+  optional double t = 1;
+  repeated FlyingWing flying_wings = 2;
+}
+
+
+// スナップショットver2 （案）
+message Snapshot2 {
+  optional double t = 1;
+
+  message ContainerShape {
+    required uint32 rows = 1;
+    required uint32 cols = 2;
+    optional uint32 id = 3;
+    optional Point origin = 4;
+  }
+  repeated ContainerShape container_shapes = 2;
+
+  repeated VortexRing vortices = 3;
+}
