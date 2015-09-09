@@ -84,4 +84,24 @@ Vector3d VortexRing::ReferenceCentroid() const {
   return (nodes0_[0] + nodes0_[1] + nodes0_[2] + nodes0_[3]) / 4;
 }
 
+Eigen::Vector3d VortexRing::TanVecChord() const {
+  Eigen::Vector3d res(this->nodes()[1] - this->nodes()[0]);
+  res.normalize();
+  return res;
+}
+
+Eigen::Vector3d VortexRing::TanVecSpan() const {
+  Eigen::Vector3d res(this->nodes()[3] - this->nodes()[0]);
+  res.normalize();
+  return res;
+}
+
+double VortexRing::CalcC() const {
+  return (this->nodes()[0] - this->nodes()[1]).norm();
+}
+
+double VortexRing::CalcB() const {
+  return (this->nodes()[0] - this->nodes()[3]).norm();
+}
+
 }  // namespace UVLM

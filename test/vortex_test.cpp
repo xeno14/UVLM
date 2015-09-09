@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
 
 #include "vortex.h"
+#include "testutil.h"
+
+using UVLM::VortexRing;
 
 const double EPS = 1e-10;
 
@@ -85,3 +88,33 @@ TEST_F(VortexRingTest, BiotSavartLaw) {
   EXPECT_DOUBLE_EQ(0, result.y());
   EXPECT_DOUBLE_EQ(4*M_SQRT2, result.z());
 }
+
+class ChordSpanTest : public ::testing::Test {
+ protected:
+  virtual void SetUp() {
+    v.Clear();
+    v.PushNode({0, 0, 0});
+    v.PushNode({1, 0, 0});
+    v.PushNode({1, 2.1, 0});
+    v.PushNode({0, 2, 0});
+  }
+
+  VortexRing v;
+};
+
+TEST_F(ChordSpanTest, tanvec_c) {
+  EXPECT_VECTOR3D_EQ(1, 0, 0, v.TanVecChord());
+}
+
+TEST_F(ChordSpanTest, tanvec_b) {
+  EXPECT_VECTOR3D_EQ(0, 1, 0, v.TanVecSpan());
+}
+
+TEST_F(ChordSpanTest, c) {
+  EXPECT_DOUBLE_EQ(1, v.CalcC());
+}
+
+TEST_F(ChordSpanTest, b) {
+  EXPECT_DOUBLE_EQ(2, v.CalcB());
+}
+

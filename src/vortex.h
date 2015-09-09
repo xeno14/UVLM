@@ -77,6 +77,26 @@ class VortexRing {
 
   void Clear() { nodes_.clear(); }
 
+  /**
+   * i方向(chordwise)の規格化した接ベクトルを返す
+   */
+  Eigen::Vector3d TanVecChord() const;
+
+  /**
+   * j方向(spanwise)の規格化した接ベクトルを返す
+   */
+  Eigen::Vector3d TanVecSpan() const;
+
+  /**
+   * 渦輪のchord方向の長さを求める
+   */
+  double CalcC() const;
+
+  /**
+   * 渦輪のspan方向の長さを求める
+   */
+  double CalcB() const;
+
  private:
   double gamma_;
   std::vector<Vector3d> nodes_;

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "calc_load.h"
+#include "testutil.h"
 
 using UVLM::VortexRing;
 
@@ -17,10 +18,7 @@ class CalcLoadFuncTest : public ::testing::Test {
   VortexRing v;
 };
 
-TEST_F(CalcLoadFuncTest, c) {
-  EXPECT_DOUBLE_EQ(1, UVLM::calc_load::CalcC(v));
+TEST_F(CalcLoadFuncTest, dummy) {
+
 }
 
-TEST_F(CalcLoadFuncTest, b) {
-  EXPECT_DOUBLE_EQ(2, UVLM::calc_load::CalcB(v));
-}
