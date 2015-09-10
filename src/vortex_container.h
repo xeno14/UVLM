@@ -13,6 +13,12 @@
 
 namespace UVLM {
 
+/**
+ * Bound Vorticesを保持すると見せかけるコンテナ
+ *
+ * 渦の本体自体はshared_ptrにvectorで保持し、VortexContainerはその中でindexが
+ * 何番目から何番目までかを記録する。
+ */
 class VortexContainer {
   typedef std::vector<VortexRing> container_t;
   typedef std::shared_ptr<container_t> vortices_ptr_t;
@@ -49,7 +55,6 @@ class VortexContainer {
     return Offset() + j + i * cols_;
   }
 
-
   VortexRing& operator[] (std::size_t i) { return (*vortices_)[Index(i)]; }
   const VortexRing& operator[] (std::size_t i) const {
     return (*vortices_)[Index(i)];
@@ -60,6 +65,10 @@ class VortexContainer {
   }
   const VortexRing& at(std::size_t i, std::size_t j) const {
     return (*vortices_)[Index(i, j)];
+  }
+
+  bool ShapeEquals(const VortexContainer& c) const {
+    return rows_ == c.rows() && cols_ == c.cols() && id_ == c.id();
   }
 
   void alloc(std::size_t sz) {
@@ -107,5 +116,41 @@ class VortexContainer {
   std::size_t rows_, cols_, id_;
 
 };
+
+
+/**
+ * コンテナの集合から要素の総数を計算する
+ */
+template <class InputIterator>
+std::size_t CountTotalSize(InputIterator first, InputIterator last) {
+  std::size_t res = 0;
+  while (first != last) {
+    res += first->size();
+    ++first;
+  }
+  return res;
+}
+
+/**
+ * コンテナをコピーする
+ *
+ * 共有された渦も新しく領域を確保してコピーする
+ */
+template <class InputIterator, class OutputIterator>
+void CopyContainers(InputIterator first, InputIterator last,
+                    OutputIterator result) {
+  auto vortices = first->vortices();
+  const auto total_size = CountTotalSize(first, last);
+
+  // 渦をコピーする
+  auto copied = std::make_shared<std::vector<UVLM::VortexRing>>(
+      vortices->begin(), vortices->begin() + total_size);
+
+  while (first != last) {
+    result->set_vortices(copied, first->rows(), first->cols(), first->id());
+    ++first;
+    ++result;
+  }
+}
 
 }  // UVLM

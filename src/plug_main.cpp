@@ -82,23 +82,6 @@ void OutputSnapshot2(const std::size_t index, InputIterator1 container_first,
   snapshot.SerializeToOstream(&ofs);
 }
 
-std::size_t CountTotalSize(const std::vector<UVLM::VortexContainer>& containers) {
-  std::size_t res = 0;
-  for (const auto& c : containers) res += c.size();
-  return res;
-}
-
-void CopyPrevContainers(std::vector<UVLM::VortexContainer>* const prev,
-                      const std::vector<UVLM::VortexContainer>& containers) {
-  auto vortices = containers.begin()->vortices();
-  const auto total_size = CountTotalSize(containers);
-  auto vortices_prev = std::make_shared<std::vector<UVLM::VortexRing>>(
-      vortices->begin(), vortices->begin() + total_size);
-  prev->clear();
-  for (const auto& c : containers) {
-    prev->emplace_back(vortices_prev, c.rows(), c.cols(), c.id());
-  }
-}
 
 void SimulationBody() {
   auto vortices = std::make_shared<std::vector<UVLM::VortexRing>>();
@@ -117,10 +100,13 @@ void SimulationBody() {
   std::vector<Eigen::Vector3d> origins;
   std::vector<UVLM::Morphing> morphings;
 
+  // originを増やしたら翼が増えるよ！
   origins.emplace_back(0, 0, 0);
 
   UVLM::WingBuilder builder(&containers, vortices);
   InitWing(&builder, origins);
+
+  containers_prev.resize(containers.size());
 
   rings.bound_vortices() = *vortices;
 
@@ -129,7 +115,8 @@ void SimulationBody() {
 
   const double dt = FLAGS_dt;
 
-  std::size_t wake_offset = CountTotalSize(containers);
+  std::size_t wake_offset =
+      CountTotalSize(containers.cbegin(), containers.cend());
 
   std::cerr << vortices->size() <<"aa\n";
   // main loop
@@ -204,20 +191,14 @@ void SimulationBody() {
     }
 
     std::cerr << "copy" << std::endl;
-    // TODO remove rings
-    // std::copy(advected_wake.begin(), advected_wake.end(),
-    //           vortices->begin() + wake_offset);
     rings.wake_vortices().resize(vortices->size() - wake_offset);
     std::copy(vortices->begin() + wake_offset, vortices->end(),
               rings.wake_vortices().begin());
-    // for (std::size_t i = 0; i < container.size(); i++) {
-    //   std::cerr << vortices->at(i).gamma() << " vs " << container[i].gamma()
-    //             << " vs " << rings.bound_vortices()[i].gamma() << std::endl;
-    // }
 
     std::cerr << std::endl;
 
-    CopyPrevContainers(&containers_prev, containers);
+    CopyContainers(containers.cbegin(), containers.cend(),
+                   containers_prev.begin());
     if (ti >= 1) {
       for (std::size_t i = 0; i < containers.size(); ++i) {
         auto force = UVLM::CalcLoad(containers[i], containers_prev[i],
