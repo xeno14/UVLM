@@ -5,6 +5,7 @@
 
 
 #include "../proto/uvlm.pb.h"
+#include "calc_load.h"
 #include "uvlm_vortex_ring.h"
 #include "morphing.h"
 #include "linear.h"
@@ -58,7 +59,7 @@ void InitWing(UVLM::WingBuilder* builder,
 }
 
 template <class InputIterator1, class InputIterator2>
-void OutputSnapshot(const std::size_t index, InputIterator1 container_first,
+void OutputSnapshot2(const std::size_t index, InputIterator1 container_first,
                     InputIterator1 container_last, InputIterator2 vortex_first,
                     InputIterator2 vortex_last, const double t) {
   UVLM::proto::Snapshot2 snapshot;
@@ -87,19 +88,32 @@ std::size_t CountTotalSize(const std::vector<UVLM::VortexContainer>& containers)
   return res;
 }
 
+void CopyPrevContainers(std::vector<UVLM::VortexContainer>* const prev,
+                      const std::vector<UVLM::VortexContainer>& containers) {
+  auto vortices = containers.begin()->vortices();
+  const auto total_size = CountTotalSize(containers);
+  auto vortices_prev = std::make_shared<std::vector<UVLM::VortexRing>>(
+      vortices->begin(), vortices->begin() + total_size);
+  prev->clear();
+  for (const auto& c : containers) {
+    prev->emplace_back(vortices_prev, c.rows(), c.cols(), c.id());
+  }
+}
+
 void SimulationBody() {
   auto vortices = std::make_shared<std::vector<UVLM::VortexRing>>();
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;
-  const double ALPHA = M_PI * 2 / 360 * 4;
-  const double U = 1;
-  const double K = 0.1;
-  const double C = 1;
-  const double OMEGA = 2 * U * K / C;
-  const double PHI = M_PI * 2 / 360 * 15;
+  const double ALPHA = M_PI * 2 / 360 * 4;  // Angle of attack
+  const double U = 1;                       // Upstream velocity
+  const double K = 0.1;                     // Reduced frequency
+  const double C = 1;                       // Chord length
+  const double OMEGA = 2 * U * K / C;       // Flapping frequency
+  const double PHI = M_PI * 2 / 360 * 15;   // Angle of flapping
   Eigen::Vector3d Vinfty(U * cos(ALPHA), 0, sin(ALPHA));
 
   std::vector<UVLM::VortexContainer> containers;
+  std::vector<UVLM::VortexContainer> containers_prev;
   std::vector<Eigen::Vector3d> origins;
   std::vector<UVLM::Morphing> morphings;
 
@@ -119,9 +133,9 @@ void SimulationBody() {
 
   std::cerr << vortices->size() <<"aa\n";
   // main loop
-  for(int i=0; i<FLAGS_steps; i++) {
-    std::cerr << i << std::endl;
-    const double t = i * dt;
+  for(int ti=0; ti<FLAGS_steps; ti++) {
+    std::cerr << ti << std::endl;
+    const double t = ti * dt;
 
     // 連立方程式を解いて翼の上の循環を求める
     std::cerr << "Solve linear problem" << std::endl;
@@ -137,7 +151,7 @@ void SimulationBody() {
     std::cerr << "Output" << std::endl;
     std::copy(vortices->begin(), vortices->begin() + wake_offset,
               rings.bound_vortices().begin());
-    OutputSnapshot(i, containers.begin(), containers.end(), vortices->begin(),
+    OutputSnapshot2(ti, containers.begin(), containers.end(), vortices->begin(),
                    vortices->end(), t);
 
     std::cerr << "Shed" << std::endl;
@@ -169,8 +183,8 @@ void SimulationBody() {
     // 変形する
     for (std::size_t i=0; i<containers.size(); i++) {
       for (auto& vortex : containers[i]) {
-        for (std::size_t i=0; i<vortex.nodes().size(); i++) {
-          morphing.Perfome(&vortex.nodes()[i], vortex.nodes0()[i], t, dt);
+        for (std::size_t j=0; j<vortex.nodes().size(); j++) {
+          morphing.Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t, dt);
         }
       }
     }
@@ -202,6 +216,16 @@ void SimulationBody() {
     // }
 
     std::cerr << std::endl;
+
+    CopyPrevContainers(&containers_prev, containers);
+    if (ti >= 1) {
+      for (std::size_t i = 0; i < containers.size(); ++i) {
+        auto force = UVLM::CalcLoad(containers[i], containers_prev[i],
+                                    vortices->begin() + wake_offset,
+                                    vortices->end(), Vinfty, 1, dt);
+        printf("%e\t%e\t%e\t%e\n", t, force.x(), force.y(), force.z());
+      }
+    }
   }
 }
 
