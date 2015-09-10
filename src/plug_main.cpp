@@ -16,6 +16,7 @@
 #include "wing_builder.h"
 
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -33,7 +34,7 @@ std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
   std::vector<Eigen::Vector3d> res;
   std::ifstream ifs(path);
   if (!ifs) {
-    std::cerr << "Open error" << std::endl;
+    LOG(INFO) << "Open error" ;
     std::exit(EXIT_FAILURE);
   }
   while (!ifs.eof()) {
@@ -118,14 +119,13 @@ void SimulationBody() {
   std::size_t wake_offset =
       CountTotalSize(containers.cbegin(), containers.cend());
 
-  std::cerr << vortices->size() <<"aa\n";
   // main loop
   for(int ti=0; ti<FLAGS_steps; ti++) {
-    std::cerr << ti << std::endl;
+    LOG(INFO) << "step: " << ti;
     const double t = ti * dt;
 
     // 連立方程式を解いて翼の上の循環を求める
-    std::cerr << "Solve linear problem" << std::endl;
+    LOG(INFO) << "Solve linear problem" ;
     auto gamma = UVLM::SolveLinearProblem(
         vortices->begin(), vortices->begin() + wake_offset,
         vortices->cbegin() + wake_offset, vortices->cend(),
@@ -135,13 +135,13 @@ void SimulationBody() {
     }
 
     // TODO remove rings
-    std::cerr << "Output" << std::endl;
+    LOG(INFO) << "Output" ;
     std::copy(vortices->begin(), vortices->begin() + wake_offset,
               rings.bound_vortices().begin());
     OutputSnapshot2(ti, containers.begin(), containers.end(), vortices->begin(),
                    vortices->end(), t);
 
-    std::cerr << "Shed" << std::endl;
+    LOG(INFO) << "Shed" ;
     // 放出する渦を求める
     // TODO 変形したときに位置が合わない
     // TODO remove rings
@@ -159,14 +159,14 @@ void SimulationBody() {
                                dt);
     }
 
-    std::cerr << "Advect" << std::endl;
+    LOG(INFO) << "Advect" ;
     // TODO remove rings
     UVLM::AdvectWake(vortices->begin() + wake_offset, vortices->end(),
                      vortices->cbegin(), vortices->cend(), 
                      rings,
                      Vinfty, dt);
 
-    std::cerr << "Morphing" << std::endl;
+    LOG(INFO) << "Morphing" ;
     // 変形する
     for (std::size_t i=0; i<containers.size(); i++) {
       for (auto& vortex : containers[i]) {
@@ -176,21 +176,21 @@ void SimulationBody() {
       }
     }
 
-    std::cerr << "Edge" << std::endl;
+    LOG(INFO) << "Edge" ;
     // 変形後のedgeの位置とshedを合わせる
     for (std::size_t i=0; i<containers.size(); i++) {
       UVLM::AttachShedVorticesToEdge(containers[i].edge_begin(), containers[i].edge_end(),
                                      shed[i].begin());
     }
 
-    std::cerr << "Append shed" << std::endl;
+    LOG(INFO) << "Append shed" ;
     // 放出した渦の追加
     // TODO jointed iterator?
     for (std::size_t i=0; i<shed.size(); i++) {
       vortices->insert(vortices->end(), shed[i].cbegin(), shed[i].cend());
     }
 
-    std::cerr << "copy" << std::endl;
+    LOG(INFO) << "copy" ;
     rings.wake_vortices().resize(vortices->size() - wake_offset);
     std::copy(vortices->begin() + wake_offset, vortices->end(),
               rings.wake_vortices().begin());
@@ -211,9 +211,13 @@ void SimulationBody() {
 }
 
 int main(int argc, char* argv[]) {
+  google::InitGoogleLogging(argv[0]);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+  FLAGS_logtostderr = true;   // TODO 実行時に --logtostderr にすると怒られる
+
+  LOG(INFO) << "INFO";
 #ifdef _OPENMP
-  std::cerr << "work with " << FLAGS_threads << " threads." << std::endl;
+  LOG(INFO) << "work with " << FLAGS_threads << " threads." ;
   omp_set_num_threads(FLAGS_threads);
 #endif
   SimulationBody();

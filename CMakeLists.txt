@@ -95,7 +95,7 @@ add_executable(plug
                ${PROTO_DIR}/uvlm.pb.cc
                src/plug_main.cpp)
 enable_gflags(plug)
-target_link_libraries(plug uvlm protobuf)
+target_link_libraries(plug uvlm protobuf glog)
 
 
 ###########################################################

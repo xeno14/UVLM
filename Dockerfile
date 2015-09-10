@@ -12,7 +12,8 @@ RUN yes | pacman -S \
       eigen \
       protobuf \
       gtest \
-      gflags
+      gflags \
+      google-glog
 
 ADD . /tmp/uvlm
 RUN cd /tmp/uvlm && cmake . && make -j && make install
