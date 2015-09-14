@@ -116,7 +116,6 @@ void SimulationBody() {
   Eigen::Vector3d Vinfty(U * cos(ALPHA), 0, U * sin(ALPHA));
 
   std::vector<UVLM::VortexContainer> containers;
-  std::vector<UVLM::VortexContainer> containers_prev;
   std::vector<Eigen::Vector3d> origins { {0, 0, 0} };
   std::vector<UVLM::Morphing> morphings;
 
@@ -127,8 +126,6 @@ void SimulationBody() {
   const double SPAN = wing.span();      // wing span
   LOG(INFO) << "chord: " << CHORD;
   LOG(INFO) << "span: " << SPAN;
-
-  containers_prev.resize(containers.size());
 
   rings.bound_vortices() = *vortices;
 
@@ -149,6 +146,54 @@ void SimulationBody() {
     LOG(INFO) << "step: " << ti;
     const double t = ti * dt;
 
+    if (ti >= 1) {
+      LOG(INFO) << "Shed";
+      // 放出する渦を求める
+      // TODO 変形したときに位置が合わない
+      // TODO remove rings
+      std::vector<std::vector<UVLM::VortexRing>> shed(containers.size());
+
+      // TODO use zip iterator?
+      for (std::size_t i = 0; i < containers.size(); i++) {
+        auto edge_first = containers[i].edge_begin();
+        auto edge_last = containers[i].edge_end();
+        shed[i].resize(std::distance(edge_first, edge_last));
+        UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed[i].begin(),
+                                 vortices->cbegin(), vortices->cend(), rings,
+                                 Vinfty, t, dt);
+      }
+
+      LOG(INFO) << "Advect";
+      // TODO remove rings
+      UVLM::AdvectWake(vortices->begin() + wake_offset, vortices->end(),
+                       vortices->cbegin(), vortices->cend(), rings, Vinfty, dt);
+
+      LOG(INFO) << "Morphing";
+      // 変形する
+      for (std::size_t i = 0; i < containers.size(); i++) {
+        for (auto& vortex : containers[i]) {
+          for (std::size_t j = 0; j < vortex.nodes().size(); j++) {
+            morphing.Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t, dt);
+          }
+        }
+      }
+
+      LOG(INFO) << "Edge";
+      // 変形後のedgeの位置とshedを合わせる
+      for (std::size_t i = 0; i < containers.size(); i++) {
+        UVLM::AttachShedVorticesToEdge(containers[i].edge_begin(),
+                                       containers[i].edge_end(),
+                                       shed[i].begin());
+      }
+
+      LOG(INFO) << "Append shed";
+      // 放出した渦の追加
+      // TODO jointed iterator?
+      for (std::size_t i = 0; i < shed.size(); i++) {
+        vortices->insert(vortices->end(), shed[i].cbegin(), shed[i].cend());
+      }
+    }
+
     // 連立方程式を解いて翼の上の循環を求める
     LOG(INFO) << "Solve linear problem" ;
     auto gamma = UVLM::SolveLinearProblem(
@@ -165,77 +210,6 @@ void SimulationBody() {
               rings.bound_vortices().begin());
     OutputSnapshot2(ti, containers.begin(), containers.end(), vortices->begin(),
                    vortices->end(), t);
-
-    LOG(INFO) << "Shed" ;
-    // 放出する渦を求める
-    // TODO 変形したときに位置が合わない
-    // TODO remove rings
-    std::vector<std::vector<UVLM::VortexRing>> shed(containers.size());
-
-    // TODO use zip iterator?
-    for (std::size_t i=0; i<containers.size(); i++) {
-      auto edge_first = containers[i].edge_begin();
-      auto edge_last = containers[i].edge_end();
-      shed[i].resize(std::distance(edge_first, edge_last));
-      UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed[i].begin(),
-                               vortices->cbegin(), vortices->cend(), 
-                               rings,
-                               Vinfty, t,
-                               dt);
-    }
-
-    LOG(INFO) << "Advect" ;
-    // TODO remove rings
-    UVLM::AdvectWake(vortices->begin() + wake_offset, vortices->end(),
-                     vortices->cbegin(), vortices->cend(), 
-                     rings,
-                     Vinfty, dt);
-
-    LOG(INFO) << "Morphing" ;
-    // 変形する
-    for (std::size_t i=0; i<containers.size(); i++) {
-      for (auto& vortex : containers[i]) {
-        for (std::size_t j=0; j<vortex.nodes().size(); j++) {
-          morphing.Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t, dt);
-        }
-      }
-    }
-
-    LOG(INFO) << "Edge" ;
-    // 変形後のedgeの位置とshedを合わせる
-    for (std::size_t i=0; i<containers.size(); i++) {
-      UVLM::AttachShedVorticesToEdge(containers[i].edge_begin(), containers[i].edge_end(),
-                                     shed[i].begin());
-    }
-
-    LOG(INFO) << "Append shed" ;
-    // 放出した渦の追加
-    // TODO jointed iterator?
-    for (std::size_t i=0; i<shed.size(); i++) {
-      vortices->insert(vortices->end(), shed[i].cbegin(), shed[i].cend());
-    }
-
-    LOG(INFO) << "copy" ;
-    rings.wake_vortices().resize(vortices->size() - wake_offset);
-    std::copy(vortices->begin() + wake_offset, vortices->end(),
-              rings.wake_vortices().begin());
-
-    std::cerr << std::endl;
-
-    // Calc aerodynamic loads
-    // LOG(INFO) << "aerodynamic load";
-    // if (ti >= 1) {
-    //   for (std::size_t i = 0; i < containers.size(); ++i) {
-    //     auto force = UVLM::CalcLoad(containers[i], containers_prev[i],
-    //                                 vortices->begin() + wake_offset,
-    //                                 vortices->end(), Vinfty, RHO, dt);
-    //     Eigen::Vector3d coeff = force / (0.5 * RHO * U * U);
-    //     printf("%e\t%e\t%e\t%e\n", t/T, coeff.x(), coeff.y(), coeff.z());
-    //   }
-    // }
-    // LOG(INFO) << "Copy containers";
-    // CopyContainers(containers.cbegin(), containers.cend(),
-    //                containers_prev.begin());
   }
 }
 

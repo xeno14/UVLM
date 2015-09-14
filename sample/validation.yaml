@@ -6,4 +6,4 @@ parameter:
   U: 1          # 主流の流速
 setting:
   threads: 8    # スレッド数
-  steps: 10     # 時間発展のステップ数
+  steps: 100    # 時間発展のステップ数
