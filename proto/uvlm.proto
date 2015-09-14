@@ -23,6 +23,11 @@ message Wing {
   repeated Point points = 3;
 
   optional Point origin = 4;  // 原点
+
+  optional double chord = 5;  // chord length
+  optional double span = 6;   // span length
+
+  // Next: 7
 }
 
 // 渦輪

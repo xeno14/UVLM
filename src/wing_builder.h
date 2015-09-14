@@ -17,7 +17,7 @@ struct WingHolder {
 };
 
 template <class InputIterator>
-std::vector<Eigen::Vector3d> TransfromRow(InputIterator first,
+std::vector<Eigen::Vector3d> TransformRow(InputIterator first,
                                           InputIterator last) {
   std::vector<Eigen::Vector3d> row(first, last);
   std::vector<Eigen::Vector3d> reversed_row(first + 1, last);

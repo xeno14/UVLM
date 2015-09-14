@@ -30,7 +30,7 @@ WingBuilder& WingBuilder::AddWing(const proto::Wing& wing) {
   for (std::size_t i = 0; i < point_rows; i++) {
     auto first = points.begin() + i * point_cols;
     auto last = first + point_cols;
-    auto row = internal::TransfromRow(first, last);
+    auto row = internal::TransformRow(first, last);
     holder.points.insert(holder.points.end(), row.begin(), row.end());
   }
 

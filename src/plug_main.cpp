@@ -45,7 +45,7 @@ std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
   return res;
 }
 
-void InitWing(UVLM::WingBuilder* builder,
+auto InitWing(UVLM::WingBuilder* builder,
               const std::vector<Eigen::Vector3d>& origins) {
   std::ifstream ifs(FLAGS_wing, std::ios::binary);
   CHECK_OPEN(ifs);
@@ -57,6 +57,16 @@ void InitWing(UVLM::WingBuilder* builder,
     builder->AddWing(wing);
   }
   builder->Build();
+
+  if (!wing.has_chord()) {
+    auto* p = wing.mutable_points();
+    wing.set_chord(p->rbegin()->x() - p->begin()->x());
+  }
+  if (!wing.has_span()) {
+    auto* p = wing.mutable_points();
+    wing.set_span(p->rbegin()->y() - p->begin()->y());
+  }
+  return wing;
 }
 
 template <class InputIterator1, class InputIterator2>
@@ -93,7 +103,10 @@ void SimulationBody() {
   const double K = 0.1;                     // Reduced frequency
   const double C = 1;                       // Chord length
   const double OMEGA = 2 * U * K / C;       // Flapping frequency
-  const double PHI = M_PI * 2 / 360 * 15;   // Angle of flapping
+  const double PHI = 15 * M_PI / 180;       // Angle of flapping
+  const double T = M_PI * 2 / OMEGA;        // Period of flapping
+  const double BETA = 4 * M_PI / 180;       // twising amp at wing tip
+  const double RHO = 1;                     // Fluid density
   Eigen::Vector3d Vinfty(U * cos(ALPHA), 0, sin(ALPHA));
 
   std::vector<UVLM::VortexContainer> containers;
@@ -105,14 +118,22 @@ void SimulationBody() {
   origins.emplace_back(0, 0, 0);
 
   UVLM::WingBuilder builder(&containers, vortices);
-  InitWing(&builder, origins);
+  auto wing = InitWing(&builder, origins);
+
+  const double CHORD = wing.chord();    // chord length
+  const double SPAN = wing.span();      // wing span
+  LOG(INFO) << "chord: " << CHORD;
+  LOG(INFO) << "span: " << SPAN;
 
   containers_prev.resize(containers.size());
 
   rings.bound_vortices() = *vortices;
 
   // morphing.set_plug([OMEGA](double t) { return 0.2 * sin(OMEGA*t); });
-  morphing.set_flap([OMEGA, PHI](double t) { return PHI * sin(OMEGA * t); });
+  morphing.set_flap([OMEGA, PHI](double t) { return PHI * sin(OMEGA * t + M_PI); });
+  morphing.set_twist([OMEGA, BETA, SPAN](const Eigen::Vector3d& x0, double t) {
+    return BETA * fabs(x0.y()) / SPAN * sin(OMEGA * t + M_PI);
+  });
 
   const double dt = FLAGS_dt;
 
@@ -203,8 +224,9 @@ void SimulationBody() {
       for (std::size_t i = 0; i < containers.size(); ++i) {
         auto force = UVLM::CalcLoad(containers[i], containers_prev[i],
                                     vortices->begin() + wake_offset,
-                                    vortices->end(), Vinfty, 1, dt);
-        printf("%e\t%e\t%e\t%e\n", t, force.x(), force.y(), force.z());
+                                    vortices->end(), Vinfty, RHO, dt);
+        Eigen::Vector3d coeff = force / (0.5 * RHO * U * U);
+        printf("%e\t%e\t%e\t%e\n", t/T, coeff.x(), coeff.y(), coeff.z());
       }
     }
   }

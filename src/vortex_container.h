@@ -14,7 +14,7 @@
 namespace UVLM {
 
 /**
- * Bound Vorticesを保持すると見せかけるコンテナ
+ * Bound Vorticesを保持するコンテナで１つの翼に対応する
  *
  * 渦の本体自体はshared_ptrにvectorで保持し、VortexContainerはその中でindexが
  * 何番目から何番目までかを記録する。
@@ -114,7 +114,7 @@ class VortexContainer {
  private:
   vortices_ptr_t vortices_;
   std::size_t rows_, cols_, id_;
-
+  double chord_, span_;
 };
 
 

@@ -30,7 +30,7 @@ class WingBuilderTest : public ::testing::Test {
 
 TEST_F(WingBuilderTest, transform_row) {
   std::vector<Eigen::Vector3d> row{{1, 0, 2}, {1, 1, 2}, {1, 2, 2}};
-  auto result = internal::TransfromRow(row.begin(), row.end());
+  auto result = internal::TransformRow(row.begin(), row.end());
 
   ASSERT_EQ(5, result.size());
 
