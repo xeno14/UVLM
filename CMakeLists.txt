@@ -20,6 +20,7 @@ if (OPENMP_FOUND)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
+find_library(yaml-cpp REQUIRED)
 
 
 
@@ -99,7 +100,7 @@ add_executable(validation
                src/wing/naca00XX.cpp
                src/validation_main.cpp)
 enable_gflags(validation)
-target_link_libraries(validation uvlm protobuf glog)
+target_link_libraries(validation uvlm protobuf glog yaml-cpp)
 
 add_executable(calc_load src/calc_load/calc_load_main.cpp)
 enable_gflags(calc_load)

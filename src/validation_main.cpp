@@ -15,6 +15,7 @@
 #include "vortex_container.h"
 #include "wing/wing.h"
 #include "wing_builder.h"
+#include "parameter.h"
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
@@ -23,14 +24,14 @@
 #include <cstdlib>
 #include <memory>
 
+DEFINE_string(input, "", "setting yaml");
 DEFINE_string(output, "", "output path");
-DEFINE_double(dt, 0.01, "delta t");
-#ifdef _OPENMP
-DEFINE_int32(threads, 1, "openmp threads");
-#endif
-DEFINE_int32(steps, 100, "number of time steps");
-DEFINE_int32(rows, 10, "number of chordwise cells");
-DEFINE_int32(cols, 20, "number of spanwise cells");
+
+namespace {
+
+YAML::Node config;
+
+}  // anonymous namespace
 
 std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
   std::vector<Eigen::Vector3d> res;
@@ -53,7 +54,9 @@ auto InitWing(UVLM::WingBuilder* builder,
 
   // 翼の作成
   // NACA0012: AR=8
-  UVLM::wing::NACA00XXGenerator(12, 1., 4., FLAGS_rows, FLAGS_cols)
+  DEFINE_PARAM(int, rows, config["parameter"]);
+  DEFINE_PARAM(int, cols, config["parameter"]);
+  UVLM::wing::NACA00XXGenerator(12, 1., 4., PARAM_rows, PARAM_cols)
       .Generate(&wing);
 
   for (const auto& origin : origins) {
@@ -95,15 +98,21 @@ void SimulationBody() {
   auto vortices = std::make_shared<std::vector<UVLM::VortexRing>>();
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;
-  const double ALPHA = M_PI * 2 / 360 * 4;  // Angle of attack
-  const double U = 1;                       // Upstream velocity
-  const double K = 0.1;                     // Reduced frequency
-  const double C = 1;                       // Chord length
-  const double OMEGA = 2 * U * K / C;       // Flapping frequency
-  const double PHI = 15 * M_PI / 180;       // Angle of flapping
-  const double T = M_PI * 2 / OMEGA;        // Period of flapping
-  const double BETA = 4 * M_PI / 180;       // twising amp at wing tip
-  const double RHO = 1;                     // Fluid density
+
+  const auto param = config["parameter"];
+  DEFINE_PARAM(double, alpha, param);
+  DEFINE_PARAM(double, U, param);
+  DEFINE_PARAM(double, dt, param);
+
+  const double ALPHA = M_PI * 2 / 360 * PARAM_alpha;  // Angle of attack
+  const double U = PARAM_U;                           // Upstream velocity
+  const double K = 0.1;                               // Reduced frequency
+  const double C = 1;                                 // Chord length
+  const double OMEGA = 2 * U * K / C;                 // Flapping frequency
+  const double PHI = 15 * M_PI / 180;                 // Angle of flapping
+  // const double T = M_PI * 2 / OMEGA;                  // Period of flapping
+  const double BETA = 4 * M_PI / 180;                 // twising amp at wing tip
+  // const double RHO = 1;                               // Fluid density
   Eigen::Vector3d Vinfty(U * cos(ALPHA), 0, U * sin(ALPHA));
 
   std::vector<UVLM::VortexContainer> containers;
@@ -129,13 +138,14 @@ void SimulationBody() {
     return BETA * fabs(x0.y()) / SPAN * sin(OMEGA * t + M_PI);
   });
 
-  const double dt = FLAGS_dt;
+  const double dt = PARAM_dt;
 
   std::size_t wake_offset =
       CountTotalSize(containers.cbegin(), containers.cend());
 
+  DEFINE_PARAM(int, steps, config["setting"]);
   // main loop
-  for(int ti=0; ti<FLAGS_steps; ti++) {
+  for(int ti=0; ti<PARAM_steps; ti++) {
     LOG(INFO) << "step: " << ti;
     const double t = ti * dt;
 
@@ -234,10 +244,12 @@ int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   FLAGS_logtostderr = true;   // TODO 実行時に --logtostderr にすると怒られる
 
-  LOG(INFO) << "INFO";
+  config = YAML::LoadFile(FLAGS_input);
 #ifdef _OPENMP
-  LOG(INFO) << "work with " << FLAGS_threads << " threads." ;
-  omp_set_num_threads(FLAGS_threads);
+  auto setting = config["setting"];
+  DEFINE_PARAM(int, threads, setting);
+  LOG(INFO) << "work with " << PARAM_threads << " threads." ;
+  omp_set_num_threads(PARAM_threads);
 #endif
   SimulationBody();
   return 0;
