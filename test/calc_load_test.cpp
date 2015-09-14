@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "calc_load.h"
+#include "../src/calc_load/calc_load.h"
 #include "testutil.h"
 
 using UVLM::VortexRing;

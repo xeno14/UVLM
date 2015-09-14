@@ -153,4 +153,18 @@ void CopyContainers(InputIterator first, InputIterator last,
   }
 }
 
-}  // UVLM
+/**
+ * @brief wakeのイテレータを入手する
+ * @tparam Range VortexContainerのレンジ
+ * @return pair {wake_first, wake_last}
+ */
+template <class Range>
+auto GetWake(const Range& containers) {
+  const auto wake_offset =
+      CountTotalSize(std::begin(containers), std::end(containers));
+  // TODO what if vortices is nullptr?
+  auto vortices = std::begin(containers)->vortices();
+  return std::make_pair(vortices->begin() + wake_offset, vortices->end());
+}
+
+}  // namespace UVLM

@@ -5,7 +5,7 @@
 
 
 #include "../proto/uvlm.pb.h"
-#include "calc_load.h"
+// #include "calc_load.h"
 #include "uvlm_vortex_ring.h"
 #include "morphing.h"
 #include "linear.h"
@@ -104,7 +104,7 @@ void SimulationBody() {
   const double T = M_PI * 2 / OMEGA;        // Period of flapping
   const double BETA = 4 * M_PI / 180;       // twising amp at wing tip
   const double RHO = 1;                     // Fluid density
-  Eigen::Vector3d Vinfty(U * cos(ALPHA), 0, sin(ALPHA));
+  Eigen::Vector3d Vinfty(U * cos(ALPHA), 0, U * sin(ALPHA));
 
   std::vector<UVLM::VortexContainer> containers;
   std::vector<UVLM::VortexContainer> containers_prev;
@@ -213,19 +213,19 @@ void SimulationBody() {
     std::cerr << std::endl;
 
     // Calc aerodynamic loads
-    LOG(INFO) << "aerodynamic load";
-    if (ti >= 1) {
-      for (std::size_t i = 0; i < containers.size(); ++i) {
-        auto force = UVLM::CalcLoad(containers[i], containers_prev[i],
-                                    vortices->begin() + wake_offset,
-                                    vortices->end(), Vinfty, RHO, dt);
-        Eigen::Vector3d coeff = force / (0.5 * RHO * U * U);
-        printf("%e\t%e\t%e\t%e\n", t/T, coeff.x(), coeff.y(), coeff.z());
-      }
-    }
-    LOG(INFO) << "Copy containers";
-    CopyContainers(containers.cbegin(), containers.cend(),
-                   containers_prev.begin());
+    // LOG(INFO) << "aerodynamic load";
+    // if (ti >= 1) {
+    //   for (std::size_t i = 0; i < containers.size(); ++i) {
+    //     auto force = UVLM::CalcLoad(containers[i], containers_prev[i],
+    //                                 vortices->begin() + wake_offset,
+    //                                 vortices->end(), Vinfty, RHO, dt);
+    //     Eigen::Vector3d coeff = force / (0.5 * RHO * U * U);
+    //     printf("%e\t%e\t%e\t%e\n", t/T, coeff.x(), coeff.y(), coeff.z());
+    //   }
+    // }
+    // LOG(INFO) << "Copy containers";
+    // CopyContainers(containers.cbegin(), containers.cend(),
+    //                containers_prev.begin());
   }
 }
 

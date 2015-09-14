@@ -78,7 +78,7 @@ add_library(uvlm
             src/vortex.cpp
             src/uvlm_vortex_ring.cpp
             src/wing_builder.cpp
-            src/calc_load.cpp)
+            src/calc_load/calc_load.cpp)
 target_link_libraries(uvlm morphing protobuf)
 
 
@@ -100,6 +100,10 @@ add_executable(validation
                src/validation_main.cpp)
 enable_gflags(validation)
 target_link_libraries(validation uvlm protobuf glog)
+
+add_executable(calc_load src/calc_load/main.cpp)
+enable_gflags(calc_load)
+target_link_libraries(calc_load uvlm glog)
 
 
 ###########################################################
