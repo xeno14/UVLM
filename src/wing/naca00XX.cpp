@@ -4,7 +4,6 @@
  */
 
 #include "naca00XX.h"
-#include "wing.h"
 
 #include <gflags/gflags.h>
 #include <cmath>
@@ -37,6 +36,8 @@ void NACA00XXGenerator::Generate(UVLM::proto::Wing* wing) {
     std::cerr << dx << "@" << dy << "\n";
   }
 
+  wing->set_span(span);
+  wing->set_chord(chord);
   wing->set_cols(cols);
   wing->set_rows(rows);
   for (int i = 0; i <= rows; i++) {

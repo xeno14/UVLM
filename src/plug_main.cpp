@@ -13,6 +13,7 @@
 #include "proto_adaptor.h"
 #include "util.h"
 #include "vortex_container.h"
+#include "wing/wing.h"
 #include "wing_builder.h"
 
 #include <gflags/gflags.h>
@@ -23,12 +24,13 @@
 #include <memory>
 
 DEFINE_string(output, "", "output path");
-DEFINE_string(wing, "", "wing data");
 DEFINE_double(dt, 0.01, "delta t");
 #ifdef _OPENMP
 DEFINE_int32(threads, 1, "openmp threads");
 #endif
 DEFINE_int32(steps, 100, "number of time steps");
+DEFINE_int32(rows, 10, "number of chordwise cells");
+DEFINE_int32(cols, 20, "number of spanwise cells");
 
 std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
   std::vector<Eigen::Vector3d> res;
@@ -47,10 +49,13 @@ std::vector<Eigen::Vector3d> ReadWingTsv (const std::string& path) {
 
 auto InitWing(UVLM::WingBuilder* builder,
               const std::vector<Eigen::Vector3d>& origins) {
-  std::ifstream ifs(FLAGS_wing, std::ios::binary);
-  CHECK_OPEN(ifs);
   UVLM::proto::Wing wing;
-  wing.ParseFromIstream(&ifs);
+
+  // 翼の作成
+  // NACA0012: AR=8
+  UVLM::wing::NACA00XXGenerator(12, 1., 4., FLAGS_rows, FLAGS_cols)
+      .Generate(&wing);
+
   for (const auto& origin : origins) {
     auto* p = wing.mutable_origin();
     p->CopyFrom(UVLM::Vector3dToPoint(origin));
@@ -58,14 +63,6 @@ auto InitWing(UVLM::WingBuilder* builder,
   }
   builder->Build();
 
-  if (!wing.has_chord()) {
-    auto* p = wing.mutable_points();
-    wing.set_chord(p->rbegin()->x() - p->begin()->x());
-  }
-  if (!wing.has_span()) {
-    auto* p = wing.mutable_points();
-    wing.set_span(p->rbegin()->y() - p->begin()->y());
-  }
   return wing;
 }
 
@@ -111,11 +108,8 @@ void SimulationBody() {
 
   std::vector<UVLM::VortexContainer> containers;
   std::vector<UVLM::VortexContainer> containers_prev;
-  std::vector<Eigen::Vector3d> origins;
+  std::vector<Eigen::Vector3d> origins { {0, 0, 0} };
   std::vector<UVLM::Morphing> morphings;
-
-  // originを増やしたら翼が増えるよ！
-  origins.emplace_back(0, 0, 0);
 
   UVLM::WingBuilder builder(&containers, vortices);
   auto wing = InitWing(&builder, origins);
@@ -136,6 +130,7 @@ void SimulationBody() {
   });
 
   const double dt = FLAGS_dt;
+  // const double dt = 1./16. * CHORD / U;
 
   std::size_t wake_offset =
       CountTotalSize(containers.cbegin(), containers.cend());
