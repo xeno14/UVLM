@@ -4,6 +4,7 @@
  */
 
 #include "naca00XX.h"
+#include "../util.h"
 
 #include <gflags/gflags.h>
 #include <fstream>
@@ -37,10 +38,8 @@ int main(int argc, char* argv[]) {
   const std::string filename(
       GenFilename(".", FLAGS_digit, FLAGS_rows, FLAGS_cols));
   std::ofstream ofs(filename, std::ios::binary);
-  if (!ofs) {
-    std::cerr << "Unable to open " << filename;
-    std::exit(EXIT_FAILURE);
-  }
+  CHECK_OPEN(ofs);
+
   wing.SerializeToOstream(&ofs);
 
   return 0;

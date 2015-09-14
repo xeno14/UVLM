@@ -50,12 +50,15 @@ add_custom_command(
   COMMAND "protoc" "uvlm.proto" "--cpp_out=." "--python_out=."
 )
 
-add_library(morphing src/morphing.cpp)
+add_library(morphing
+            src/morphing.cpp
+            src/morphing_viewer.cpp
+            ${PROTO_DIR}/uvlm.pb.cc)
+enable_gflags(morphing)
+target_link_libraries(morphing protobuf)
 add_executable(morphing_viewer
-               ${PROTO_DIR}/uvlm.pb.cc
-               src/morphing_viewer.cpp)
-enable_gflags(morphing_viewer)
-target_link_libraries(morphing_viewer morphing protobuf)
+               src/morphing_viewer_main.cpp)
+target_link_libraries(morphing_viewer morphing)
 
 add_executable(result_to_gnuplot
                ${PROTO_DIR}/uvlm.pb.cc
