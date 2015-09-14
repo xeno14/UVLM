@@ -18,7 +18,9 @@ RUN yes | pacman -S \
       yaml-cpp
 
 ADD . /tmp/uvlm
-RUN cd /tmp/uvlm && cmake . && make -j && make install
+RUN [ -d /tmp/uvlm/build ] || mkdir -p /tmp/uvlm/build
+RUN cd /tmp/uvlm/build && cmake .. && make -j && make install
+RUN cd /tmp/uvlm/build && make test
 
 VOLUME ["/data"]
 
