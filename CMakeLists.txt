@@ -94,17 +94,17 @@ target_link_libraries(naca00XX wing)
 
 add_subdirectory(test)
 
-add_executable(plug
+add_executable(validation
                ${PROTO_DIR}/uvlm.pb.cc
                src/wing/naca00XX.cpp
-               src/plug_main.cpp)
-enable_gflags(plug)
-target_link_libraries(plug uvlm protobuf glog)
+               src/validation_main.cpp)
+enable_gflags(validation)
+target_link_libraries(validation uvlm protobuf glog)
 
 
 ###########################################################
 # install
 ###########################################################
 install (
-  TARGETS morphing_viewer result_to_gnuplot result_to_vtk naca00XX plug
+  TARGETS morphing_viewer result_to_gnuplot result_to_vtk naca00XX validation
   DESTINATION /usr/local/bin)
