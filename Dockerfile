@@ -1,6 +1,6 @@
 FROM base/archlinux
 
-RUN pacman -Sy
+RUN yes | pacman -Sy
 # to avoid keyring problem
 RUN sed -i "s/SigLevel    = Required DatabaseOptional/SigLevel = Never/" /etc/pacman.conf
 RUN yes | pacman -S \
@@ -14,6 +14,7 @@ RUN yes | pacman -S \
       gtest \
       gflags \
       google-glog \
+      boost \
       yaml-cpp
 
 ADD . /tmp/uvlm
