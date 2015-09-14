@@ -17,7 +17,7 @@
 DEFINE_string(pattern, "", "pattern for blob");
 DEFINE_string(output, "", "output");
 DEFINE_double(U, 1.0, "velocity of main stream");
-DEFINE_double(alpha, 0, "angle of attack");
+DEFINE_double(alpha, 0, "angle of attack [deg]");
 
 namespace {
 using namespace UVLM;
@@ -72,7 +72,7 @@ auto Calc(const proto::Snapshot2& s0, const proto::Snapshot2& s1) {
   const double dt = s1.t() - s0.t();
   const double RHO = 1.0;
   const double U = FLAGS_U;
-  const double ALPHA = FLAGS_alpha;
+  const double ALPHA = FLAGS_alpha * M_PI / 180;
   Eigen::Vector3d Vinfty(U * cos(ALPHA), 0, U * sin(ALPHA));
 
   std::vector<Eigen::Vector3d> res;
@@ -100,6 +100,8 @@ int main(int argc, char* argv[]) {
   std::ofstream ofs(FLAGS_output, std::ios::binary);
 
   for (std::size_t i=1; i<snapshots.size(); i++) {
+    LOG(INFO) << "Processing " << i << ": " << filepaths[i - 1] << " & "
+              << filepaths[i];
     const double t = snapshots[i].t();
     auto result = Calc(snapshots[i-1], snapshots[i]);
     ofs << t;
