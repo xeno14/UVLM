@@ -101,7 +101,7 @@ add_executable(validation
 enable_gflags(validation)
 target_link_libraries(validation uvlm protobuf glog)
 
-add_executable(calc_load src/calc_load/main.cpp)
+add_executable(calc_load src/calc_load/calc_load_main.cpp)
 enable_gflags(calc_load)
 target_link_libraries(calc_load uvlm glog)
 
