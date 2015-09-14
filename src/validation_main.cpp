@@ -130,7 +130,6 @@ void SimulationBody() {
   });
 
   const double dt = FLAGS_dt;
-  // const double dt = 1./16. * CHORD / U;
 
   std::size_t wake_offset =
       CountTotalSize(containers.cbegin(), containers.cend());
@@ -213,8 +212,8 @@ void SimulationBody() {
 
     std::cerr << std::endl;
 
-    CopyContainers(containers.cbegin(), containers.cend(),
-                   containers_prev.begin());
+    // Calc aerodynamic loads
+    LOG(INFO) << "aerodynamic load";
     if (ti >= 1) {
       for (std::size_t i = 0; i < containers.size(); ++i) {
         auto force = UVLM::CalcLoad(containers[i], containers_prev[i],
@@ -224,6 +223,9 @@ void SimulationBody() {
         printf("%e\t%e\t%e\t%e\n", t/T, coeff.x(), coeff.y(), coeff.z());
       }
     }
+    LOG(INFO) << "Copy containers";
+    CopyContainers(containers.cbegin(), containers.cend(),
+                   containers_prev.begin());
   }
 }
 
