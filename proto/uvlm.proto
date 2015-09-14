@@ -66,13 +66,5 @@ message Snapshot2 {
 
   repeated VortexRing vortices = 3;
 
-  message AerodynamicLoad {
-    required Point load = 1;
-    optional uint32 id = 2;
-    optional Point pos = 3;    // maybe duplicate ContainerShape::origin
-    optional double phase = 4;
-  }
-  repeated AerodynamicLoad aerodynamic_loads = 4;
-
   // Next: 5
 }
