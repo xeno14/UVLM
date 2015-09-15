@@ -25,6 +25,7 @@ inline double DefaultFunc2(const Eigen::Vector3d&, double) { return 0; }
 class Morphing {
  public:
   Morphing();
+  Morphing(const Morphing&);
   ~Morphing() = default;
 
   /** @brief 変形を行う

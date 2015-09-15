@@ -12,6 +12,13 @@ Morphing::Morphing() : origin_(0, 0, 0)  {
   Clear();
 }
 
+Morphing::Morphing(const Morphing& m)
+    : alpha_(m.alpha_),
+      flap_(m.flap_),
+      twist_(m.twist_),
+      bend_(m.bend_),
+      origin_(m.origin_) {}
+
 void Morphing::Perfome(Eigen::Vector3d* x,
                        const Eigen::Vector3d& x0, const double t,
                        const double dt) const {
