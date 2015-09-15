@@ -94,7 +94,8 @@ void OutputSnapshot2(const std::size_t index, InputIterator1 container_first,
 }
 
 
-void SimulationBody(const double dt) {
+void SimulationBody(const int steps, const double dt) {
+  LOG(INFO) << "steps: " << steps << " dt: " << dt;
   auto vortices = std::make_shared<std::vector<UVLM::VortexRing>>();
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;
@@ -102,31 +103,32 @@ void SimulationBody(const double dt) {
   const auto param = config["parameter"];
   DEFINE_PARAM(double, alpha, param);
   DEFINE_PARAM(double, U, param);
-  DEFINE_PARAM(double, k, param);
-  DEFINE_PARAM(double, phi, param);
-  DEFINE_PARAM(double, beta, param);
 
-  const double ALPHA = PARAM_alpha * M_PI / 180;      // Angle of attack
+  const double ALPHA = M_PI * 2 / 360 * PARAM_alpha;  // Angle of attack
   const double U = PARAM_U;                           // Upstream velocity
-  const double K = PARAM_k;                           // Reduced frequency
-  const double PHI = PARAM_phi * M_PI / 180;          // Angle of flapping
-  // const double T = M_PI * 2 / OMEGA;               // Period of flapping
-  const double BETA = PARAM_beta * M_PI / 180;        // twising amp at wing tip
-  // const double RHO = 1;                            // Fluid density
+  const double K = 0.1;                               // Reduced frequency
+  const double C = 1;                                 // Chord length
+  const double OMEGA = 2 * U * K / C;                 // Flapping frequency
+  const double PHI = 15 * M_PI / 180;                 // Angle of flapping
+  // const double T = M_PI * 2 / OMEGA;                  // Period of flapping
+  const double BETA = 4 * M_PI / 180;                 // twising amp at wing tip
+  // const double RHO = 1;                               // Fluid density
   Eigen::Vector3d Vinfty(U * cos(ALPHA), 0, U * sin(ALPHA));
 
   std::vector<UVLM::VortexContainer> containers;
+  std::vector<UVLM::VortexContainer> containers_prev;
   std::vector<Eigen::Vector3d> origins { {0, 0, 0} };
   std::vector<UVLM::Morphing> morphings;
 
   UVLM::WingBuilder builder(&containers, vortices);
   auto wing = InitWing(&builder, origins);
 
-  const double CHORD = wing.chord();        // chord length
-  const double SPAN = wing.span();          // wing span
-  const double OMEGA = K * 2 * U / CHORD;   // Flapping frequency
+  const double CHORD = wing.chord();    // chord length
+  const double SPAN = wing.span();      // wing span
   LOG(INFO) << "chord: " << CHORD;
   LOG(INFO) << "span: " << SPAN;
+
+  containers_prev.resize(containers.size());
 
   rings.bound_vortices() = *vortices;
 
@@ -139,12 +141,10 @@ void SimulationBody(const double dt) {
   std::size_t wake_offset =
       CountTotalSize(containers.cbegin(), containers.cend());
 
-  DEFINE_PARAM(int, steps, config["setting"]);
   // main loop
-  for(int ti=0; ti<PARAM_steps; ti++) {
-    LOG(INFO) << "step: " << ti;
-    const double t = ti * dt;
-
+  for(int step=0; step<steps; step++) {
+    LOG(INFO) << "step: " << step;
+    const double t = step * dt;
 
     // 連立方程式を解いて翼の上の循環を求める
     LOG(INFO) << "Solve linear problem" ;
@@ -160,54 +160,79 @@ void SimulationBody(const double dt) {
     LOG(INFO) << "Output" ;
     std::copy(vortices->begin(), vortices->begin() + wake_offset,
               rings.bound_vortices().begin());
-    OutputSnapshot2(ti, containers.begin(), containers.end(), vortices->begin(),
+    OutputSnapshot2(step, containers.begin(), containers.end(), vortices->begin(),
                    vortices->end(), t);
 
-      LOG(INFO) << "Shed";
-      // 放出する渦を求める
-      // TODO 変形したときに位置が合わない
-      // TODO remove rings
-      std::vector<std::vector<UVLM::VortexRing>> shed(containers.size());
+    LOG(INFO) << "Shed" ;
+    // 放出する渦を求める
+    // TODO 変形したときに位置が合わない
+    // TODO remove rings
+    std::vector<std::vector<UVLM::VortexRing>> shed(containers.size());
 
-      // TODO use zip iterator?
-      for (std::size_t i = 0; i < containers.size(); i++) {
-        auto edge_first = containers[i].edge_begin();
-        auto edge_last = containers[i].edge_end();
-        shed[i].resize(std::distance(edge_first, edge_last));
-        UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed[i].begin(),
-                                 vortices->cbegin(), vortices->cend(), rings,
-                                 Vinfty, t, dt);
-      }
+    // TODO use zip iterator?
+    for (std::size_t i=0; i<containers.size(); i++) {
+      auto edge_first = containers[i].edge_begin();
+      auto edge_last = containers[i].edge_end();
+      shed[i].resize(std::distance(edge_first, edge_last));
+      UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed[i].begin(),
+                               vortices->cbegin(), vortices->cend(), 
+                               rings,
+                               Vinfty, t,
+                               dt);
+    }
 
-      LOG(INFO) << "Advect";
-      // TODO remove rings
-      UVLM::AdvectWake(vortices->begin() + wake_offset, vortices->end(),
-                       vortices->cbegin(), vortices->cend(), rings, Vinfty, dt);
+    LOG(INFO) << "Advect" ;
+    // TODO remove rings
+    UVLM::AdvectWake(vortices->begin() + wake_offset, vortices->end(),
+                     vortices->cbegin(), vortices->cend(), 
+                     rings,
+                     Vinfty, dt);
 
-      LOG(INFO) << "Morphing";
-      // 変形する
-      for (std::size_t i = 0; i < containers.size(); i++) {
-        for (auto& vortex : containers[i]) {
-          for (std::size_t j = 0; j < vortex.nodes().size(); j++) {
-            morphing.Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t, dt);
-          }
+    LOG(INFO) << "Morphing" ;
+    // 変形する
+    for (std::size_t i=0; i<containers.size(); i++) {
+      for (auto& vortex : containers[i]) {
+        for (std::size_t j=0; j<vortex.nodes().size(); j++) {
+          morphing.Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t, dt);
         }
       }
+    }
 
-      LOG(INFO) << "Edge";
-      // 変形後のedgeの位置とshedを合わせる
-      for (std::size_t i = 0; i < containers.size(); i++) {
-        UVLM::AttachShedVorticesToEdge(containers[i].edge_begin(),
-                                       containers[i].edge_end(),
-                                       shed[i].begin());
-      }
+    LOG(INFO) << "Edge" ;
+    // 変形後のedgeの位置とshedを合わせる
+    for (std::size_t i=0; i<containers.size(); i++) {
+      UVLM::AttachShedVorticesToEdge(containers[i].edge_begin(), containers[i].edge_end(),
+                                     shed[i].begin());
+    }
 
-      LOG(INFO) << "Append shed";
-      // 放出した渦の追加
-      // TODO jointed iterator?
-      for (std::size_t i = 0; i < shed.size(); i++) {
-        vortices->insert(vortices->end(), shed[i].cbegin(), shed[i].cend());
-      }
+    LOG(INFO) << "Append shed" ;
+    // 放出した渦の追加
+    // TODO jointed iterator?
+    for (std::size_t i=0; i<shed.size(); i++) {
+      vortices->insert(vortices->end(), shed[i].cbegin(), shed[i].cend());
+    }
+
+    LOG(INFO) << "copy" ;
+    rings.wake_vortices().resize(vortices->size() - wake_offset);
+    std::copy(vortices->begin() + wake_offset, vortices->end(),
+              rings.wake_vortices().begin());
+
+    std::cerr << std::endl;
+
+    // Calc aerodynamic loads
+    // LOG(INFO) << "aerodynamic load";
+    // if (ti >= 1) {
+    //   for (std::size_t i = 0; i < containers.size(); ++i) {
+    //     auto force = UVLM::CalcLoad(containers[i], containers_prev[i],
+    //                                 vortices->begin() + wake_offset,
+    //                                 vortices->end(), Vinfty, RHO, dt);
+    //     Eigen::Vector3d coeff = force / (0.5 * RHO * U * U);
+    //     printf("%e\t%e\t%e\t%e\n", t/T, coeff.x(), coeff.y(), coeff.z());
+    //   }
+    // }
+    // LOG(INFO) << "Copy containers";
+    // CopyContainers(containers.cbegin(), containers.cend(),
+    //                containers_prev.begin());
   }
 }
 
@@ -219,11 +244,12 @@ int main(int argc, char* argv[]) {
   config = YAML::LoadFile(FLAGS_input);
   auto setting = config["setting"];
   DEFINE_PARAM(double, dt, setting);
+  DEFINE_PARAM(int, steps, setting);
 #ifdef _OPENMP
   DEFINE_PARAM(int, threads, setting);
   LOG(INFO) << "work with " << PARAM_threads << " threads." ;
   omp_set_num_threads(PARAM_threads);
 #endif
-  SimulationBody(PARAM_dt);
+  SimulationBody(PARAM_steps, PARAM_dt);
   return 0;
 }
