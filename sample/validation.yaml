@@ -1,9 +1,12 @@
 parameter:
   rows: 10
   cols: 20
-  dt: 0.0625    # 時間刻み
   alpha: 4      # 迎角[deg]
   U: 1          # 主流の流速
+  k: 0.1
+  phi: 15       # 羽ばたきの振れ幅[deg]
+  beta: 4       # twistの最大[deg]
 setting:
   threads: 8    # スレッド数
+  dt: 0.0625    # 時間刻み
   steps: 100    # 時間発展のステップ数

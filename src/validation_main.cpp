@@ -94,7 +94,7 @@ void OutputSnapshot2(const std::size_t index, InputIterator1 container_first,
 }
 
 
-void SimulationBody() {
+void SimulationBody(const double dt) {
   auto vortices = std::make_shared<std::vector<UVLM::VortexRing>>();
   UVLM::UVLMVortexRing rings;
   UVLM::Morphing morphing;
@@ -102,17 +102,17 @@ void SimulationBody() {
   const auto param = config["parameter"];
   DEFINE_PARAM(double, alpha, param);
   DEFINE_PARAM(double, U, param);
-  DEFINE_PARAM(double, dt, param);
+  DEFINE_PARAM(double, k, param);
+  DEFINE_PARAM(double, phi, param);
+  DEFINE_PARAM(double, beta, param);
 
-  const double ALPHA = M_PI * 2 / 360 * PARAM_alpha;  // Angle of attack
+  const double ALPHA = PARAM_alpha * M_PI / 180;      // Angle of attack
   const double U = PARAM_U;                           // Upstream velocity
-  const double K = 0.1;                               // Reduced frequency
-  const double C = 1;                                 // Chord length
-  const double OMEGA = 2 * U * K / C;                 // Flapping frequency
-  const double PHI = 15 * M_PI / 180;                 // Angle of flapping
-  // const double T = M_PI * 2 / OMEGA;                  // Period of flapping
-  const double BETA = 4 * M_PI / 180;                 // twising amp at wing tip
-  // const double RHO = 1;                               // Fluid density
+  const double K = PARAM_k;                           // Reduced frequency
+  const double PHI = PARAM_phi * M_PI / 180;          // Angle of flapping
+  // const double T = M_PI * 2 / OMEGA;               // Period of flapping
+  const double BETA = PARAM_beta * M_PI / 180;        // twising amp at wing tip
+  // const double RHO = 1;                            // Fluid density
   Eigen::Vector3d Vinfty(U * cos(ALPHA), 0, U * sin(ALPHA));
 
   std::vector<UVLM::VortexContainer> containers;
@@ -122,8 +122,9 @@ void SimulationBody() {
   UVLM::WingBuilder builder(&containers, vortices);
   auto wing = InitWing(&builder, origins);
 
-  const double CHORD = wing.chord();    // chord length
-  const double SPAN = wing.span();      // wing span
+  const double CHORD = wing.chord();        // chord length
+  const double SPAN = wing.span();          // wing span
+  const double OMEGA = K * 2 * U / CHORD;   // Flapping frequency
   LOG(INFO) << "chord: " << CHORD;
   LOG(INFO) << "span: " << SPAN;
 
@@ -135,8 +136,6 @@ void SimulationBody() {
     return BETA * fabs(x0.y()) / SPAN * sin(OMEGA * t + M_PI);
   });
 
-  const double dt = PARAM_dt;
-
   std::size_t wake_offset =
       CountTotalSize(containers.cbegin(), containers.cend());
 
@@ -146,7 +145,24 @@ void SimulationBody() {
     LOG(INFO) << "step: " << ti;
     const double t = ti * dt;
 
-    if (ti >= 1) {
+
+    // 連立方程式を解いて翼の上の循環を求める
+    LOG(INFO) << "Solve linear problem" ;
+    auto gamma = UVLM::SolveLinearProblem(
+        vortices->begin(), vortices->begin() + wake_offset,
+        vortices->cbegin() + wake_offset, vortices->cend(),
+        Vinfty, morphing, t);
+    for (std::size_t i=0; i<wake_offset; i++) {
+      vortices->at(i).set_gamma(gamma(i));
+    }
+
+    // TODO remove rings
+    LOG(INFO) << "Output" ;
+    std::copy(vortices->begin(), vortices->begin() + wake_offset,
+              rings.bound_vortices().begin());
+    OutputSnapshot2(ti, containers.begin(), containers.end(), vortices->begin(),
+                   vortices->end(), t);
+
       LOG(INFO) << "Shed";
       // 放出する渦を求める
       // TODO 変形したときに位置が合わない
@@ -192,24 +208,6 @@ void SimulationBody() {
       for (std::size_t i = 0; i < shed.size(); i++) {
         vortices->insert(vortices->end(), shed[i].cbegin(), shed[i].cend());
       }
-    }
-
-    // 連立方程式を解いて翼の上の循環を求める
-    LOG(INFO) << "Solve linear problem" ;
-    auto gamma = UVLM::SolveLinearProblem(
-        vortices->begin(), vortices->begin() + wake_offset,
-        vortices->cbegin() + wake_offset, vortices->cend(),
-        Vinfty, morphing, t);
-    for (std::size_t i=0; i<wake_offset; i++) {
-      vortices->at(i).set_gamma(gamma(i));
-    }
-
-    // TODO remove rings
-    LOG(INFO) << "Output" ;
-    std::copy(vortices->begin(), vortices->begin() + wake_offset,
-              rings.bound_vortices().begin());
-    OutputSnapshot2(ti, containers.begin(), containers.end(), vortices->begin(),
-                   vortices->end(), t);
   }
 }
 
@@ -219,12 +217,13 @@ int main(int argc, char* argv[]) {
   FLAGS_logtostderr = true;   // TODO 実行時に --logtostderr にすると怒られる
 
   config = YAML::LoadFile(FLAGS_input);
-#ifdef _OPENMP
   auto setting = config["setting"];
+  DEFINE_PARAM(double, dt, setting);
+#ifdef _OPENMP
   DEFINE_PARAM(int, threads, setting);
   LOG(INFO) << "work with " << PARAM_threads << " threads." ;
   omp_set_num_threads(PARAM_threads);
 #endif
-  SimulationBody();
+  SimulationBody(PARAM_dt);
   return 0;
 }
