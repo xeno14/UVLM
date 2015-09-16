@@ -203,19 +203,8 @@ void Start(const std::size_t steps, const double dt) {
     LOG(INFO) << "Morphing" ;
     internal::MorphingProcess(t, dt);
 
-    LOG(INFO) << "Edge" ;
-    // 変形後のedgeの位置とshedを合わせる
-    for (std::size_t i=0; i<containers.size(); i++) {
-      UVLM::AttachShedVorticesToEdge(containers[i].edge_begin(), containers[i].edge_end(),
-                                     shed[i].begin());
-    }
-
-    LOG(INFO) << "Append shed" ;
-    // 放出した渦の追加
-    // TODO jointed iterator?
-    for (std::size_t i=0; i<shed.size(); i++) {
-      vortices->insert(vortices->end(), shed[i].cbegin(), shed[i].cend());
-    }
+    LOG(INFO) << "Append shed";
+    internal::AppendShedProcess(&shed);
 
     LOG(INFO) << "copy" ;
     rings.wake_vortices().resize(vortices->size() - wake_offset);
