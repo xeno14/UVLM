@@ -180,22 +180,7 @@ void Start(const std::size_t steps, const double dt) {
     internal::OutputSnapshot2(step, t);
 
     LOG(INFO) << "Shed" ;
-    // 放出する渦を求める
-    // TODO 変形したときに位置が合わない
-    // TODO remove rings
-    std::vector<std::vector<UVLM::VortexRing>> shed(containers.size());
-
-    // TODO use zip iterator?
-    for (std::size_t i=0; i<containers.size(); i++) {
-      auto edge_first = containers[i].edge_begin();
-      auto edge_last = containers[i].edge_end();
-      shed[i].resize(std::distance(edge_first, edge_last));
-      UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed[i].begin(),
-                               vortices->cbegin(), vortices->cend(), 
-                               rings,
-                               inlet, t,
-                               dt);
-    }
+    auto shed = internal::ShedProcess(dt);
 
     LOG(INFO) << "Advect" ;
     internal::AdvectProcess(dt);
