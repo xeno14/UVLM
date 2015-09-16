@@ -116,15 +116,15 @@ add_executable(calc_load src/calc_load/calc_load_main.cpp)
 enable_gflags(calc_load)
 target_link_libraries(calc_load uvlm glog)
 
-add_executable(flapping_validaton src/validation/flapping_validation.cpp)
-target_link_libraries(flapping_validaton uvlm wing protobuf glog yaml-cpp)
+add_executable(flapping_validation src/validation/flapping_validation.cpp)
+target_link_libraries(flapping_validation uvlm wing protobuf glog yaml-cpp)
 
-add_executable(plunging_validaton src/validation/plunging_validation.cpp)
-target_link_libraries(plunging_validaton uvlm wing protobuf glog yaml-cpp)
+add_executable(plunging_validation src/validation/plunging_validation.cpp)
+target_link_libraries(plunging_validation uvlm wing protobuf glog yaml-cpp)
 
 ###########################################################
 # install
 ###########################################################
 install (
-  TARGETS morphing_viewer result_to_gnuplot result_to_vtk naca00XX validation flapping_validaton plunging_validaton calc_load
+  TARGETS morphing_viewer result_to_gnuplot result_to_vtk naca00XX validation flapping_validation plunging_validation calc_load
   DESTINATION /usr/local/bin)
