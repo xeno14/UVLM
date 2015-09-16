@@ -126,5 +126,5 @@ target_link_libraries(plunging_validaton uvlm wing protobuf glog yaml-cpp)
 # install
 ###########################################################
 install (
-  TARGETS morphing_viewer result_to_gnuplot result_to_vtk naca00XX validation calc_load
+  TARGETS morphing_viewer result_to_gnuplot result_to_vtk naca00XX validation flapping_validaton plunging_validaton calc_load
   DESTINATION /usr/local/bin)
