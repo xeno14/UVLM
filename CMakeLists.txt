@@ -112,5 +112,5 @@ target_link_libraries(calc_load uvlm glog)
 # install
 ###########################################################
 install (
-  TARGETS morphing_viewer result_to_gnuplot result_to_vtk naca00XX validation
+  TARGETS morphing_viewer result_to_gnuplot result_to_vtk naca00XX validation calc_load
   DESTINATION /usr/local/bin)

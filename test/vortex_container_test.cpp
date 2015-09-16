@@ -159,5 +159,7 @@ TEST_F(VortexContainerTest, CopyContainers) {
   EXPECT_NE(copied.begin()->vortices().get(), vortices.get());
   for (std::size_t i=0; i<containers.size(); i++) {
     EXPECT_TRUE(containers[i].ShapeEquals(copied[i]));
+    EXPECT_DOUBLE_EQ(containers[i].chord(), copied[i].chord());
+    EXPECT_DOUBLE_EQ(containers[i].span(), copied[i].span());
   }
 }

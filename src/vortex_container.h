@@ -26,37 +26,45 @@ class VortexContainer {
  public:
   VortexContainer() : vortices_(nullptr) {}
   VortexContainer(const vortices_ptr_t& vortices, std::size_t rows,
-                  std::size_t cols, std::size_t id)
-      : vortices_(vortices), rows_(rows), cols_(cols), id_(id) {}
+                  std::size_t cols, std::size_t id, double chord = 1,
+                  double span = 1)
+      : vortices_(vortices),
+        rows_(rows),
+        cols_(cols),
+        id_(id),
+        chord_(chord),
+        span_(span) {}
   VortexContainer(const VortexContainer& container)
       : vortices_(container.vortices_),
         rows_(container.rows_),
         cols_(container.cols_),
-        id_(container.id_) {}
+        id_(container.id_),
+        chord_(container.chord_),
+        span_(container.span_) {}
 
-  VortexContainer& operator=(const VortexContainer& container) {
-    this->set_vortices(container.vortices(), container.rows(), container.cols(),
-                       container.id());
+  VortexContainer& operator=(const VortexContainer& c) {
+    vortices_ = c.vortices_;
+    rows_ = c.rows_;
+    cols_ = c.cols_;
+    id_ = c.id_;
+    chord_ = c.chord_;
+    span_ = c.span_;
     return *this;
   }
 
   // vorticesの始点からのオフセット
-  std::size_t Offset() const {
-    return id_ * rows_ * cols_;
-  }
+  std::size_t Offset() const { return id_ * rows_ * cols_; }
 
   // vorticesのindexへの変換
-  std::size_t Index(std::size_t i) const {
-    return Offset() + i;
-  }
+  std::size_t Index(std::size_t i) const { return Offset() + i; }
 
   // vorticesのindexへの変換
   std::size_t Index(std::size_t i, std::size_t j) const {
     return Offset() + j + i * cols_;
   }
 
-  VortexRing& operator[] (std::size_t i) { return (*vortices_)[Index(i)]; }
-  const VortexRing& operator[] (std::size_t i) const {
+  VortexRing& operator[](std::size_t i) { return (*vortices_)[Index(i)]; }
+  const VortexRing& operator[](std::size_t i) const {
     return (*vortices_)[Index(i)];
   }
 
@@ -81,6 +89,8 @@ class VortexContainer {
   std::size_t cols() const { return cols_; }
   std::size_t rows() const { return rows_; }
   std::size_t id() const { return id_; }
+  double chord() const { return chord_; }
+  double span() const { return span_; }
 
   void set_vortices(const vortices_ptr_t& vortices, std::size_t r,
                     std::size_t c, std::size_t i) {
@@ -92,31 +102,18 @@ class VortexContainer {
 
   std::size_t size() const { return cols_ * rows_; }
 
-  auto begin() {
-    return vortices_->begin() + Index(0);
-  }
-  auto end() {
-    return vortices_->begin() + Index(rows_ * cols_);
-  }
-  auto edge_begin() {
-    return vortices_->begin() + Index(rows_ - 1, 0);
-  }
-  auto edge_end() {
-    return end();
-  }
-  auto cbegin() const {
-    return vortices_->cbegin() + Index(0);
-  }
-  auto cend() const {
-    return vortices_->cbegin() + Index(rows_ * cols_);
-  }
+  auto begin() { return vortices_->begin() + Index(0); }
+  auto end() { return vortices_->begin() + Index(rows_ * cols_); }
+  auto edge_begin() { return vortices_->begin() + Index(rows_ - 1, 0); }
+  auto edge_end() { return end(); }
+  auto cbegin() const { return vortices_->cbegin() + Index(0); }
+  auto cend() const { return vortices_->cbegin() + Index(rows_ * cols_); }
 
  private:
   vortices_ptr_t vortices_;
   std::size_t rows_, cols_, id_;
   double chord_, span_;
 };
-
 
 /**
  * コンテナの集合から要素の総数を計算する
@@ -147,7 +144,8 @@ void CopyContainers(InputIterator first, InputIterator last,
       vortices->begin(), vortices->begin() + total_size);
 
   while (first != last) {
-    result->set_vortices(copied, first->rows(), first->cols(), first->id());
+    *result = VortexContainer(copied, first->rows(), first->cols(), first->id(),
+                             first->chord(), first->span());
     ++first;
     ++result;
   }
