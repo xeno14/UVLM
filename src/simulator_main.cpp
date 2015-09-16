@@ -24,8 +24,9 @@ auto InitWing() {
 
   // 翼の作成
   // NACA0012: AR=8
-  DEFINE_PARAM_VERBOSE(int, rows, config["parameter"]);
-  DEFINE_PARAM_VERBOSE(int, cols, config["parameter"]);
+  const auto param = config["parameter"];
+  DEFINE_PARAM_VERBOSE(int, rows, param);
+  DEFINE_PARAM_VERBOSE(int, cols, param);
   UVLM::wing::NACA00XXGenerator(12, 1., 4., PARAM_rows, PARAM_cols)
       .Generate(&wing);
   auto* origin = wing.mutable_origin();
@@ -40,17 +41,32 @@ int main(int argc, char* argv[]) {
   FLAGS_logtostderr = true;
 
   config = YAML::LoadFile(FLAGS_input);
-
-  UVLM::Morphing m;
-  m.set_plug([](double t) { return sin(t); });
+  const auto param = config["parameter"];
 
   UVLM::proto::Wing wing = InitWing();
 
+  DEFINE_PARAM_VERBOSE(double, U, param);
+
+  const double U = PARAM_U;                           // Upstream velocity
+  const double K = 0.1;                               // Reduced frequency
+  const double C = 1;                                 // Chord length
+  const double OMEGA = 2 * U * K / C;                 // Flapping frequency
+  const double PHI = 15 * M_PI / 180;                 // Angle of flapping
+  const double BETA = 4 * M_PI / 180;                 // twising amp at wing tip
+  // const double CHORD = wing.chord();
+  const double SPAN = wing.span();
+
+  UVLM::Morphing m;
+  m.set_flap([OMEGA, PHI](double t) { return PHI * sin(OMEGA * t + M_PI); });
+  m.set_twist([OMEGA, BETA, SPAN](const Eigen::Vector3d& x0, double t) {
+    return BETA * fabs(x0.y()) / SPAN * sin(OMEGA * t + M_PI);
+  });
+
   UVLM::simulator::AddWing(wing, m);
-  UVLM::simulator::SetInlet(1, 0, 0);
+  UVLM::simulator::SetInlet(PARAM_U, 0, 0);
   UVLM::simulator::SetOutputPath(FLAGS_output);
 
-  auto setting = config["setting"];
+  const auto setting = config["setting"];
   DEFINE_PARAM_VERBOSE(int, steps, setting);
   DEFINE_PARAM_VERBOSE(double, dt, setting);
   UVLM::simulator::Start(PARAM_steps, PARAM_dt);
