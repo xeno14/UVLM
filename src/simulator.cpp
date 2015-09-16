@@ -142,7 +142,7 @@ void InitSimulator() {
   // do nothing
 }
 
-void AddWing(const ::UVLM::proto::Wing& wing, const UVLM::Morphing& m) {
+void AddWing(const ::UVLM::proto::Wing& wing, const ::UVLM::Morphing& m) {
   wings.emplace_back(wing);
   morphings.emplace_back(m);
 }

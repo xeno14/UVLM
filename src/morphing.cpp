@@ -14,6 +14,7 @@ Morphing::Morphing() : origin_(0, 0, 0)  {
 
 Morphing::Morphing(const Morphing& m)
     : alpha_(m.alpha_),
+      plug_(m.plug_),
       flap_(m.flap_),
       twist_(m.twist_),
       bend_(m.bend_),
