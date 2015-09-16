@@ -119,6 +119,9 @@ target_link_libraries(calc_load uvlm glog)
 add_executable(flapping_validaton src/validation/flapping_validation.cpp)
 target_link_libraries(flapping_validaton uvlm wing protobuf glog yaml-cpp)
 
+add_executable(plunging_validaton src/validation/plunging_validation.cpp)
+target_link_libraries(plunging_validaton uvlm wing protobuf glog yaml-cpp)
+
 ###########################################################
 # install
 ###########################################################
