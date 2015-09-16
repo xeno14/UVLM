@@ -198,18 +198,10 @@ void Start(const std::size_t steps, const double dt) {
     }
 
     LOG(INFO) << "Advect" ;
-    // TODO remove rings
     internal::AdvectProcess(dt);
 
     LOG(INFO) << "Morphing" ;
-    // 変形する
-    for (std::size_t i=0; i<containers.size(); i++) {
-      for (auto& vortex : containers[i]) {
-        for (std::size_t j=0; j<vortex.nodes().size(); j++) {
-          morphings[0].Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t, dt);
-        }
-      }
-    }
+    internal::MorphingProcess(t, dt);
 
     LOG(INFO) << "Edge" ;
     // 変形後のedgeの位置とshedを合わせる
