@@ -29,8 +29,7 @@ auto InitWing() {
   DEFINE_PARAM_VERBOSE(int, cols, param);
   UVLM::wing::NACA00XXGenerator(12, 1., 4., PARAM_rows, PARAM_cols)
       .Generate(&wing);
-  auto* origin = wing.mutable_origin();
-  origin->CopyFrom(UVLM::Vector3dToPoint({0, 0, 0}));
+  UVLM::wing::SetOrigin(&wing, {0, 0, 0});
   return wing;
 }
 
