@@ -199,10 +199,7 @@ void Start(const std::size_t steps, const double dt) {
 
     LOG(INFO) << "Advect" ;
     // TODO remove rings
-    UVLM::AdvectWake(vortices->begin() + wake_offset, vortices->end(),
-                     vortices->cbegin(), vortices->cend(), 
-                     rings,
-                     inlet, dt);
+    internal::AdvectProcess(dt);
 
     LOG(INFO) << "Morphing" ;
     // 変形する
