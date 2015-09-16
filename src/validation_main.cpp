@@ -13,8 +13,8 @@
 #include "proto_adaptor.h"
 #include "util.h"
 #include "vortex_container.h"
-#include "wing/wing.h"
 #include "wing_builder.h"
+#include "wing/wing.h"
 #include "parameter.h"
 
 #include <gflags/gflags.h>
@@ -56,8 +56,8 @@ auto InitWing(UVLM::WingBuilder* builder,
   // NACA0012: AR=8
   DEFINE_PARAM(int, rows, config["parameter"]);
   DEFINE_PARAM(int, cols, config["parameter"]);
-  UVLM::wing::NACA00XXGenerator(12, 1., 4., PARAM_rows, PARAM_cols)
-      .Generate(&wing);
+  UVLM::wing::NACA00XXGenerator generator(12, 1., 4., PARAM_rows, PARAM_cols);
+  generator.Generate(&wing);
 
   for (const auto& origin : origins) {
     auto* p = wing.mutable_origin();

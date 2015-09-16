@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include "rect.h"
 #include "naca00XX.h"
 #include "../../proto/uvlm.pb.h"
 #include <eigen3/Eigen/Core>

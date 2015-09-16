@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "wing_generator.h"
+#include "rect.h"
 
 namespace UVLM {
 namespace wing {
@@ -18,21 +18,19 @@ namespace wing {
  */
 double NACA00XX(double x, double c, int xx);
 
-class NACA00XXGenerator : public WingGenerator {
+class NACA00XXGenerator : public RectGenerator {
  public:
   NACA00XXGenerator(int digit, double chord, double span, std::size_t rows,
                     std::size_t cols)
-      : WingGenerator(rows, cols),
+      : RectGenerator(chord, span, rows, cols),
         digit_(digit),
-        chord_(chord),
-        span_(span),
         verbose_(false) {}
-  void Generate(UVLM::proto::Wing* wing);
+  virtual ~NACA00XXGenerator() = default;
+  virtual void Generate(UVLM::proto::Wing* wing) override;
   void set_verbose(bool flag) { verbose_ = flag; }
 
  private:
   int digit_;
-  double chord_, span_;
   bool verbose_;
 };
 

@@ -36,14 +36,22 @@ macro(add_gtest test_name src libs)
 endmacro(add_gtest)
 
 
+
 ###########################################################
-# targets
+# testing
 ###########################################################
+
+add_definitions("-DUVLM_PROJECT_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\"")
+
 set(PROTO_DIR "${PROJECT_SOURCE_DIR}/proto")
 macro(enable_gflags target)
   target_link_libraries(${target} gflags pthread)
 endmacro(enable_gflags)
 
+
+###########################################################
+# targets
+###########################################################
 add_custom_command(
   OUTPUT ${PROTO_DIR}/uvlm.pb.cc ${PROTO_DIR}/uvlm.pb.h
   WORKING_DIRECTORY ${PROTO_DIR}
@@ -86,6 +94,7 @@ target_link_libraries(uvlm morphing protobuf)
 
 add_library(wing
             ${PROTO_DIR}/uvlm.pb.cc
+            src/wing/rect.cpp
             src/wing/naca00XX.cpp)
 target_link_libraries(wing protobuf)
 
@@ -101,7 +110,7 @@ add_executable(validation
                src/wing/naca00XX.cpp
                src/validation_main.cpp)
 enable_gflags(validation)
-target_link_libraries(validation uvlm protobuf glog yaml-cpp)
+target_link_libraries(validation uvlm wing protobuf glog yaml-cpp)
 
 add_executable(calc_load src/calc_load/calc_load_main.cpp)
 enable_gflags(calc_load)
@@ -109,7 +118,6 @@ target_link_libraries(calc_load uvlm glog)
 
 add_executable(flapping_validaton src/validation/flapping_validation.cpp)
 target_link_libraries(flapping_validaton uvlm wing protobuf glog yaml-cpp)
-
 
 ###########################################################
 # install
