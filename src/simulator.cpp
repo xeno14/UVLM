@@ -47,6 +47,8 @@ std::size_t WakeOffset() {
 void CheckReady() {
   if (morphings.size() == 0) LOG(ERROR) << "No morphing";
   if (wings.size() == 0 || containers.size() == 0) LOG(ERROR) << "No wing";
+
+  // TODO check output path is writable
 }
 
 void CreateContainers() {
@@ -120,6 +122,8 @@ void OutputSnapshot2(const std::size_t step, const double t) {
     shape->set_rows(container.rows());
     shape->set_cols(container.cols());
     shape->set_id(container.id());
+    shape->set_chord(container.chord());
+    shape->set_span(container.span());
     // shape->set_origin(Vector3dToPoint(container->origin()));
   }
   for (const auto& vortex : *vortices) {
@@ -160,27 +164,25 @@ void Start(const std::size_t steps, const double dt) {
   for (std::size_t step=0; step<steps; ++step) {
     const double t = dt * step;
     const std::size_t wake_offset = internal::WakeOffset();
-    // 最初のステップは放出と移流を行わない
-    // Wake vortices process
-    if (vortices->begin() + wake_offset == vortices->end()) {
-      LOG(INFO) << "Shed";
-      auto shed = internal::ShedProcess(dt);
+    LOG(INFO) << "step: " << step << " t=" << t;
 
-      LOG(INFO) << "Advect";
-      internal::AdvectProcess(dt);
-
-      LOG(INFO) << "Morphing";
-      internal::MorphingProcess(t, dt);
-
-      LOG(INFO) << "Append Shed";
-      internal::AppendShedProcess(&shed);
-    }
-    // Bound vortices process
     LOG(INFO) << "Linear problem";
     internal::SolveLinearProblem(t);
 
     LOG(INFO) << "Output";
     internal::OutputSnapshot2(step, t);
+
+    LOG(INFO) << "Shed";
+    auto shed = internal::ShedProcess(dt);
+
+    LOG(INFO) << "Advect";
+    internal::AdvectProcess(dt);
+
+    LOG(INFO) << "Morphing";
+    internal::MorphingProcess(t, dt);
+
+    LOG(INFO) << "Append Shed";
+    internal::AppendShedProcess(&shed);
 
     // TODO remove
     std::copy(vortices->begin(), vortices->begin() + wake_offset,

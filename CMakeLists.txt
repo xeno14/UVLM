@@ -107,6 +107,9 @@ add_executable(calc_load src/calc_load/calc_load_main.cpp)
 enable_gflags(calc_load)
 target_link_libraries(calc_load uvlm glog)
 
+add_executable(simulator src/simulator_main.cpp)
+target_link_libraries(simulator uvlm wing protobuf glog yaml-cpp)
+
 
 ###########################################################
 # install
