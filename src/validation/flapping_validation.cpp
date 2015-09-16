@@ -3,11 +3,11 @@
  * @brief Add description here
  */
 
-#include "../proto/uvlm.pb.h"
-#include "proto_adaptor.h"
-#include "simulator.h"
-#include "parameter.h"
-#include "wing/wing.h"
+#include "../../proto/uvlm.pb.h"
+#include "../proto_adaptor.h"
+#include "../simulator.h"
+#include "../parameter.h"
+#include "../wing/wing.h"
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
