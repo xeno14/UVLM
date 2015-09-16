@@ -57,6 +57,10 @@ void CreateContainers() {
     builder.AddWing(wing);
   }
   builder.Build();
+
+  for (std::size_t i = 0; i < containers.size(); i++)
+    LOG(INFO) << "container[" << i << "]: " << containers[i].rows() << "x"
+              << containers[i].cols();
 } 
 
 auto ShedProcess(const double dt) {
@@ -174,24 +178,24 @@ void Start(const std::size_t steps, const double dt) {
     internal::SolveLinearProblem(t);
 
     // TODO remove rings
-    LOG(INFO) << "Output" ;
+    // LOG(INFO) << "Output" ;
     std::copy(vortices->begin(), vortices->begin() + wake_offset,
               rings.bound_vortices().begin());
     internal::OutputSnapshot2(step, t);
 
-    LOG(INFO) << "Shed" ;
+    // LOG(INFO) << "Shed" ;
     auto shed = internal::ShedProcess(dt);
 
-    LOG(INFO) << "Advect" ;
+    // LOG(INFO) << "Advect" ;
     internal::AdvectProcess(dt);
 
-    LOG(INFO) << "Morphing" ;
+    // LOG(INFO) << "Morphing" ;
     internal::MorphingProcess(t, dt);
 
-    LOG(INFO) << "Append shed";
+    // LOG(INFO) << "Append shed";
     internal::AppendShedProcess(&shed);
 
-    LOG(INFO) << "copy" ;
+    // LOG(INFO) << "copy" ;
     rings.wake_vortices().resize(vortices->size() - wake_offset);
     std::copy(vortices->begin() + wake_offset, vortices->end(),
               rings.wake_vortices().begin());
