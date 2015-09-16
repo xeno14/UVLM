@@ -14,6 +14,7 @@ struct WingHolder {
   std::vector<Eigen::Vector3d> points;
   Eigen::Vector3d origin;
   std::size_t rows, cols;
+  double chord, span;
 };
 
 template <class InputIterator>

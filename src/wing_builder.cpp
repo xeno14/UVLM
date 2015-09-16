@@ -18,7 +18,9 @@ WingBuilder& WingBuilder::AddWing(const proto::Wing& wing) {
 
   internal::WingHolder holder;
   holder.rows = wing.rows();
-  holder.cols = wing.cols() * 2;
+  holder.cols  = wing.cols() * 2;
+  holder.chord = wing.chord();
+  holder.span  = wing.span();
   if (wing.has_origin()) holder.origin = PointToVector3d(wing.origin());
   else holder.origin = Eigen::Vector3d::Zero();
 
@@ -47,9 +49,10 @@ void WingBuilder::Build() {
   vortices_->resize(CountTotalSize(holders_));
   containers_->resize(holders_.size());
 
-  for (std::size_t i=0; i < containers_->size(); i++) {
-    containers_->at(i)
-        .set_vortices(vortices_, holders_[i].rows, holders_[i].cols, i);
+  for (std::size_t i = 0; i < containers_->size(); i++) {
+    containers_->at(i).set_vortices(vortices_, holders_[i].rows,
+                                    holders_[i].cols, i, holders_[i].chord,
+                                    holders_[i].span);
     BuildWing(&containers_->at(i), holders_[i]);
   }
 

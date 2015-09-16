@@ -81,6 +81,8 @@ void OutputSnapshot2(const std::size_t index, InputIterator1 container_first,
     shape->set_rows(container->rows());
     shape->set_cols(container->cols());
     shape->set_id(container->id());
+    shape->set_chord(container->chord());
+    shape->set_span(container->span());
     // shape->set_origin(Vector3dToPoint(container->origin()));
   }
   for (auto vortex = vortex_first; vortex != vortex_last; ++vortex) {

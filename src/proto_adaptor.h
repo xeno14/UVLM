@@ -75,7 +75,8 @@ inline auto Snapshot2ToContainers(
 
   containers->clear();
   for (const auto& shape : snapshot2.container_shapes()) {
-    containers->emplace_back(vortices, shape.rows(), shape.cols(), shape.id());
+    containers->emplace_back(vortices, shape.rows(), shape.cols(), shape.id(),
+                             shape.chord(), shape.span());
   }
   return vortices;
 }

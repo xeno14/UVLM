@@ -81,7 +81,7 @@ auto Calc(const proto::Snapshot2& s0, const proto::Snapshot2& s1) {
   for (std::size_t i = 0; i < c1.size(); i++) {
     auto load = CalcLoad(c1[i], c0[i], wake_iterator.first,
                          wake_iterator.second, Vinfty, RHO, dt);
-    load /= (0.5 * RHO * U * U);
+    load /= (0.5 * RHO * U * U * c1[i].chord() * c1[i].span());
     res.emplace_back(load);
   }
   return res;

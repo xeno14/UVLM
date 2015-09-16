@@ -26,8 +26,7 @@ class VortexContainer {
  public:
   VortexContainer() : vortices_(nullptr) {}
   VortexContainer(const vortices_ptr_t& vortices, std::size_t rows,
-                  std::size_t cols, std::size_t id, double chord = 1,
-                  double span = 1)
+                  std::size_t cols, std::size_t id, double chord, double span)
       : vortices_(vortices),
         rows_(rows),
         cols_(cols),
@@ -93,11 +92,13 @@ class VortexContainer {
   double span() const { return span_; }
 
   void set_vortices(const vortices_ptr_t& vortices, std::size_t r,
-                    std::size_t c, std::size_t i) {
+                    std::size_t c, std::size_t i, double chord, double span) {
     vortices_ = vortices;
     rows_ = r;
     cols_ = c;
     id_ = i;
+    chord_ = chord;
+    span_ = span;
   }
 
   std::size_t size() const { return cols_ * rows_; }
