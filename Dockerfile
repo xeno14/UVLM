@@ -1,8 +1,8 @@
 FROM base/archlinux
 
-RUN yes | pacman -Sy
 # to avoid keyring problem
 RUN sed -i "s/SigLevel    = Required DatabaseOptional/SigLevel = Never/" /etc/pacman.conf
+RUN yes | pacman -Sy
 RUN yes | pacman -S \
       gcc \
       glibc \
