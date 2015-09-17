@@ -16,10 +16,12 @@
 #include "wing_builder.h"
 
 #include <fstream>
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <vector>
 #include <utility>
 
+DEFINE_string(run_name, "", "name of run");
 
 namespace {
 
@@ -45,8 +47,8 @@ std::size_t WakeOffset() {
 }
 
 void CheckReady() {
-  if (morphings.size() == 0) LOG(ERROR) << "No morphing";
-  if (wings.size() == 0 || containers.size() == 0) LOG(ERROR) << "No wing";
+  if (morphings.size() == 0) LOG(FATAL) << FLAGS_run_name << " " << "No morphing";
+  if (wings.size() == 0) LOG(FATAL) << FLAGS_run_name << " " << "No wing";
 
   // TODO check output path is writable
 }
@@ -59,9 +61,9 @@ void CreateContainers() {
   builder.Build();
 
   for (std::size_t i = 0; i < containers.size(); i++)
-    LOG(INFO) << "container[" << i << "]: " << containers[i].rows() << "x"
-              << containers[i].cols();
-} 
+    LOG(INFO) << FLAGS_run_name << " container[" << i
+              << "]: " << containers[i].rows() << " x " << containers[i].cols();
+}
 
 auto ShedProcess(const double dt) {
   // shed[i]: 翼iから放出される渦
@@ -72,9 +74,9 @@ auto ShedProcess(const double dt) {
     auto edge_first = containers[i].edge_begin();
     auto edge_last = containers[i].edge_end();
     shed[i].resize(std::distance(edge_first, edge_last));
-        UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed[i].begin(),
-                                 vortices->cbegin(), vortices->cend(), rings,
-                                 inlet, 0, dt);
+    UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed[i].begin(),
+                             vortices->cbegin(), vortices->cend(), rings, inlet,
+                             0, dt);
   }
   return shed;
 }
@@ -90,16 +92,16 @@ void MorphingProcess(const double t, const double dt) {
 }
 
 void AdvectProcess(const double dt) {
-  const std::size_t wake_offset = WakeOffset(); 
+  const std::size_t wake_offset = WakeOffset();
   UVLM::AdvectWake(vortices->begin() + wake_offset, vortices->end(),
-      vortices->cbegin(), vortices->cend(), rings, inlet, dt);
+                   vortices->cbegin(), vortices->cend(), rings, inlet, dt);
 }
 
 void AppendShedProcess(std::vector<std::vector<UVLM::VortexRing>>* shed) {
   for (std::size_t i = 0; i < containers.size(); i++) {
     UVLM::AttachShedVorticesToEdge(containers[i].edge_begin(),
-        containers[i].edge_end(),
-        shed->at(i).begin());
+                                   containers[i].edge_end(),
+                                   shed->at(i).begin());
   }
   for (std::size_t i = 0; i < shed->size(); i++) {
     vortices->insert(vortices->end(), shed->at(i).cbegin(), shed->at(i).cend());
@@ -134,7 +136,7 @@ void OutputSnapshot2(const std::size_t step, const double t) {
     snapshot.add_vortices()->CopyFrom(::UVLM::VortexRingToProto(vortex));
   }
   char filename[256];
-  sprintf(filename, "%s/%08lu", output_path.c_str(), step); 
+  sprintf(filename, "%s/%08lu", output_path.c_str(), step);
   std::ofstream ofs(filename, std::ios::binary);
   CHECK((bool)ofs) << "Unable to open " << filename;
   snapshot.SerializeToOstream(&ofs);
@@ -155,52 +157,40 @@ void SetInlet(double x, double y, double z) {
   inlet = Eigen::Vector3d(x, y, z);
 }
 
-void SetOutputPath(const std::string& path) {
-  output_path = path;
-}
+void SetOutputPath(const std::string& path) { output_path = path; }
 
 void Start(const std::size_t steps, const double dt) {
   internal::CheckReady();
   internal::CreateContainers();
   rings.bound_vortices() = *vortices;
 
-  // LOG(INFO) << "Morphing for initial condition";
+  // LOG(INFO) << FLAGS_run_name << " "  << "Morphing for initial condition";
   // internal::MorphingProcess(t, dt);
 
   // Main loop
-  for (std::size_t step=0; step<steps; ++step) {
-    LOG(INFO) << "step: " << step;
+  for (std::size_t step = 0; step < steps; ++step) {
+    LOG(INFO) << FLAGS_run_name << " " << "step: " << step;
     const double t = dt * step;
     const std::size_t wake_offset = internal::WakeOffset();
 
     // 連立方程式を解いて翼の上の循環を求める
-    LOG(INFO) << "Solve linear problem" ;
     internal::SolveLinearProblem(t);
 
     // TODO remove rings
-    // LOG(INFO) << "Output" ;
     std::copy(vortices->begin(), vortices->begin() + wake_offset,
               rings.bound_vortices().begin());
     internal::OutputSnapshot2(step, t);
+    if (step == steps) break;
 
-    // LOG(INFO) << "Shed" ;
     auto shed = internal::ShedProcess(dt);
-
-    // LOG(INFO) << "Advect" ;
     internal::AdvectProcess(dt);
-
-    // LOG(INFO) << "Morphing" ;
     internal::MorphingProcess(t, dt);
-
-    // LOG(INFO) << "Append shed";
     internal::AppendShedProcess(&shed);
 
-    // LOG(INFO) << "copy" ;
+    // TODO remove rings
     rings.wake_vortices().resize(vortices->size() - wake_offset);
     std::copy(vortices->begin() + wake_offset, vortices->end(),
               rings.wake_vortices().begin());
-
-    std::cerr << std::endl;
   }
 }
 

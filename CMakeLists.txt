@@ -89,7 +89,7 @@ add_library(uvlm
             src/wing_builder.cpp
             src/calc_load/calc_load.cpp
             src/simulator.cpp)
-target_link_libraries(uvlm morphing protobuf)
+target_link_libraries(uvlm morphing protobuf glog)
 
 
 add_library(wing
