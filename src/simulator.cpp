@@ -6,6 +6,7 @@
 #include "simulator.h"
 
 #include "../proto/uvlm.pb.h"
+#include "calc_load/calc_load.h"
 #include "uvlm_vortex_ring.h"
 #include "morphing.h"
 #include "linear.h"
@@ -18,10 +19,12 @@
 #include <fstream>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+#include <sstream>
 #include <vector>
 #include <utility>
 
 DEFINE_string(run_name, "", "name of run");
+DEFINE_string(load_output, "", "output file path for aerodynamic loads");
 
 namespace {
 
@@ -29,6 +32,7 @@ std::vector<UVLM::proto::Wing> wings;
 std::vector<UVLM::Morphing> morphings;
 auto vortices = std::make_shared<std::vector<UVLM::VortexRing>>();
 std::vector<UVLM::VortexContainer> containers;
+std::vector<UVLM::VortexContainer> containers_prev;
 UVLM::UVLMVortexRing rings;
 Eigen::Vector3d inlet(1, 0, 0);
 std::string output_path;
@@ -142,6 +146,35 @@ void OutputSnapshot2(const std::size_t step, const double t) {
   snapshot.SerializeToOstream(&ofs);
 }
 
+void CalcLoadProcess(const double t, const double dt) {
+  containers_prev.resize(containers.size());
+  CopyContainers(containers.begin(), containers.end(), containers_prev.begin());
+  std::vector<Eigen::Vector3d> loads;
+  std::vector<std::string> lines { "" };
+  for (std::size_t i=0; i<containers.size(); i++) {
+    const auto& c = containers[i];
+    const auto& c_prev = containers_prev[i];
+    const auto& m = morphings[i];
+    const double rho = 1;
+    auto wake = GetWake(containers);
+    auto load = CalcLoad(c, c_prev, wake.first, wake.second, m, inlet, rho,
+        t, dt);
+    const double U = inlet.norm();
+    auto coeff = load / (0.5 * rho * U * U); 
+    std::stringstream head, num;
+    head << "CD_" << i << "\t" << "_" << "\t" << "CL_" << i;
+    lines[0] += head.str();
+
+    num << coeff.x() << "\t" << coeff.y() << "\t" << coeff.z();
+    lines.push_back(num.str());
+  }
+  std::ofstream ofs(FLAGS_load_output);
+  CHECK((bool)ofs) << "Unable to open " << FLAGS_load_output;
+  for (const auto& line : lines) {
+    ofs << line << std::endl;
+  }
+}
+
 }  // namespace internal
 
 void InitSimulator() {
@@ -180,6 +213,9 @@ void Start(const std::size_t steps, const double dt) {
     std::copy(vortices->begin(), vortices->begin() + wake_offset,
               rings.bound_vortices().begin());
     internal::OutputSnapshot2(step, t);
+    if (FLAGS_load_output.size()) {
+      internal::CalcLoadProcess(t, dt);
+    }
     if (step == steps) break;
 
     auto shed = internal::ShedProcess(dt);
