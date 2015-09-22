@@ -69,6 +69,7 @@ namespace internal {
 proto::Snapshot2 ReadSnapshot2(const std::string& filename);
 std::vector<proto::Snapshot2> ReadSnapshot2(
     const std::vector<std::string>& filenames);
+std::vector<Eigen::Vector3d> Calc(const proto::Snapshot2& s0, const proto::Snapshot2& s1);
 
 }  // namespace internal
 
