@@ -24,7 +24,6 @@
 #include <utility>
 
 DEFINE_string(run_name, "", "name of run");
-DEFINE_string(load_output, "", "output file path for aerodynamic loads");
 
 namespace {
 
@@ -36,6 +35,7 @@ std::vector<UVLM::VortexContainer> containers_prev;
 UVLM::UVLMVortexRing rings;
 Eigen::Vector3d inlet(1, 0, 0);
 std::string output_path;
+std::string output_load_path;
 
 }  // anonymous namespace
 
@@ -54,6 +54,7 @@ void CheckReady() {
   if (morphings.size() == 0) LOG(FATAL) << FLAGS_run_name << " " << "No morphing";
   if (wings.size() == 0) LOG(FATAL) << FLAGS_run_name << " " << "No wing";
 
+  std::ofstream ofs_load(output_load_path);
   // TODO check output path is writable
 }
 
@@ -150,7 +151,7 @@ void CalcLoadProcess(const double t, const double dt) {
   containers_prev.resize(containers.size());
   CopyContainers(containers.begin(), containers.end(), containers_prev.begin());
   std::vector<Eigen::Vector3d> loads;
-  std::vector<std::string> lines { "" };
+  std::stringstream line;
   for (std::size_t i=0; i<containers.size(); i++) {
     const auto& c = containers[i];
     const auto& c_prev = containers_prev[i];
@@ -161,18 +162,12 @@ void CalcLoadProcess(const double t, const double dt) {
         t, dt);
     const double U = inlet.norm();
     auto coeff = load / (0.5 * rho * U * U); 
-    std::stringstream head, num;
-    head << "CD_" << i << "\t" << "_" << "\t" << "CL_" << i;
-    lines[0] += head.str();
 
-    num << coeff.x() << "\t" << coeff.y() << "\t" << coeff.z();
-    lines.push_back(num.str());
+    line << t << "\t" << coeff.x() << "\t" << coeff.y() << "\t" << coeff.z();
   }
-  std::ofstream ofs(FLAGS_load_output);
-  CHECK((bool)ofs) << "Unable to open " << FLAGS_load_output;
-  for (const auto& line : lines) {
-    ofs << line << std::endl;
-  }
+  std::ofstream ofs(output_load_path, std::ios::app);
+  CHECK((bool)ofs) << "Unable to open " << output_load_path;
+  ofs << line.str() << std::endl;
 }
 
 }  // namespace internal
@@ -191,6 +186,8 @@ void SetInlet(double x, double y, double z) {
 }
 
 void SetOutputPath(const std::string& path) { output_path = path; }
+
+void SetOutputLoadPath(const std::string& path) { output_load_path = path; }
 
 void Start(const std::size_t steps, const double dt) {
   internal::CheckReady();
@@ -213,7 +210,7 @@ void Start(const std::size_t steps, const double dt) {
     std::copy(vortices->begin(), vortices->begin() + wake_offset,
               rings.bound_vortices().begin());
     internal::OutputSnapshot2(step, t);
-    if (FLAGS_load_output.size()) {
+    if (output_load_path.size()) {
       internal::CalcLoadProcess(t, dt);
     }
     if (step == steps) break;

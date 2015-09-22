@@ -14,6 +14,7 @@
 
 DEFINE_string(input, "", "setting yaml");
 DEFINE_string(output, "", "output path");
+DEFINE_string(output_load, "", "output load path");
 
 namespace {
 YAML::Node config;
@@ -64,6 +65,7 @@ int main(int argc, char* argv[]) {
   UVLM::simulator::AddWing(wing, m);
   UVLM::simulator::SetInlet(U, 0, 0);
   UVLM::simulator::SetOutputPath(FLAGS_output);
+  UVLM::simulator::SetOutputLoadPath(FLAGS_output_load);
 
   const auto setting = config["setting"];
   DEFINE_PARAM_VERBOSE(int, steps, setting);

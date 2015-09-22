@@ -45,6 +45,8 @@ void SetInlet(double x, double y, double z);
 
 void SetOutputPath(const std::string& path);
 
+void SetOutputLoadPath(const std::string& path);
+
 void Start(std::size_t steps, const double dt);
 
 }  // simulator
