@@ -73,7 +73,15 @@ void VortexRing::SaveReferenceNode() {
 Vector3d VortexRing::Normal() const {
   Vector3d diff1 = nodes_[2] - nodes_[0];
   Vector3d diff2 = nodes_[3] - nodes_[1];
-  return diff1.cross(diff2);
+  Vector3d res = diff1.cross(diff2);
+  res.normalize();
+  return res;
+}
+
+Vector3d VortexRing::Tangent() const {
+  Vector3d res = nodes_[2] - nodes_[1] + nodes_[1] - nodes_[3];
+  res.normalize();
+  return res;
 }
 
 Vector3d VortexRing::Centroid() const {

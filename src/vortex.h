@@ -62,6 +62,11 @@ class VortexRing {
    *  @todo キャッシュする
    */
   Vector3d Normal() const;
+
+  /** @brief tangent vector
+   */
+  Vector3d Tangent() const;
+
   /** @brief 中心の位置 
    *  @todo ちゃんと計算する
    */

@@ -60,6 +60,15 @@ class VortexRingTest : public ::testing::Test {
   virtual void SetUp() {}
   virtual void TearDown() { ring.Clear(); }
   UVLM::VortexRing ring;
+
+  UVLM::VortexRing GetSquaredRing(double l) {
+    UVLM::VortexRing res;
+    res.PushNode(Vector3d(0, 0, 0))
+       .PushNode(Vector3d(l, 0, 0))
+       .PushNode(Vector3d(l, l, 0))
+       .PushNode(Vector3d(0, l, 0));
+    return res;
+  }
 };
 
 TEST_F(VortexRingTest, Assemble) {
@@ -87,6 +96,18 @@ TEST_F(VortexRingTest, BiotSavartLaw) {
   EXPECT_DOUBLE_EQ(0, result.x());
   EXPECT_DOUBLE_EQ(0, result.y());
   EXPECT_DOUBLE_EQ(4*M_SQRT2, result.z());
+}
+
+TEST_F(VortexRingTest, Normal) {
+  auto v = GetSquaredRing(20000);
+  auto n = v.Normal();
+  EXPECT_VECTOR3D_EQ(0, 0, 1, n);
+}
+
+TEST_F(VortexRingTest, Tangent) {
+  auto v = GetSquaredRing(20000);
+  auto t = v.Tangent();
+  EXPECT_VECTOR3D_EQ(1, 0, 0, t);
 }
 
 class ChordSpanTest : public ::testing::Test {
@@ -117,4 +138,3 @@ TEST_F(ChordSpanTest, c) {
 TEST_F(ChordSpanTest, b) {
   EXPECT_DOUBLE_EQ(2, v.CalcB());
 }
-
