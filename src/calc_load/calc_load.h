@@ -18,11 +18,26 @@ double CalcDragOnPanel(const std::size_t i, const std::size_t j,
               InputIterator wake_first, InputIterator wake_last,
               const Morphing& morphing, const Eigen::Vector3d& inlet,
               const double rho, const double t, const double dt) {
+  // calc for angle of attack
+  Eigen::Vector3d V_ind;
+  morphing.Velocity(&V_ind, vb.at(i, j).ReferenceCentroid(), t);
+  V_ind -= inlet;   // -inlet = forward flight
+  const double alpha = vb.at(i, j).AngleOfAttack(V_ind);
 
-  // Eigen::Vector3d V_kinematic =
-  //     morphing.Velocity(vb.at(i, j).ReferenceCentroid()) - inlet;
-  // const double alpha = vb.at(i, j).AngleOfAttack(V_kinematic);
-  return 0;
+  // calc for induced velocity due to wake vortices
+  Eigen::Vector3d V_wake;
+  const Eigen::Vector3d centroid = vb.at(i, j).Centroid();
+  InducedVelocity(&V_wake, centroid, wake_first, wake_last);
+
+  const double C = vb.at(i, j).CalcC();
+  const double B = vb.at(i, j).CalcB();
+  const double dS = C * B;
+  const double dg_dx =
+      (i == 0 ? vb.at(i, j).gamma()
+              : vb.at(i, j).gamma() - vb.at(i - 1, j).gamma()) / C;
+  const double dg_dt = (vb.at(i, j).gamma() - vb_prev.at(i, j).gamma()) / dt;
+
+  return rho * dS * ((V_ind + V_wake) * dg_dx + dg_dt * sin(alpha));
 }
 
 
