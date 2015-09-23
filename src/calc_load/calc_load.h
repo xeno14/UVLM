@@ -29,8 +29,7 @@ double CalcDragOnPanel(const std::size_t i, const std::size_t j,
   const Eigen::Vector3d centroid = vb.at(i, j).Centroid();
   InducedVelocity(&V_wake, centroid, wake_first, wake_last);
 
-  // ????????????????????????????
-  const double induced = (V_ind + V_wake).norm();
+  const double induced = vb.at(i, j).Normal().dot((V_ind + V_wake));
 
   const double C = vb.at(i, j).CalcC();
   const double B = vb.at(i, j).CalcB();
