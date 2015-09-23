@@ -109,6 +109,11 @@ class VortexRing {
    */
   double CalcB() const;
 
+  /**
+   * angle of attack
+   */
+  double AngleOfAttack(const Eigen::Vector3d& Q) const;
+
  private:
   double gamma_;
   std::vector<Vector3d> nodes_;

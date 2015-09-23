@@ -119,6 +119,12 @@ Eigen::Vector3d VortexRing::TanVecSpan() const {
   return res;
 }
 
+double VortexRing::AngleOfAttack(const Eigen::Vector3d& Q) const {
+  const double y = Q.dot(Normal());
+  const double x = Q.dot(Tangent());
+  return atan2(y, x);
+}
+
 double VortexRing::CalcC() const {
   return (this->nodes()[0] - this->nodes()[1]).norm();
 }

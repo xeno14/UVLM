@@ -12,6 +12,15 @@
 
 namespace UVLM {
 
+template <class InputIterator>
+double CalcDragOnPanel(const std::size_t i, const std::size_t j,
+              const VortexContainer& vb, const VortexContainer& vb_prev,
+              InputIterator wake_first, InputIterator wake_last,
+              const Morphing& morphing, const Eigen::Vector3d& inlet,
+              const double rho, const double t, const double dt) {
+
+}
+
 /**
  * パネルi,jでの圧力差を求める
  */

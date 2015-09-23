@@ -124,6 +124,14 @@ TEST_F(VortexRingTest, Tangent) {
   EXPECT_VECTOR3D_EQ(1, 0, 0, t);
 }
 
+TEST_F(VortexRingTest, AngleOfAttack) {
+  auto v = GetSquaredRing(1);
+  const double alpha = 0.1;
+  Vector3d Q = {cos(alpha), 0 , sin(alpha)};
+  EXPECT_DOUBLE_EQ(alpha, v.AngleOfAttack(Q));
+}
+
+
 class ChordSpanTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
