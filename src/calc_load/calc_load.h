@@ -29,6 +29,9 @@ double CalcDragOnPanel(const std::size_t i, const std::size_t j,
   const Eigen::Vector3d centroid = vb.at(i, j).Centroid();
   InducedVelocity(&V_wake, centroid, wake_first, wake_last);
 
+  // ????????????????????????????
+  const double induced = (V_ind + V_wake).norm();
+
   const double C = vb.at(i, j).CalcC();
   const double B = vb.at(i, j).CalcB();
   const double dS = C * B;
@@ -37,7 +40,7 @@ double CalcDragOnPanel(const std::size_t i, const std::size_t j,
               : vb.at(i, j).gamma() - vb.at(i - 1, j).gamma()) / C;
   const double dg_dt = (vb.at(i, j).gamma() - vb_prev.at(i, j).gamma()) / dt;
 
-  return rho * dS * ((V_ind + V_wake) * dg_dx + dg_dt * sin(alpha));
+  return rho * dS * (induced * dg_dx + dg_dt * sin(alpha));
 }
 
 
@@ -79,6 +82,7 @@ Eigen::Vector3d CalcLoad(const VortexContainer& vb,
                          const Morphing& morphing, const Eigen::Vector3d& inlet,
                          const double rho, const double t, const double dt) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
+  double drag = 0;
   for (std::size_t i = 0; i < vb.rows(); i++) {
     for (std::size_t j = 0; j < vb.cols(); j++) {
       const double deltaP = CalcDP(i, j, vb, vb_prev, wake_first, wake_last,
@@ -87,8 +91,12 @@ Eigen::Vector3d CalcLoad(const VortexContainer& vb,
       const double dS = vb.at(i, j).CalcB() * vb.at(i, j).CalcC();
 
       res += n * deltaP * dS;
+
+      drag += CalcDragOnPanel(i, j, vb, vb_prev, wake_first, wake_last,
+                              morphing, inlet, rho, t, dt);
     }
   }
+  res.x() = drag;
   return res;
 }
 
