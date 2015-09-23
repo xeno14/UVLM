@@ -47,6 +47,19 @@ void InducedVelocity(Eigen::Vector3d* const result,
   }
 }
 
+template <class InputIterator>
+void ChordwiseInducedVelocity(Eigen::Vector3d* const result,
+                              const Eigen::Vector3d& pos, InputIterator first,
+                              InputIterator last) {
+  *result = Eigen::Vector3d::Zero();
+  Eigen::Vector3d tmp;
+  while (first != last) {
+    first->ChordwiseBiotSavartLaw(&tmp, pos);
+    *result += tmp;
+    ++first;
+  }
+}
+
 template <class InputIterator1, class InputIterator2, class OutputIterator>
 void ShedAtTrailingEdge(InputIterator1 edge_first, InputIterator1 edge_last,
                         OutputIterator result, InputIterator2 vortices_first,

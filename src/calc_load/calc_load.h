@@ -19,7 +19,12 @@ double CalcDragOnPanel(const std::size_t i, const std::size_t j,
               const Morphing& morphing, const Eigen::Vector3d& inlet,
               const double rho, const double t, const double dt) {
 
+  // Eigen::Vector3d V_kinematic =
+  //     morphing.Velocity(vb.at(i, j).ReferenceCentroid()) - inlet;
+  // const double alpha = vb.at(i, j).AngleOfAttack(V_kinematic);
+  return 0;
 }
+
 
 /**
  * パネルi,jでの圧力差を求める
