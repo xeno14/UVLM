@@ -19,15 +19,19 @@ double CalcDragOnPanel(const std::size_t i, const std::size_t j,
               const Morphing& morphing, const Eigen::Vector3d& inlet,
               const double rho, const double t, const double dt) {
   // calc for angle of attack
-  Eigen::Vector3d V_ind;
-  morphing.Velocity(&V_ind, vb.at(i, j).ReferenceCentroid(), t);
-  V_ind -= inlet;   // -inlet = forward flight
-  const double alpha = vb.at(i, j).AngleOfAttack(V_ind);
+  Eigen::Vector3d V_kinematic;
+  morphing.Velocity(&V_kinematic, vb.at(i, j).ReferenceCentroid(), t);
+  V_kinematic -= inlet;   // -inlet = forward flight
+  const double alpha = vb.at(i, j).AngleOfAttack(V_kinematic);
 
   // calc for induced velocity due to wake vortices
   Eigen::Vector3d V_wake;
   const Eigen::Vector3d centroid = vb.at(i, j).Centroid();
   InducedVelocity(&V_wake, centroid, wake_first, wake_last);
+
+  // Calc for V_ind
+  Eigen::Vector3d V_ind;
+  ChordwiseInducedVelocity(&V_ind, centroid, vb.cbegin(), vb.cend());
 
   const double induced = vb.at(i, j).Normal().dot((V_ind + V_wake));
 
