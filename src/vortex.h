@@ -49,9 +49,17 @@ class VortexRing {
    */
   void BiotSavartLaw(Vector3d* result, const Vector3d& pos, double gamma) const;
 
+  void ChordwiseBiotSavartLaw(Vector3d* result, const Vector3d& pos,
+                              double gamma) const;
+
   /** @brief この渦の循環の値を使ったBiotSavartLaw */
   inline void BiotSavartLaw(Vector3d* result, const Vector3d& pos) const {
     BiotSavartLaw(result, pos, gamma_);
+  }
+
+  inline void ChordwiseBiotSavartLaw(Vector3d* result,
+                                     const Vector3d& pos) const {
+    return ChordwiseBiotSavartLaw(result, pos, gamma_);
   }
 
   VortexRing& PushNode(const Vector3d& pos);

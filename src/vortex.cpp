@@ -44,9 +44,24 @@ void BiotSavartLaw(Vector3d* result,
 
 void VortexRing::BiotSavartLaw(Vector3d* result, const Vector3d& pos,
                                double gamma) const {
-  *result = Eigen::Vector3d::Zero();
+  *result = ::Eigen::Vector3d::Zero();
   Vector3d tmp;
   for (std::size_t i = 0; i < nodes_.size(); i++) {
+    const Vector3d& start = nodes_[i];
+    const Vector3d& end = nodes_[(i + 1) % nodes_.size()];
+    ::UVLM::BiotSavartLaw(&tmp, start, end, pos);
+    *result += tmp;
+  }
+  *result *= gamma;
+}
+
+void VortexRing::ChordwiseBiotSavartLaw(Vector3d* result, const Vector3d& pos,
+                              double gamma) const {
+  *result = ::Eigen::Vector3d::Zero();
+  Vector3d tmp;
+  // 0-1 and 2-3
+  static const int CHORDWISE_INDICES[] = {0, 2};
+  for (std::size_t i : CHORDWISE_INDICES) {
     const Vector3d& start = nodes_[i];
     const Vector3d& end = nodes_[(i + 1) % nodes_.size()];
     ::UVLM::BiotSavartLaw(&tmp, start, end, pos);
