@@ -12,6 +12,29 @@
 
 namespace UVLM {
 
+inline void MatrixForLocalUnitVector(Eigen::Matrix3d* m,
+    const Eigen::Vector3d& n, const Eigen::Vector3d& t, const double alpha) {
+  Eigen::Vector3d q = t.cross(n);
+  Eigen::Matrix3d T;
+  T << t.x(), n.x(), q.x(),
+       t.y(), n.y(), q.y(),
+       t.z(), n.z(), q.z();
+  Eigen::Matrix3d T_alpha;
+  T_alpha << cos(alpha), -sin(alpha), 0,
+             sin(alpha),  cos(alpha), 0,
+              0,          0,          1;
+  *m = T * T_alpha * T.transpose();
+}
+
+inline void LocalUnitVector(Eigen::Vector3d* e_lift, Eigen::Vector3d* e_drag,
+                            const Eigen::Vector3d& n, const Eigen::Vector3d& t,
+                            const double alpha) {
+  Eigen::Matrix3d m;
+  MatrixForLocalUnitVector(&m, n, t, alpha);
+  *e_lift = m * n;
+  *e_drag = m * t;
+}
+
 template <class InputIterator>
 double CalcDragOnPanel(const std::size_t i, const std::size_t j,
               const VortexContainer& vb, const VortexContainer& vb_prev,
