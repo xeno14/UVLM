@@ -70,8 +70,25 @@ double CalcDragOnPanel(const std::size_t i, const std::size_t j,
   return rho * dS * (induced * dg_dx + dg_dt * sin(alpha));
 }
 
+inline double CalcPinOnPanel(const Eigen::Vector3d& dF,
+                             const Eigen::Vector3d& normal,
+                             const Eigen::Vector3d& V_motion) {
+  return dF.dot(normal) * normal.dot(V_motion);
+}
+
+inline double CalcPout(const Eigen::Vector3d& F, const Eigen::Vector3d& inlet) {
+  Eigen::Vector3d unit = inlet;
+  unit.normalize();
+  return inlet.norm() * F.dot(unit);
+}
+
+struct AerodynamicLoad {
+  Eigen::Vector3d F;
+  double Pin, Pout;
+};
+
 template <class InputIterator>
-void CalcLoadOnPanel(Eigen::Vector3d* dL, Eigen::Vector3d* dD,
+void CalcLoadOnPanel(Eigen::Vector3d* dL, Eigen::Vector3d* dD, double* dPin,
                      const std::size_t i, const std::size_t j,
                      const VortexContainer& vb, const VortexContainer& vb_prev,
                      InputIterator wake_first, InputIterator wake_last,
@@ -110,6 +127,7 @@ void CalcLoadOnPanel(Eigen::Vector3d* dL, Eigen::Vector3d* dD,
 
   *dL = e_lift * rho * dS * (v_k * dg_dx + dg_dt) * cos(alpha);
   *dD = e_drag * rho * dS * (induced * dg_dx + dg_dt * sin(alpha));
+  *dPin = CalcPinOnPanel(*dL + *dD, n, V_kinematic);
 }
 
 /**
@@ -144,21 +162,27 @@ double CalcDP(const std::size_t i, const std::size_t j,
 }
 
 template <class InputIterator>
-Eigen::Vector3d CalcLoad(const VortexContainer& vb,
+auto CalcLoad(const VortexContainer& vb,
                          const VortexContainer& vb_prev,
                          InputIterator wake_first, InputIterator wake_last,
                          const Morphing& morphing, const Eigen::Vector3d& inlet,
                          const double rho, const double t, const double dt) {
-  Eigen::Vector3d res = Eigen::Vector3d::Zero();
+  Eigen::Vector3d F = Eigen::Vector3d::Zero();
+  double Pin=0, Pout;
   for (std::size_t i = 0; i < vb.rows(); i++) {
     for (std::size_t j = 0; j < vb.cols(); j++) {
       Eigen::Vector3d dL, dD;
-      CalcLoadOnPanel(&dL, &dD, i, j, vb, vb_prev, wake_first, wake_last,
+      double dPin;
+      CalcLoadOnPanel(&dL, &dD, &dPin, i, j, vb, vb_prev, wake_first, wake_last,
                       morphing, inlet, rho, t, dt);
       const Eigen::Vector3d dF = dL + dD;
-      res += dF;
+      F += dF;
+      Pin += dPin;
     }
   }
+  Pout = CalcPout(F, inlet);
+
+  AerodynamicLoad res {F, Pin, Pout};
   return res;
 }
 
