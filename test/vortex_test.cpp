@@ -98,6 +98,20 @@ TEST_F(VortexRingTest, BiotSavartLaw) {
   EXPECT_DOUBLE_EQ(4*M_SQRT2, result.z());
 }
 
+TEST_F(VortexRingTest, ChordwiseBiotSavartLaw) {
+  ring.set_gamma(4*M_PI);
+  ring.PushNode(1, 1, 0)
+      .PushNode(-1, 1, 0)
+      .PushNode(-1, -1, 0)
+      .PushNode(1, -1, 0);
+  Vector3d result;
+  Vector3d pos(0, 0, 0);
+  ring.ChordwiseBiotSavartLaw(&result, pos);
+  EXPECT_DOUBLE_EQ(0, result.x());
+  EXPECT_DOUBLE_EQ(0, result.y());
+  EXPECT_DOUBLE_EQ(2*M_SQRT2, result.z());
+}
+
 TEST_F(VortexRingTest, Normal) {
   auto v = GetSquaredRing(20000);
   auto n = v.Normal();
@@ -109,6 +123,14 @@ TEST_F(VortexRingTest, Tangent) {
   auto t = v.Tangent();
   EXPECT_VECTOR3D_EQ(1, 0, 0, t);
 }
+
+TEST_F(VortexRingTest, AngleOfAttack) {
+  auto v = GetSquaredRing(1);
+  const double alpha = 0.1;
+  Vector3d Q = {cos(alpha), 0 , sin(alpha)};
+  EXPECT_DOUBLE_EQ(alpha, v.AngleOfAttack(Q));
+}
+
 
 class ChordSpanTest : public ::testing::Test {
  protected:

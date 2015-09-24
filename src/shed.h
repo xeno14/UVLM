@@ -87,6 +87,11 @@ void InducedVelocity(Eigen::Vector3d* const result,
                      const Eigen::Vector3d& pos,
                      InputIterator first, InputIterator last);
 
+template <class InputIterator>
+void ChordwiseInducedVelocity(Eigen::Vector3d* const result,
+                              const Eigen::Vector3d& pos, InputIterator first,
+                              InputIterator last);
+
 }  // namespace UVLM
 
 #include "shed.inl"
