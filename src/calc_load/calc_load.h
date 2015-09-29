@@ -103,19 +103,22 @@ AerodynamicLoad CalcLoad(const VortexContainer& vb,
     for (std::size_t j = 0; j < vb.cols(); j++) {
       const Eigen::Vector3d centroid = vb.at(i, j).Centroid();
       const Eigen::Vector3d normal = vb.at(i, j).Normal();
+
       const Eigen::Vector3d Um =
           internal::CalcUm(morphing, centroid, freestream, t);
-
-      Eigen::Vector3d Um_ = Um;
-      Um_.normalize();
       Eigen::Matrix3d P = internal::CalcProjectionOperator(Um);
-
       Eigen::Vector3d Ubc, Uw;
       ChordwiseInducedVelocity(&Ubc, centroid, vb.cbegin(), vb.cend());
       InducedVelocity(&Uw, wake_first, wake_last);
+      const double alpha = vb.at(i, j).AngleOfAttack(Um);
 
-      double Llocal = 0;
-      double Dlocal = 0;
+      const double Llocal =
+          internal::CalcLocalLift(i, j, vb, vb_prev, Um, Uw, alpha, rho, dt);
+      const double Dlocal = internal::CalcLocalDrag(i, j, vb, vb_prev, P, Ubc,
+                                                    Uw, alpha, rho, dt);
+
+      Eigen::Vector3d Um_ = Um;
+      Um_.normalize();
 
       F += Um_ * Dlocal + P * normal * Llocal;
     }
