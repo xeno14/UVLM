@@ -109,7 +109,7 @@ AerodynamicLoad CalcLoad(const VortexContainer& vb,
       Eigen::Matrix3d P = internal::CalcProjectionOperator(Um);
       Eigen::Vector3d Ubc, Uw;
       ChordwiseInducedVelocity(&Ubc, centroid, vb.cbegin(), vb.cend());
-      InducedVelocity(&Uw, wake_first, wake_last);
+      InducedVelocity(&Uw, centroid, wake_first, wake_last);
       const double alpha = vb.at(i, j).AngleOfAttack(Um);
 
       const double Llocal =

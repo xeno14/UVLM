@@ -158,8 +158,8 @@ void CalcLoadProcess(const double t, const double dt) {
     const auto& m = morphings[i];
     const double rho = 1;
     auto wake = GetWake(containers);
-    auto load = CalcLoad(c, c_prev, wake.first, wake.second, m, inlet, rho,
-        t, dt);
+    auto load = UVLM::calc_load::CalcLoad(c, c_prev, wake.first, wake.second, m,
+                                          inlet, rho, t, dt);
     const double U = inlet.norm();
     auto coeff = load.F / (0.5 * rho * U * U); 
 
