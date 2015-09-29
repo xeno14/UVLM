@@ -14,6 +14,17 @@
 #include "../morphing.h"
 
 namespace UVLM {
+namespace calc_load {
+namespace internal {
+
+inline Eigen::Matrix3d GetProjectionOperator(const Eigen::Vector3d& Um) {
+  Eigen::Vector3d Um_ = Um; // normalized vector
+  Um_.normalize();
+  return Eigen::Matrix3d::Identity() - Um_ * Um_.transpose();
+}
+
+}  // namespace internal
+}  // namespace calc_load
 
 inline void MatrixForLocalUnitVector(Eigen::Matrix3d* m,
     const Eigen::Vector3d& n, const Eigen::Vector3d& t, const double alpha) {
@@ -131,37 +142,6 @@ void CalcLoadOnPanel(Eigen::Vector3d* dL, Eigen::Vector3d* dD, double* dPin,
   *dL = e_lift * rho * dS * (v_k * dg_dx + dg_dt) * cos(alpha);
   *dD = e_drag * rho * dS * (induced * dg_dx + dg_dt * sin(alpha));
   *dPin = CalcPinOnPanel(*dL + *dD, n, V_kinematic);
-}
-
-/**
- * パネルi,jでの圧力差を求める
- */
-template <class InputIterator>
-double CalcDP(const std::size_t i, const std::size_t j,
-              const VortexContainer& vb, const VortexContainer& vb_prev,
-              InputIterator wake_first, InputIterator wake_last,
-              const Morphing& morphing, const Eigen::Vector3d& inlet,
-              const double rho, const double t, const double dt) {
-  Eigen::Vector3d vw;  // wakeによって作られた流れ
-  Eigen::Vector3d centroid = vb.at(i, j).Centroid();
-  InducedVelocity(&vw, centroid, wake_first, wake_last);
-  Eigen::Vector3d v_morphing;
-  morphing.Velocity(&v_morphing, centroid, t);
-  const Eigen::Vector3d V = inlet - v_morphing + vw;
-
-  // 端っこのパネルでは差を使わない
-  const double dg_dx =
-      (i == 0 ? vb.at(i, j).gamma()
-              : vb.at(i, j).gamma() - vb.at(i - 1, j).gamma()) /
-      vb.at(i, j).CalcC();
-  const double dg_dy =
-      (j == 0 ? vb.at(i, j).gamma()
-              : vb.at(i, j).gamma() - vb.at(i, j - 1).gamma()) /
-      vb.at(i, j).CalcB();
-  const double dg_dt = (vb.at(i, j).gamma() - vb_prev.at(i, j).gamma()) / dt;
-
-  return rho * (V.dot(vb.at(i, j).TanVecChord()) * dg_dx +
-                V.dot(vb.at(i, j).TanVecSpan()) * dg_dy + dg_dt);
 }
 
 template <class InputIterator>

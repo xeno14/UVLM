@@ -4,6 +4,7 @@
 #include "testutil.h"
 
 using UVLM::VortexRing;
+using namespace UVLM::calc_load;
 
 class CalcLoadFuncTest : public ::testing::Test {
  protected:
@@ -49,4 +50,17 @@ TEST_F(LocalUnitVectorTest, LocalUnitVector2) {
   UVLM::LocalUnitVector(&e_lift, &e_drag, n, t, alpha);
   EXPECT_VECTOR3D_EQ(-sin(alpha), 0, cos(alpha), e_lift);
   EXPECT_VECTOR3D_EQ(cos(alpha), 0, sin(alpha), e_drag);
+}
+
+
+TEST(ProjectionOperatorTest, GetProjectionOperator) {
+  Eigen::Vector3d Um(2, 0, 0);
+  Eigen::Matrix3d P = internal::GetProjectionOperator(Um);
+  Eigen::Vector3d result;
+  result = P.block(0, 0, 3, 1);
+  EXPECT_VECTOR3D_EQ(0, 0, 0, result);
+  result = P.block(0, 1, 3, 1);
+  EXPECT_VECTOR3D_EQ(0, 1, 0, result);
+  result = P.block(0, 2, 3, 1);
+  EXPECT_VECTOR3D_EQ(0, 0, 1, result);
 }
