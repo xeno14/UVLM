@@ -164,7 +164,7 @@ void CalcLoadProcess(const double t, const double dt) {
     auto coeff = load.F / (0.5 * rho * U * U); 
 
     line << t << "\t" << coeff.x() << "\t" << coeff.y() << "\t" << coeff.z()
-      << "\t" << load.Pin << "\t" << load.Pout << std::endl;
+      << "\t" << load.Pin << "\t" << load.Pout;
   }
   std::ofstream ofs(output_load_path, std::ios::app);
   CHECK((bool)ofs) << "Unable to open " << output_load_path;

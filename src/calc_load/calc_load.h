@@ -37,6 +37,34 @@ inline Eigen::Vector3d CalcUm(const Morphing& morphing,
 }
 
 }  // namespace internal
+
+struct AerodynamicLoad {
+  Eigen::Vector3d D, L;
+};
+
+template <class InputIterator>
+AerodynamicLoad CalcLoad(const VortexContainer& vb,
+                         const VortexContainer& vb_prev,
+                         InputIterator wake_first, InputIterator wake_last,
+                         const Morphing& morphing, const Eigen::Vector3d& freestream,
+                         const double rho, const double t, const double dt) {
+  Eigen::Vector3d F = Eigen::Vector3d::Zero();
+  for (std::size_t i = 0; i < vb.rows(); i++) {
+    for (std::size_t j = 0; j < vb.cols(); j++) {
+      const Eigen::Vector3d Um =
+          internal::CalcUm(morphing, vb.at(i, j).Centroid(), freestream, t);
+      Eigen::Vector3d Um_ = Um;
+      Um_.normalize();
+      Eigen::Matrix3d P = internal::CalcProjectionOperator(Um);
+
+      double Llocal = 0;
+      double Dlocal = 0;
+
+    }
+  }
+  return AerodynamicLoad {F.x(), F.z()};
+}
+
 }  // namespace calc_load
 
 inline void MatrixForLocalUnitVector(Eigen::Matrix3d* m,
@@ -67,11 +95,11 @@ template <class InputIterator>
 double CalcDragOnPanel(const std::size_t i, const std::size_t j,
               const VortexContainer& vb, const VortexContainer& vb_prev,
               InputIterator wake_first, InputIterator wake_last,
-              const Morphing& morphing, const Eigen::Vector3d& inlet,
+              const Morphing& morphing, const Eigen::Vector3d& freestream,
               const double rho, const double t, const double dt) {
   // calc for angle of attack
   Eigen::Vector3d V_kinematic = calc_load::internal::CalcUm(
-      morphing, vb.at(i, j).ReferenceCentroid(), inlet, t);
+      morphing, vb.at(i, j).ReferenceCentroid(), freestream, t);
   const double alpha = vb.at(i, j).AngleOfAttack(V_kinematic);
 
   // calc for induced velocity due to wake vortices
@@ -102,10 +130,10 @@ inline double CalcPinOnPanel(const Eigen::Vector3d& dF,
   return dF.dot(normal) * normal.dot(V_motion);
 }
 
-inline double CalcPout(const Eigen::Vector3d& F, const Eigen::Vector3d& inlet) {
-  Eigen::Vector3d unit = inlet;
+inline double CalcPout(const Eigen::Vector3d& F, const Eigen::Vector3d& freestream) {
+  Eigen::Vector3d unit = freestream;
   unit.normalize();
-  return inlet.norm() * F.dot(unit);
+  return freestream.norm() * F.dot(unit);
 }
 
 struct AerodynamicLoad {
@@ -118,12 +146,12 @@ void CalcLoadOnPanel(Eigen::Vector3d* dL, Eigen::Vector3d* dD, double* dPin,
                      const std::size_t i, const std::size_t j,
                      const VortexContainer& vb, const VortexContainer& vb_prev,
                      InputIterator wake_first, InputIterator wake_last,
-                     const Morphing& morphing, const Eigen::Vector3d& inlet,
+                     const Morphing& morphing, const Eigen::Vector3d& freestream,
                      const double rho, const double t, const double dt) {
   // calc for angle of attack
   Eigen::Vector3d V_kinematic;
   morphing.Velocity(&V_kinematic, vb.at(i, j).ReferenceCentroid(), t);
-  V_kinematic -= inlet;   // -inlet is equivalent to forward flight
+  V_kinematic -= freestream;   // -freestream is equivalent to forward flight
   const double alpha = vb.at(i, j).AngleOfAttack(V_kinematic);
 
   // calc for unit vectors
@@ -160,7 +188,7 @@ template <class InputIterator>
 auto CalcLoad(const VortexContainer& vb,
                          const VortexContainer& vb_prev,
                          InputIterator wake_first, InputIterator wake_last,
-                         const Morphing& morphing, const Eigen::Vector3d& inlet,
+                         const Morphing& morphing, const Eigen::Vector3d& freestream,
                          const double rho, const double t, const double dt) {
   Eigen::Vector3d F = Eigen::Vector3d::Zero();
   double Pin=0, Pout;
@@ -169,13 +197,13 @@ auto CalcLoad(const VortexContainer& vb,
       Eigen::Vector3d dL, dD;
       double dPin;
       CalcLoadOnPanel(&dL, &dD, &dPin, i, j, vb, vb_prev, wake_first, wake_last,
-                      morphing, inlet, rho, t, dt);
+                      morphing, freestream, rho, t, dt);
       const Eigen::Vector3d dF = dL + dD;
       F += dF;
       Pin += dPin;
     }
   }
-  Pout = CalcPout(F, inlet);
+  Pout = CalcPout(F, freestream);
 
   AerodynamicLoad res {F, Pin, Pout};
   return res;
