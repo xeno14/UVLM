@@ -157,11 +157,12 @@ void CalcLoadProcess(const double t, const double dt) {
     const auto& c_prev = containers_prev[i];
     const auto& m = morphings[i];
     const double rho = 1;
+    const double S = c.chord() * c.span();
     auto wake = GetWake(containers);
     auto load = UVLM::calc_load::CalcLoad(c, c_prev, wake.first, wake.second, m,
                                           inlet, rho, t, dt);
     const double U = inlet.norm();
-    auto coeff = load.F / (0.5 * rho * U * U); 
+    auto coeff = load.F / (0.5 * rho * U * U * S);
 
     line << t << "\t" << coeff.x() << "\t" << coeff.y() << "\t" << coeff.z()
       << "\t" << load.Pin << "\t" << load.Pout;
