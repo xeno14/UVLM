@@ -59,9 +59,9 @@ int main(int argc, char* argv[]) {
   const double ALPHA = PARAM_alpha;
 
   UVLM::Morphing m;
-  m.set_flap([OMEGA, PHI](double t) { return PHI * cos(OMEGA * t); });
+  m.set_flap([OMEGA, PHI](double t) { return PHI * sin(-OMEGA * t); });
   m.set_twist([OMEGA, BETA, SPAN](const Eigen::Vector3d& x0, double t) {
-    return BETA * fabs(x0.y()) / SPAN * cos(OMEGA * t);
+    return BETA * fabs(x0.y()) / SPAN * sin(-OMEGA * t);
   });
 
   UVLM::simulator::AddWing(wing, m);
