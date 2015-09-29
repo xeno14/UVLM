@@ -15,6 +15,7 @@
 DEFINE_string(input, "", "setting yaml");
 DEFINE_string(output, "", "output path");
 DEFINE_string(output_load, "", "output load path");
+DEFINE_bool(calc_load, false, "calc load mode");
 
 namespace {
 YAML::Node config;
@@ -47,6 +48,7 @@ int main(int argc, char* argv[]) {
 
   DEFINE_PARAM_VERBOSE(double, U, param);
   DEFINE_PARAM_VERBOSE(double, alpha, param);
+  DEFINE_PARAM_VERBOSE(double, phi0, param);
 
   const double U = PARAM_U;                           // Upstream velocity
   const double K = 0.1;                               // Reduced frequency
@@ -57,11 +59,12 @@ int main(int argc, char* argv[]) {
   // const double CHORD = wing.chord();
   const double SPAN = wing.span();
   const double ALPHA = PARAM_alpha;
+  const double PHI0 = PARAM_phi0;
 
   UVLM::Morphing m;
-  m.set_flap([OMEGA, PHI](double t) { return PHI * sin(-OMEGA * t); });
-  m.set_twist([OMEGA, BETA, SPAN](const Eigen::Vector3d& x0, double t) {
-    return BETA * fabs(x0.y()) / SPAN * sin(-OMEGA * t);
+  m.set_flap([&](double t) { return PHI * sin(OMEGA * t + PHI0); });
+  m.set_twist([&](const Eigen::Vector3d& x0, double t) {
+    return BETA * fabs(x0.y()) / SPAN * sin(OMEGA * t + PHI0);
   });
 
   UVLM::simulator::AddWing(wing, m);
@@ -72,7 +75,12 @@ int main(int argc, char* argv[]) {
   const auto setting = config["setting"];
   DEFINE_PARAM_VERBOSE(int, steps, setting);
   DEFINE_PARAM_VERBOSE(double, dt, setting);
-  UVLM::simulator::Start(PARAM_steps, PARAM_dt);
+
+  if (FLAGS_calc_load) {
+    // todo
+  } else {
+    UVLM::simulator::Start(PARAM_steps, PARAM_dt);
+  }
 
   return 0;
 }
