@@ -17,10 +17,23 @@ namespace UVLM {
 namespace calc_load {
 namespace internal {
 
-inline Eigen::Matrix3d GetProjectionOperator(const Eigen::Vector3d& Um) {
+inline Eigen::Matrix3d CalcProjectionOperator(const Eigen::Vector3d& Um) {
   Eigen::Vector3d Um_ = Um; // normalized vector
   Um_.normalize();
   return Eigen::Matrix3d::Identity() - Um_ * Um_.transpose();
+}
+
+/**
+ * @brief Calc velocity contribution from the surface motion
+ */
+inline Eigen::Vector3d CalcUm(const Morphing& morphing,
+                              const Eigen::Vector3d& x0, 
+                              const Eigen::Vector3d& freestream,
+                              const double t) {
+  Eigen::Vector3d res;
+  morphing.Velocity(&res, x0, t);
+  res = freestream - res;
+  return res;
 }
 
 }  // namespace internal
@@ -57,9 +70,8 @@ double CalcDragOnPanel(const std::size_t i, const std::size_t j,
               const Morphing& morphing, const Eigen::Vector3d& inlet,
               const double rho, const double t, const double dt) {
   // calc for angle of attack
-  Eigen::Vector3d V_kinematic;
-  morphing.Velocity(&V_kinematic, vb.at(i, j).ReferenceCentroid(), t);
-  V_kinematic -= inlet;   // -inlet = forward flight
+  Eigen::Vector3d V_kinematic = calc_load::internal::CalcUm(
+      morphing, vb.at(i, j).ReferenceCentroid(), inlet, t);
   const double alpha = vb.at(i, j).AngleOfAttack(V_kinematic);
 
   // calc for induced velocity due to wake vortices

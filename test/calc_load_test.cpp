@@ -53,9 +53,9 @@ TEST_F(LocalUnitVectorTest, LocalUnitVector2) {
 }
 
 
-TEST(ProjectionOperatorTest, GetProjectionOperator) {
+TEST(ProjectionOperatorTest, CalcProjectionOperator) {
   Eigen::Vector3d Um(2, 0, 0);
-  Eigen::Matrix3d P = internal::GetProjectionOperator(Um);
+  Eigen::Matrix3d P = internal::CalcProjectionOperator(Um);
   Eigen::Vector3d result;
   result = P.block(0, 0, 3, 1);
   EXPECT_VECTOR3D_EQ(0, 0, 0, result);
