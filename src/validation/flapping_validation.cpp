@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
   UVLM::proto::Wing wing = InitWing();
 
   DEFINE_PARAM_VERBOSE(double, U, param);
+  DEFINE_PARAM_VERBOSE(double, alpha, param);
 
   const double U = PARAM_U;                           // Upstream velocity
   const double K = 0.1;                               // Reduced frequency
@@ -55,6 +56,7 @@ int main(int argc, char* argv[]) {
   const double BETA = 4 * M_PI / 180;                 // twising amp at wing tip
   // const double CHORD = wing.chord();
   const double SPAN = wing.span();
+  const double ALPHA = PARAM_alpha;
 
   UVLM::Morphing m;
   m.set_flap([OMEGA, PHI](double t) { return PHI * sin(OMEGA * t + M_PI); });
@@ -63,7 +65,7 @@ int main(int argc, char* argv[]) {
   });
 
   UVLM::simulator::AddWing(wing, m);
-  UVLM::simulator::SetInlet(PARAM_U, 0, 0);
+  UVLM::simulator::SetInlet(PARAM_U * cos(ALPHA), 0, PARAM_U * sin(ALPHA));
   UVLM::simulator::SetOutputPath(FLAGS_output);
   UVLM::simulator::SetOutputLoadPath(FLAGS_output_load);
 

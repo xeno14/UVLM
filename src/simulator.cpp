@@ -196,11 +196,10 @@ void Start(const std::size_t steps, const double dt) {
   internal::CreateContainers();
   rings.bound_vortices() = *vortices;
 
-  // LOG(INFO) << FLAGS_run_name << " "  << "Morphing for initial condition";
-  // internal::MorphingProcess(t, dt);
+  internal::MorphingProcess(0, dt);
 
   // Main loop
-  for (std::size_t step = 0; step < steps; ++step) {
+  for (std::size_t step = 1; step <= steps; ++step) {
     LOG(INFO) << FLAGS_run_name << " " << "step: " << step;
     const double t = dt * step;
     const std::size_t wake_offset = internal::WakeOffset();
