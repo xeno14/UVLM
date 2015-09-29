@@ -36,10 +36,60 @@ inline Eigen::Vector3d CalcUm(const Morphing& morphing,
   return res;
 }
 
+inline double CalcChordwiseDGamma(const std::size_t i, const std::size_t j,
+                                  const VortexContainer& vb) {
+  return i == 0 ? vb.at(i, j).gamma()
+                : vb.at(i, j).gamma() - vb.at(i - 1, j).gamma();
+}
+
+inline double CalcSpanwiseDGamma(const std::size_t i, const std::size_t j,
+                                  const VortexContainer& vb) {
+  return j == 0 ? vb.at(i, j).gamma()
+                : vb.at(i, j).gamma() - vb.at(i, j-1).gamma();
+}
+
+inline double CalcGammaTimeDerivate(const VortexRing& v, const VortexRing& v_prev,
+    const double dt) {
+  return (v.gamma() - v_prev.gamma()) / dt;
+}
+
+inline double CalcLocalLift(const std::size_t i, const std::size_t j,
+                           const VortexContainer& vb,
+                           const VortexContainer& vb_prev,
+                           const Eigen::Vector3d& Um, const Eigen::Vector3d& Uw,
+                           const double alpha,
+                           const double rho, const double dt) {
+  const VortexRing& v = vb.at(i, j);
+  const VortexRing& v_prev = vb_prev.at(i, j);
+  const double b = v.CalcB();
+  const double c = v.CalcC();
+  return rho * b * c * cos(alpha) *
+         ((Um + Uw).dot(v.TanVecChord()) * CalcChordwiseDGamma(i, j, vb) / c +
+          (Um + Uw).dot(v.TanVecSpan()) * CalcSpanwiseDGamma(i, j, vb) / b +
+          CalcGammaTimeDerivate(v, v_prev, dt));
+}
+
+inline double CalcLocalDrag(const std::size_t i, const std::size_t j,
+                           const VortexContainer& vb,
+                           const VortexContainer& vb_prev,
+                           const Eigen::Matrix3d& P,
+                           const Eigen::Vector3d& Ubc, const Eigen::Vector3d& Uw,
+                           const double alpha,
+                           const double rho, const double dt) {
+  const VortexRing& v = vb.at(i, j);
+  const VortexRing& v_prev = vb_prev.at(i, j);
+  const double b = v.CalcB();
+  const double c = v.CalcC();
+  return rho * (
+      -(Ubc + Uw).dot(P * v.Normal()) * CalcChordwiseDGamma(i, j, vb) * b +
+      CalcGammaTimeDerivate(v, v_prev, dt) * b * c * sin(alpha));
+}
+
 }  // namespace internal
 
 struct AerodynamicLoad {
-  Eigen::Vector3d D, L;
+  Eigen::Vector3d F;
+  double Pin, Pout;
 };
 
 template <class InputIterator>
@@ -51,18 +101,26 @@ AerodynamicLoad CalcLoad(const VortexContainer& vb,
   Eigen::Vector3d F = Eigen::Vector3d::Zero();
   for (std::size_t i = 0; i < vb.rows(); i++) {
     for (std::size_t j = 0; j < vb.cols(); j++) {
+      const Eigen::Vector3d centroid = vb.at(i, j).Centroid();
+      const Eigen::Vector3d normal = vb.at(i, j).Normal();
       const Eigen::Vector3d Um =
-          internal::CalcUm(morphing, vb.at(i, j).Centroid(), freestream, t);
+          internal::CalcUm(morphing, centroid, freestream, t);
+
       Eigen::Vector3d Um_ = Um;
       Um_.normalize();
       Eigen::Matrix3d P = internal::CalcProjectionOperator(Um);
 
+      Eigen::Vector3d Ubc, Uw;
+      ChordwiseInducedVelocity(&Ubc, centroid, vb.cbegin(), vb.cend());
+      InducedVelocity(&Uw, wake_first, wake_last);
+
       double Llocal = 0;
       double Dlocal = 0;
 
+      F += Um_ * Dlocal + P * normal * Llocal;
     }
   }
-  return AerodynamicLoad {F.x(), F.z()};
+  return AerodynamicLoad {F, 0, 0};
 }
 
 }  // namespace calc_load
