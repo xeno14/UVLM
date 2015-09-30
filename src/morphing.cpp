@@ -20,9 +20,8 @@ Morphing::Morphing(const Morphing& m)
       bend_(m.bend_),
       origin_(m.origin_) {}
 
-void Morphing::Perfome(Eigen::Vector3d* x,
-                       const Eigen::Vector3d& x0, const double t,
-                       const double dt) const {
+void Morphing::Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& x0,
+                       const double t) const {
   Eigen::Vector3d x_ref = x0 - origin_;
   bool is_negative = x_ref.y() < 0;
 
@@ -46,8 +45,8 @@ void Morphing::Velocity(Eigen::Vector3d* v,
                         const Eigen::Vector3d& x0, const double t,
                         const double dt) const {
   Eigen::Vector3d x1, x2;   // x(t-dt), x(t+dt)
-  Perfome(&x1, x0, t - dt, dt);
-  Perfome(&x2, x0, t + dt, dt);
+  Perfome(&x1, x0, t - dt);
+  Perfome(&x2, x0, t + dt);
   *v = (x2 - x1) / (2*dt);
 }
 

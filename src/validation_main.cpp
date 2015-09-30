@@ -195,7 +195,7 @@ void SimulationBody(const int steps, const double dt) {
     for (std::size_t i=0; i<containers.size(); i++) {
       for (auto& vortex : containers[i]) {
         for (std::size_t j=0; j<vortex.nodes().size(); j++) {
-          morphing.Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t, dt);
+          morphing.Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t);
         }
       }
     }

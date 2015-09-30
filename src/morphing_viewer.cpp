@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
     // Data
     for (const auto& x0 : wing) {
       Eigen::Vector3d x;
-      m.Perfome(&x, x0, t, dt);
+      m.Perfome(&x, x0, t);
       fprintf(fp, "%e\t%e\t%e\n", x.x(), x.y(), x.z());
     }
     fprintf(fp, "end\n");

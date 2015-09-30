@@ -86,11 +86,11 @@ auto ShedProcess(const double dt) {
   return shed;
 }
 
-void MorphingProcess(const double t, const double dt) {
+void MorphingProcess(const double t) {
   for (std::size_t i = 0; i < containers.size(); i++) {
     for (auto& vortex : containers[i]) {
       for (std::size_t j = 0; j < vortex.nodes().size(); j++) {
-        morphings[i].Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t, dt);
+        morphings[i].Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t);
       }
     }
   }
@@ -194,7 +194,7 @@ void Start(const std::size_t steps, const double dt) {
   internal::CreateContainers();
   rings.bound_vortices() = *vortices;
 
-  internal::MorphingProcess(0, dt);
+  internal::MorphingProcess(0);
 
   // Main loop
   for (std::size_t step = 1; step <= steps; ++step) {
@@ -202,6 +202,7 @@ void Start(const std::size_t steps, const double dt) {
     const double t = dt * step;
     const std::size_t wake_offset = internal::WakeOffset();
 
+    // Save circulations of bound vortices at the previous step
     containers_prev.resize(containers.size());
     CopyContainers(containers.begin(), containers.end(),
                    containers_prev.begin());
@@ -220,7 +221,7 @@ void Start(const std::size_t steps, const double dt) {
 
     auto shed = internal::ShedProcess(dt);
     internal::AdvectProcess(dt);
-    internal::MorphingProcess(t, dt);
+    internal::MorphingProcess(t);
     internal::AppendShedProcess(&shed);
 
     // TODO remove rings
