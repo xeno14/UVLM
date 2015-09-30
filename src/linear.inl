@@ -88,7 +88,7 @@ Eigen::VectorXd SolveLinearProblem(InputIterator1 bound_first,
       internal::CalcRhsUpStream(Vinfty, bound_first, bound_last) +
       internal::CalcRhsWake(bound_first, bound_last, wake_first, wake_last) -
       internal::CalcRhsMorphing(bound_first, bound_last, morphing, t);
-  Eigen::PartialPivLU<Eigen::MatrixXd> solver(A);
+  Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
   return solver.solve(rhs);
 }
 

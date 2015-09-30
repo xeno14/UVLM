@@ -106,7 +106,7 @@ AerodynamicLoad CalcLoad(const VortexContainer& vb,
 
       const Eigen::Vector3d Um =
           internal::CalcUm(morphing, centroid, freestream, t);
-      Eigen::Matrix3d P = internal::CalcProjectionOperator(Um);
+      const Eigen::Matrix3d P = internal::CalcProjectionOperator(Um);
       Eigen::Vector3d Ubc, Uw;
       ChordwiseInducedVelocity(&Ubc, centroid, vb.cbegin(), vb.cend());
       InducedVelocity(&Uw, centroid, wake_first, wake_last);
