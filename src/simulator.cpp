@@ -148,8 +148,6 @@ void OutputSnapshot2(const std::size_t step, const double t) {
 }
 
 void CalcLoadProcess(const double t, const double dt) {
-  containers_prev.resize(containers.size());
-  CopyContainers(containers.begin(), containers.end(), containers_prev.begin());
   std::vector<Eigen::Vector3d> loads;
   std::stringstream line;
   for (std::size_t i=0; i<containers.size(); i++) {
@@ -204,6 +202,10 @@ void Start(const std::size_t steps, const double dt) {
     const double t = dt * step;
     const std::size_t wake_offset = internal::WakeOffset();
 
+    containers_prev.resize(containers.size());
+    CopyContainers(containers.begin(), containers.end(),
+                   containers_prev.begin());
+
     // 連立方程式を解いて翼の上の循環を求める
     internal::SolveLinearProblem(t);
 
@@ -225,6 +227,7 @@ void Start(const std::size_t steps, const double dt) {
     rings.wake_vortices().resize(vortices->size() - wake_offset);
     std::copy(vortices->begin() + wake_offset, vortices->end(),
               rings.wake_vortices().begin());
+
   }
 }
 
