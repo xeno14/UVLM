@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <glog/logging.h>
 
 namespace UVLM {
 namespace internal {
@@ -89,6 +90,9 @@ Eigen::VectorXd SolveLinearProblem(InputIterator1 bound_first,
       internal::CalcRhsWake(bound_first, bound_last, wake_first, wake_last) -
       internal::CalcRhsMorphing(bound_first, bound_last, morphing, t);
   Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
+  if (!solver.isInvertible()) {
+    LOG(FATAL) << "Matrix is not invertible.";
+  }
   return solver.solve(rhs);
 }
 
