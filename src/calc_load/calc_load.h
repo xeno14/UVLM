@@ -43,9 +43,9 @@ inline double CalcChordwiseDGamma(const std::size_t i, const std::size_t j,
 }
 
 inline double CalcSpanwiseDGamma(const std::size_t i, const std::size_t j,
-                                  const VortexContainer& vb) {
+                                 const VortexContainer& vb) {
   return j == 0 ? vb.at(i, j).gamma()
-                : vb.at(i, j).gamma() - vb.at(i, j-1).gamma();
+                : vb.at(i, j).gamma() - vb.at(i, j - 1).gamma();
 }
 
 inline double CalcGammaTimeDerivate(const VortexRing& v, const VortexRing& v_prev,
