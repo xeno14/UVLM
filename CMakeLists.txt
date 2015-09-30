@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.0)
 SET(CMAKE_CXX_FLAGS_RELEASE "-O2")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 SET(CMAKE_BUILD_TYPE Release)
-add_definitions("-Wall -std=c++14")
+add_definitions("-Wall -std=c++14 -static")
 # set(CMAKE_VERBOSE_MAKEFILE 1)
 
 ###########################################################
