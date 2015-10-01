@@ -122,9 +122,12 @@ target_link_libraries(flapping_validation uvlm wing protobuf glog yaml-cpp)
 add_executable(plunging_validation src/validation/plunging_validation.cpp)
 target_link_libraries(plunging_validation uvlm wing protobuf glog yaml-cpp)
 
+add_executable(2d_velocity src/tools/2d_velocity_main.cpp)
+target_link_libraries(2d_velocity uvlm protobuf glog)
+
 ###########################################################
 # install
 ###########################################################
 install (
-  TARGETS morphing_viewer result_to_gnuplot result_to_vtk naca00XX validation flapping_validation plunging_validation calc_load
+  TARGETS morphing_viewer result_to_gnuplot result_to_vtk naca00XX validation flapping_validation plunging_validation calc_load 2d_velocity
   DESTINATION /usr/local/bin)
