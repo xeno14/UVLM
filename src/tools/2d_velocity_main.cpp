@@ -65,12 +65,16 @@ template <class InputIterator1, class InputIterator2>
 void CalcData(std::vector<Data>* data, InputIterator1 pos_first,
               InputIterator1 pos_last, InputIterator2 v_first,
               InputIterator2 v_last) {
-  while (pos_first != pos_last) {
-    const auto& pos = *pos_first;
+  const std::size_t size = std::distance(pos_first, pos_last);
+  data->resize(size);
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (std::size_t i = 0; i < size; i++) {
+    const auto pos = *(pos_first + i);
     Eigen::Vector3d vel;
     UVLM::InducedVelocity(&vel, pos, v_first, v_last);
-    data->push_back(Data{pos, vel});
-    ++pos_first;
+    data->at(i) = Data{pos, vel};
   }
 }
 
