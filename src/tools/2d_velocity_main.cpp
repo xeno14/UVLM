@@ -17,7 +17,8 @@ DEFINE_double(xmax, 3, "right most x");
 DEFINE_double(zmax, 1.5, "up most z");
 DEFINE_int32(resolution, 100, "number of points for each edge");
 DEFINE_string(input, "", "snapshot2");
-DEFINE_string(output, "", "tsv file output");
+DEFINE_string(output, "", "output filename");
+DEFINE_string(filetype, "csv", "csv or tsv");
 
 namespace {
 
@@ -78,23 +79,34 @@ void CalcData(std::vector<Data>* data, InputIterator1 pos_first,
   }
 }
 
+std::string Sep() {
+  if (FLAGS_filetype == "csv") {
+    return ",";
+  } else if (FLAGS_filetype == "tsv") {
+    return "\t";
+  } else {
+    LOG(FATAL) << "Invalid filetype: " << FLAGS_filetype;
+  }
+}
+
 void Output(const std::vector<Data>& data) {
   std::ofstream ofs(FLAGS_output);
   CHECK(ofs) << "Unable to open " << FLAGS_output;
   LOG(INFO) << "Output: " << FLAGS_output;
+  const std::string sep = Sep();
   ofs << "#"
-      << "x" << "\t"
-      << "y" << "\t"
-      << "z" << "\t"
-      << "u" << "\t"
-      << "v" << "\t"
+      << "x" << sep
+      << "y" << sep
+      << "z" << sep
+      << "u" << sep
+      << "v" << sep
       << "w" << std::endl;
   for (const auto& d : data) {
-    ofs << d.pos.x() << "\t"
-        << d.pos.y() << "\t"
-        << d.pos.z() << "\t"
-        << d.vel.x() << "\t"
-        << d.vel.y() << "\t"
+    ofs << d.pos.x() << sep
+        << d.pos.y() << sep
+        << d.pos.z() << sep
+        << d.vel.x() << sep
+        << d.vel.y() << sep
         << d.vel.z() << std::endl;
   }
 }
