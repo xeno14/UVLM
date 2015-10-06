@@ -18,5 +18,6 @@ void set_plug(std::function<double(double)> f);
 void set_flap(std::function<double(double)> f);
 void set_twist(std::function<double(const Eigen::Vector3d&, double)> f);
 void set_bend(std::function<double(const Eigen::Vector3d&, double)> f);
+void set_alpha(double);
 
 }  // namespace morphing_viewer

@@ -52,23 +52,25 @@ void Morphing::Velocity(Eigen::Vector3d* v,
 
 void Morphing::PrepareMatrix(Eigen::Matrix3d* m, const Eigen::Vector3d& x0,
                              double t) const {
-  Eigen::Matrix3d twist;
-  const double beta = twist_(x0, t);
-  twist << cos(beta), 0, sin(beta),
-           0, 1, 0,
-           -sin(beta), 0, cos(beta);
-
+  // see Kats and Plotkin p.371, 423
+  // see Ghommem et al. (2012) eq(15)
   Eigen::Matrix3d flap;
   const double phi = flap_(t);
-
   flap << 1, 0, 0,
           0, cos(phi), sin(phi),
           0, -sin(phi), cos(phi);
-  Eigen::Matrix3d attack;
-  attack << cos(alpha_), 0, sin(alpha_),
-            0, 1, 0,
-            -sin(alpha_), 0, cos(alpha_);
 
+  Eigen::Matrix3d attack;
+  const double theta = alpha_;
+  attack << cos(theta), 0, -sin(theta),
+            0, 1, 0,
+            sin(theta), 0, cos(theta);
+
+  Eigen::Matrix3d twist;
+  const double beta = twist_(x0, t);
+  twist << cos(beta), 0, sin(beta),
+           0,         1, 0,
+          -sin(beta), 0, cos(beta);
   *m = attack * flap * twist;
 }
 

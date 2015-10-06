@@ -74,9 +74,9 @@ void InitWing(std::vector<Eigen::Vector3d>* points,
     }
   } else {
     std::cerr << "No wing was specifiled. Use rect." << std::endl;
-    for (int i = 1; i <= 10; i++) {
+    for (int i = 0; i <= 10; i++) {
       for (int j = -20; j <= 20; j++) {
-        double x = i * DX;
+        double x = -i * DX;
         double y = j * DX;
         double z = 0;
         points->emplace_back(x, y, z);
@@ -137,6 +137,10 @@ void set_twist(std::function<double(const Eigen::Vector3d&, double)> f) {
 }
 void set_bend(std::function<double(const Eigen::Vector3d&, double)> f) {
   GetMorphing().set_bend(f);
+}
+
+void set_alpha(double a) {
+  GetMorphing().set_alpha(a);
 }
 
 }  // morphing_viewer
