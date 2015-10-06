@@ -86,10 +86,10 @@ TEST_F(VortexRingTest, Assemble) {
 
 TEST_F(VortexRingTest, BiotSavartLaw) {
   ring.set_gamma(4*M_PI);
-  ring.PushNode(1, 1, 0)
-      .PushNode(-1, 1, 0)
-      .PushNode(-1, -1, 0)
-      .PushNode(1, -1, 0);
+  ring.PushNode(-1, -1, 0)
+      .PushNode(1, -1, 0)
+      .PushNode(1, 1, 0)
+      .PushNode(-1, 1, 0);
   Vector3d result;
   Vector3d pos(0, 0, 0);
   ring.BiotSavartLaw(&result, pos);
@@ -100,10 +100,10 @@ TEST_F(VortexRingTest, BiotSavartLaw) {
 
 TEST_F(VortexRingTest, ChordwiseBiotSavartLaw) {
   ring.set_gamma(4*M_PI);
-  ring.PushNode(1, 1, 0)
-      .PushNode(-1, 1, 0)
-      .PushNode(-1, -1, 0)
-      .PushNode(1, -1, 0);
+  ring.PushNode(-1, -1, 0)
+      .PushNode(1, -1, 0)
+      .PushNode(1, 1, 0)
+      .PushNode(-1, 1, 0);
   Vector3d result;
   Vector3d pos(0, 0, 0);
   ring.ChordwiseBiotSavartLaw(&result, pos);
