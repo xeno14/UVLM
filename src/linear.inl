@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#include "shed.h"
+
 #include <glog/logging.h>
 
 namespace UVLM {
@@ -30,13 +32,14 @@ Eigen::MatrixXd CalcMatrix(InputIterator bound_first,
 }
 
 template <class InputIterator>
-Eigen::VectorXd CalcRhsUpStream(const Eigen::Vector3d& Vinfty,
+Eigen::VectorXd CalcRhsFreeStream(const Eigen::Vector3d& freestream,
     InputIterator bound_first,
     InputIterator bound_last) {
   const std::size_t len = std::distance(bound_first, bound_last);
   Eigen::VectorXd res(len);
   for (std::size_t i = 0; i < len; i++) {
-    res(i) = Vinfty.dot((bound_first + i)->Normal());
+    const auto& v = *(bound_first + i);
+    res(i) = freestream.dot(v.Normal());
   }
   return res;
 }
@@ -50,12 +53,9 @@ Eigen::VectorXd CalcRhsWake(InputIterator1 bound_first,
   Eigen::VectorXd res(len);
   Eigen::Vector3d vel;
   for (std::size_t i = 0; i < len; i++) {
-    res(i) = 0;
     const auto& v = *(bound_first + i);
-    for (auto wake = wake_first; wake != wake_last; ++wake) {
-      wake->BiotSavartLaw(&vel, v.Centroid());  // 渦輪の中心の流速
-      res(i) += vel.dot(v.Normal());
-    }
+    InducedVelocity(&vel, v.Centroid(), wake_first, wake_last);
+    res(i) = vel.dot(v.Normal());
   }
   return res;
 }
@@ -82,13 +82,13 @@ Eigen::VectorXd SolveLinearProblem(InputIterator1 bound_first,
                                    InputIterator1 bound_last,
                                    InputIterator2 wake_first,
                                    InputIterator2 wake_last,
-                                   const Eigen::Vector3d Vinfty,
+                                   const Eigen::Vector3d freestream,
                                    const Morphing& morphing, const double t) {
   Eigen::MatrixXd A = internal::CalcMatrix(bound_first, bound_last);
   Eigen::VectorXd rhs =
-      - internal::CalcRhsUpStream(Vinfty, bound_first, bound_last)
-      - internal::CalcRhsWake(bound_first, bound_last, wake_first, wake_last)
-      + internal::CalcRhsMorphing(bound_first, bound_last, morphing, t);
+      internal::CalcRhsMorphing(bound_first, bound_last, morphing, t)
+      - internal::CalcRhsFreeStream(freestream, bound_first, bound_last)
+      - internal::CalcRhsWake(bound_first, bound_last, wake_first, wake_last);
   Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
   if (!solver.isInvertible()) {
     LOG(FATAL) << "Matrix is not invertible.";
