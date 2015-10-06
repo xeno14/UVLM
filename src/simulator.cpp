@@ -214,24 +214,24 @@ void Start(const std::size_t steps, const double dt) {
     internal::SolveLinearProblem(t);
 
     // TODO remove rings
-    std::copy(vortices->begin(), vortices->begin() + wake_offset,
-              rings.bound_vortices().begin());
+    // std::copy(vortices->begin(), vortices->begin() + wake_offset,
+    //           rings.bound_vortices().begin());
     internal::OutputSnapshot2(step, t);
     if (output_load_path.size()) {
       internal::CalcLoadProcess(t, dt);
     }
     if (step == steps) break;
 
-    auto shed = internal::ShedProcess(dt);
-    internal::AdvectProcess(dt);
+    // auto shed = internal::ShedProcess(dt);
+    // internal::AdvectProcess(dt);
     internal::MorphingProcess(t);
-    internal::AppendShedProcess(&shed);
-
-    // TODO remove rings
-    rings.wake_vortices().resize(vortices->size() - wake_offset);
-    std::copy(vortices->begin() + wake_offset, vortices->end(),
-              rings.wake_vortices().begin());
-
+    // internal::AppendShedProcess(&shed);
+    //
+    // // TODO remove rings
+    // rings.wake_vortices().resize(vortices->size() - wake_offset);
+    // std::copy(vortices->begin() + wake_offset, vortices->end(),
+    //           rings.wake_vortices().begin());
+    //
   }
 }
 
