@@ -86,9 +86,9 @@ Eigen::VectorXd SolveLinearProblem(InputIterator1 bound_first,
                                    const Morphing& morphing, const double t) {
   Eigen::MatrixXd A = internal::CalcMatrix(bound_first, bound_last);
   Eigen::VectorXd rhs =
-      internal::CalcRhsUpStream(Vinfty, bound_first, bound_last) +
-      internal::CalcRhsWake(bound_first, bound_last, wake_first, wake_last) -
-      internal::CalcRhsMorphing(bound_first, bound_last, morphing, t);
+      - internal::CalcRhsUpStream(Vinfty, bound_first, bound_last)
+      - internal::CalcRhsWake(bound_first, bound_last, wake_first, wake_last)
+      + internal::CalcRhsMorphing(bound_first, bound_last, morphing, t);
   Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
   if (!solver.isInvertible()) {
     LOG(FATAL) << "Matrix is not invertible.";

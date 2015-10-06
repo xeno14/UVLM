@@ -113,11 +113,14 @@ void AppendShedProcess(std::vector<std::vector<UVLM::VortexRing>>* shed) {
   }
 }
 
+/** 
+ * @todo multiple morphings
+ */
 void SolveLinearProblem(double t) {
   const std::size_t wake_offset = internal::WakeOffset();
   auto morphing = *(morphings.begin());
   auto gamma = ::UVLM::SolveLinearProblem(
-      vortices->begin(), vortices->begin() + wake_offset,
+      vortices->cbegin(), vortices->cbegin() + wake_offset,
       vortices->cbegin() + wake_offset, vortices->cend(), inlet, morphing, t);
   for (std::size_t i = 0; i < wake_offset; i++) {
     vortices->at(i).set_gamma(gamma(i));
