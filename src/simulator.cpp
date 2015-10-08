@@ -24,6 +24,7 @@
 #include <utility>
 
 DEFINE_string(run_name, "", "name of run");
+DEFINE_bool(disable_wake, false, "disable wake shedding");
 
 namespace {
 
@@ -222,16 +223,17 @@ void Start(const std::size_t steps, const double dt) {
     }
     if (step == steps) break;
 
-    auto shed = internal::ShedProcess(dt);
-    internal::AdvectProcess(dt);
-    internal::MorphingProcess(t);
-    internal::AppendShedProcess(&shed);
+    if (!FLAGS_disable_wake) {
+      auto shed = internal::ShedProcess(dt);
+      internal::AdvectProcess(dt);
+      internal::MorphingProcess(t);
+      internal::AppendShedProcess(&shed);
 
-    // TODO remove rings
-    rings.wake_vortices().resize(vortices->size() - wake_offset);
-    std::copy(vortices->begin() + wake_offset, vortices->end(),
-              rings.wake_vortices().begin());
-
+      // TODO remove rings
+      rings.wake_vortices().resize(vortices->size() - wake_offset);
+      std::copy(vortices->begin() + wake_offset, vortices->end(),
+                rings.wake_vortices().begin());
+    }
   }
 }
 

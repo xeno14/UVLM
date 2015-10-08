@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <cmath>
 
 #ifndef CHECK_OPEN
 #define CHECK_OPEN(fp)                                                         \
@@ -12,3 +13,7 @@
     std::exit(EXIT_FAILURE);                                                   \
   }
 #endif
+
+inline double DegToRad(double deg) {
+  return deg / 180.0 * M_PI;
+}
