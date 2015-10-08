@@ -21,3 +21,69 @@
   LOG(INFO) << "@param " << #node << "[\"" << #name << "\"]" \
             << ": " << PARAM_##name
 #endif
+
+#include <map>
+#include <string>
+
+namespace UVLM {
+namespace parameter {
+namespace internal {
+
+class Converter {
+ public:
+  virtual ~Converter() {}
+  virtual void convert(void* ptr, const YAML::Node& node) = 0;
+};
+
+class IntConverter : public Converter {
+ public:
+  virtual void convert(void* ptr, const YAML::Node& node) {
+    *((int*)ptr) = node.as<int>();
+  }
+};
+
+struct Param {
+  void* ptr;
+  Converter* converter;
+};
+
+class ParamManager {
+ private:
+  std::map<std::string, Param> params_;
+
+  ~ParamManager() {
+    for (auto it = params_.begin(); it != params_.end(); ++it) {
+      delete it->second.converter;
+    }
+  }
+
+ public:
+  static ParamManager& instance() {
+    static ParamManager p;
+    return p;
+  }
+
+  void Register(std::string name, void* ptr, Converter* converter) {
+    params_[name] = Param{ptr, converter};
+  }
+};
+
+class Registerer {
+ public:
+  template <class T>
+  Registerer(const char* name, T* ptr, Converter* converter) {
+    ParamManager::instance().Register(name, (void*)ptr, converter);
+  }
+};
+
+}  // namespace internal
+
+void InitParam(const YAML::Node& node);
+
+}  // namespace parameter
+}  // namespace UVLM
+
+#define DEFINE_PARAM_int(name, default_value)                              \
+  int PARAM_##name = default_value;                                        \
+  UVLM::parameter::internal::Registerer _UVLM_parameter_Registerer_##name( \
+      #name, &PARAM_##name, new IntConverter());
