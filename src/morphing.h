@@ -33,9 +33,8 @@ class Morphing {
    *  @param x0 reference frameでの座標
    *  @param t  時刻
    */
-  void Perfome(Eigen::Vector3d* x,
-               const Eigen::Vector3d& x0, const double t,
-               const double dt) const;
+  void Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& x0,
+               const double t) const;
 
   /** @brief 変形速度
    *

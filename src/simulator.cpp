@@ -24,6 +24,7 @@
 #include <utility>
 
 DEFINE_string(run_name, "", "name of run");
+DEFINE_bool(disable_wake, false, "disable wake shedding");
 
 namespace {
 
@@ -86,11 +87,11 @@ auto ShedProcess(const double dt) {
   return shed;
 }
 
-void MorphingProcess(const double t, const double dt) {
+void MorphingProcess(const double t) {
   for (std::size_t i = 0; i < containers.size(); i++) {
     for (auto& vortex : containers[i]) {
       for (std::size_t j = 0; j < vortex.nodes().size(); j++) {
-        morphings[i].Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t, dt);
+        morphings[i].Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t);
       }
     }
   }
@@ -113,11 +114,14 @@ void AppendShedProcess(std::vector<std::vector<UVLM::VortexRing>>* shed) {
   }
 }
 
+/** 
+ * @todo multiple morphings
+ */
 void SolveLinearProblem(double t) {
   const std::size_t wake_offset = internal::WakeOffset();
   auto morphing = *(morphings.begin());
   auto gamma = ::UVLM::SolveLinearProblem(
-      vortices->begin(), vortices->begin() + wake_offset,
+      vortices->cbegin(), vortices->cbegin() + wake_offset,
       vortices->cbegin() + wake_offset, vortices->cend(), inlet, morphing, t);
   for (std::size_t i = 0; i < wake_offset; i++) {
     vortices->at(i).set_gamma(gamma(i));
@@ -148,8 +152,6 @@ void OutputSnapshot2(const std::size_t step, const double t) {
 }
 
 void CalcLoadProcess(const double t, const double dt) {
-  containers_prev.resize(containers.size());
-  CopyContainers(containers.begin(), containers.end(), containers_prev.begin());
   std::vector<Eigen::Vector3d> loads;
   std::stringstream line;
   for (std::size_t i=0; i<containers.size(); i++) {
@@ -157,14 +159,15 @@ void CalcLoadProcess(const double t, const double dt) {
     const auto& c_prev = containers_prev[i];
     const auto& m = morphings[i];
     const double rho = 1;
+    const double S = c.chord() * c.span();
     auto wake = GetWake(containers);
-    auto load = CalcLoad(c, c_prev, wake.first, wake.second, m, inlet, rho,
-        t, dt);
+    auto load = UVLM::calc_load::CalcLoad(c, c_prev, wake.first, wake.second, m,
+                                          inlet, rho, t, dt);
     const double U = inlet.norm();
-    auto coeff = load.F / (0.5 * rho * U * U); 
+    auto coeff = load.F / (0.5 * rho * U * U * S);
 
     line << t << "\t" << coeff.x() << "\t" << coeff.y() << "\t" << coeff.z()
-      << "\t" << load.Pin << "\t" << load.Pout << std::endl;
+      << "\t" << load.Pin << "\t" << load.Pout;
   }
   std::ofstream ofs(output_load_path, std::ios::app);
   CHECK((bool)ofs) << "Unable to open " << output_load_path;
@@ -195,14 +198,18 @@ void Start(const std::size_t steps, const double dt) {
   internal::CreateContainers();
   rings.bound_vortices() = *vortices;
 
-  // LOG(INFO) << FLAGS_run_name << " "  << "Morphing for initial condition";
-  // internal::MorphingProcess(t, dt);
+  internal::MorphingProcess(0);
 
   // Main loop
-  for (std::size_t step = 0; step < steps; ++step) {
+  for (std::size_t step = 1; step <= steps; ++step) {
     LOG(INFO) << FLAGS_run_name << " " << "step: " << step;
     const double t = dt * step;
     const std::size_t wake_offset = internal::WakeOffset();
+
+    // Save circulations of bound vortices at the previous step
+    containers_prev.resize(containers.size());
+    CopyContainers(containers.begin(), containers.end(),
+                   containers_prev.begin());
 
     // 連立方程式を解いて翼の上の循環を求める
     internal::SolveLinearProblem(t);
@@ -216,15 +223,17 @@ void Start(const std::size_t steps, const double dt) {
     }
     if (step == steps) break;
 
-    auto shed = internal::ShedProcess(dt);
-    internal::AdvectProcess(dt);
-    internal::MorphingProcess(t, dt);
-    internal::AppendShedProcess(&shed);
+    if (!FLAGS_disable_wake) {
+      auto shed = internal::ShedProcess(dt);
+      internal::AdvectProcess(dt);
+      internal::MorphingProcess(t);
+      internal::AppendShedProcess(&shed);
 
-    // TODO remove rings
-    rings.wake_vortices().resize(vortices->size() - wake_offset);
-    std::copy(vortices->begin() + wake_offset, vortices->end(),
-              rings.wake_vortices().begin());
+      // TODO remove rings
+      rings.wake_vortices().resize(vortices->size() - wake_offset);
+      std::copy(vortices->begin() + wake_offset, vortices->end(),
+                rings.wake_vortices().begin());
+    }
   }
 }
 

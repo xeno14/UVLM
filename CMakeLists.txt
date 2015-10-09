@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.0)
 SET(CMAKE_CXX_FLAGS_RELEASE "-O2")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 SET(CMAKE_BUILD_TYPE Release)
-add_definitions("-Wall -std=c++14")
+add_definitions("-Wall -std=c++14 -static")
 # set(CMAKE_VERBOSE_MAKEFILE 1)
 
 ###########################################################
@@ -122,9 +122,25 @@ target_link_libraries(flapping_validation uvlm wing protobuf glog yaml-cpp)
 add_executable(plunging_validation src/validation/plunging_validation.cpp)
 target_link_libraries(plunging_validation uvlm wing protobuf glog yaml-cpp)
 
+add_executable(fixed_plate src/validation/fixed_plate.cpp)
+target_link_libraries(fixed_plate uvlm wing protobuf glog yaml-cpp)
+
+add_executable(2d_velocity src/tools/2d_velocity_main.cpp)
+target_link_libraries(2d_velocity uvlm protobuf glog)
+
 ###########################################################
 # install
 ###########################################################
 install (
-  TARGETS morphing_viewer result_to_gnuplot result_to_vtk naca00XX validation flapping_validation plunging_validation calc_load
+  TARGETS
+  morphing_viewer
+  result_to_gnuplot
+  result_to_vtk
+  naca00XX
+  validation
+  flapping_validation
+  plunging_validation
+  fixed_plate
+  calc_load
+  2d_velocity
   DESTINATION /usr/local/bin)

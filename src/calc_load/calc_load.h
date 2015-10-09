@@ -14,76 +14,79 @@
 #include "../morphing.h"
 
 namespace UVLM {
+namespace calc_load {
+namespace internal {
 
-inline void MatrixForLocalUnitVector(Eigen::Matrix3d* m,
-    const Eigen::Vector3d& n, const Eigen::Vector3d& t, const double alpha) {
-  Eigen::Vector3d q = t.cross(n);
-  Eigen::Matrix3d T;
-  T << t.x(), n.x(), q.x(),
-       t.y(), n.y(), q.y(),
-       t.z(), n.z(), q.z();
-  // In Ghommem's article, T_alpha here is transposed.
-  Eigen::Matrix3d T_alpha;
-  T_alpha << cos(alpha), -sin(alpha), 0,
-             sin(alpha),  cos(alpha), 0,
-              0,          0,          1;
-  *m = T * T_alpha * T.transpose();
+inline Eigen::Matrix3d CalcProjectionOperator(const Eigen::Vector3d& Um) {
+  Eigen::Vector3d Um_ = Um; // normalized vector
+  Um_.normalize();
+  return Eigen::Matrix3d::Identity() - Um_ * Um_.transpose();
 }
 
-inline void LocalUnitVector(Eigen::Vector3d* e_lift, Eigen::Vector3d* e_drag,
-                            const Eigen::Vector3d& n, const Eigen::Vector3d& t,
-                            const double alpha) {
-  Eigen::Matrix3d m;
-  MatrixForLocalUnitVector(&m, n, t, alpha);
-  *e_lift = m * n;
-  *e_drag = m * t;
+/**
+ * @brief Calc velocity contribution from the surface motion
+ */
+inline Eigen::Vector3d CalcUm(const Morphing& morphing,
+                              const Eigen::Vector3d& x0, 
+                              const Eigen::Vector3d& freestream,
+                              const double t) {
+  Eigen::Vector3d res;
+  morphing.Velocity(&res, x0, t);
+  res = freestream - res;
+  return res;
 }
 
-template <class InputIterator>
-double CalcDragOnPanel(const std::size_t i, const std::size_t j,
-              const VortexContainer& vb, const VortexContainer& vb_prev,
-              InputIterator wake_first, InputIterator wake_last,
-              const Morphing& morphing, const Eigen::Vector3d& inlet,
-              const double rho, const double t, const double dt) {
-  // calc for angle of attack
-  Eigen::Vector3d V_kinematic;
-  morphing.Velocity(&V_kinematic, vb.at(i, j).ReferenceCentroid(), t);
-  V_kinematic -= inlet;   // -inlet = forward flight
-  const double alpha = vb.at(i, j).AngleOfAttack(V_kinematic);
-
-  // calc for induced velocity due to wake vortices
-  Eigen::Vector3d V_wake;
-  const Eigen::Vector3d centroid = vb.at(i, j).Centroid();
-  InducedVelocity(&V_wake, centroid, wake_first, wake_last);
-
-  // Calc for V_ind
-  Eigen::Vector3d V_ind;
-  ChordwiseInducedVelocity(&V_ind, centroid, vb.cbegin(), vb.cend());
-
-  const double induced = vb.at(i, j).Normal().dot((V_ind + V_wake));
-
-  const double C = vb.at(i, j).CalcC();
-  const double B = vb.at(i, j).CalcB();
-  const double dS = C * B;
-  const double dg_dx =
-      (i == 0 ? vb.at(i, j).gamma()
-              : vb.at(i, j).gamma() - vb.at(i - 1, j).gamma()) / C;
-  const double dg_dt = (vb.at(i, j).gamma() - vb_prev.at(i, j).gamma()) / dt;
-
-  return rho * dS * (induced * dg_dx + dg_dt * sin(alpha));
+inline double CalcChordwiseDGamma(const std::size_t i, const std::size_t j,
+                                  const VortexContainer& vb) {
+  return i == 0 ? vb.at(i, j).gamma()
+                : vb.at(i, j).gamma() - vb.at(i - 1, j).gamma();
 }
 
-inline double CalcPinOnPanel(const Eigen::Vector3d& dF,
-                             const Eigen::Vector3d& normal,
-                             const Eigen::Vector3d& V_motion) {
-  return dF.dot(normal) * normal.dot(V_motion);
+inline double CalcSpanwiseDGamma(const std::size_t i, const std::size_t j,
+                                 const VortexContainer& vb) {
+  return j == 0 ? vb.at(i, j).gamma()
+                : vb.at(i, j).gamma() - vb.at(i, j - 1).gamma();
 }
 
-inline double CalcPout(const Eigen::Vector3d& F, const Eigen::Vector3d& inlet) {
-  Eigen::Vector3d unit = inlet;
-  unit.normalize();
-  return inlet.norm() * F.dot(unit);
+inline double CalcGammaTimeDerivate(const VortexRing& v, const VortexRing& v_prev,
+    const double dt) {
+  return (v.gamma() - v_prev.gamma()) / dt;
 }
+
+inline double CalcLocalLift(const std::size_t i, const std::size_t j,
+                           const VortexContainer& vb,
+                           const VortexContainer& vb_prev,
+                           const Eigen::Vector3d& Um, const Eigen::Vector3d& Uw,
+                           const double alpha,
+                           const double rho, const double dt) {
+  const VortexRing& v = vb.at(i, j);
+  const VortexRing& v_prev = vb_prev.at(i, j);
+  const double b = v.CalcB();
+  const double c = v.CalcC();
+  // -1: direction of gamma is opposite to the articles
+  return rho * b * c * cos(alpha) *
+         ((Um + Uw).dot(v.TanVecChord()) * CalcChordwiseDGamma(i, j, vb) / c +
+          (Um + Uw).dot(v.TanVecSpan()) * CalcSpanwiseDGamma(i, j, vb) / b +
+          CalcGammaTimeDerivate(v, v_prev, dt));
+}
+
+inline double CalcLocalDrag(const std::size_t i, const std::size_t j,
+                           const VortexContainer& vb,
+                           const VortexContainer& vb_prev,
+                           const Eigen::Matrix3d& P,
+                           const Eigen::Vector3d& Ubc, const Eigen::Vector3d& Uw,
+                           const double alpha,
+                           const double rho, const double dt) {
+  const VortexRing& v = vb.at(i, j);
+  const VortexRing& v_prev = vb_prev.at(i, j);
+  const double b = v.CalcB();
+  const double c = v.CalcC();
+  return rho * (
+      -(Ubc + Uw).dot(P * v.Normal()) * CalcChordwiseDGamma(i, j, vb) * b +
+      CalcGammaTimeDerivate(v, v_prev, dt) * b * c * sin(alpha));
+}
+
+}  // namespace internal
 
 struct AerodynamicLoad {
   Eigen::Vector3d F;
@@ -91,103 +94,40 @@ struct AerodynamicLoad {
 };
 
 template <class InputIterator>
-void CalcLoadOnPanel(Eigen::Vector3d* dL, Eigen::Vector3d* dD, double* dPin,
-                     const std::size_t i, const std::size_t j,
-                     const VortexContainer& vb, const VortexContainer& vb_prev,
-                     InputIterator wake_first, InputIterator wake_last,
-                     const Morphing& morphing, const Eigen::Vector3d& inlet,
-                     const double rho, const double t, const double dt) {
-  // calc for angle of attack
-  Eigen::Vector3d V_kinematic;
-  morphing.Velocity(&V_kinematic, vb.at(i, j).ReferenceCentroid(), t);
-  V_kinematic -= inlet;   // -inlet is equivalent to forward flight
-  const double alpha = vb.at(i, j).AngleOfAttack(V_kinematic);
-
-  // calc for unit vectors
-  const Eigen::Vector3d n = vb.at(i, j).Normal();
-  Eigen::Vector3d e_lift, e_drag;
-  LocalUnitVector(&e_lift, &e_drag, n, vb.at(i, j).Tangent(), alpha);
-
-  // calc for induced velocity due to wake vortices
-  Eigen::Vector3d V_wake;
-  const Eigen::Vector3d centroid = vb.at(i, j).Centroid();
-  InducedVelocity(&V_wake, centroid, wake_first, wake_last);
-
-  // Calc for V_ind
-  Eigen::Vector3d V_ind;
-  ChordwiseInducedVelocity(&V_ind, centroid, vb.cbegin(), vb.cend());
-
-  const double induced = n.dot((V_ind + V_wake));
-  const double v_k = n.dot(V_kinematic);
-
-  const double C = vb.at(i, j).CalcC();
-  const double B = vb.at(i, j).CalcB();
-  const double dS = C * B;
-  const double dg_dx =
-      (i == 0 ? vb.at(i, j).gamma()
-              : vb.at(i, j).gamma() - vb.at(i - 1, j).gamma()) / C;
-  const double dg_dt = (vb.at(i, j).gamma() - vb_prev.at(i, j).gamma()) / dt;
-
-  *dL = e_lift * rho * dS * (v_k * dg_dx + dg_dt) * cos(alpha);
-  *dD = e_drag * rho * dS * (induced * dg_dx + dg_dt * sin(alpha));
-  *dPin = CalcPinOnPanel(*dL + *dD, n, V_kinematic);
-}
-
-/**
- * パネルi,jでの圧力差を求める
- */
-template <class InputIterator>
-double CalcDP(const std::size_t i, const std::size_t j,
-              const VortexContainer& vb, const VortexContainer& vb_prev,
-              InputIterator wake_first, InputIterator wake_last,
-              const Morphing& morphing, const Eigen::Vector3d& inlet,
-              const double rho, const double t, const double dt) {
-  Eigen::Vector3d vw;  // wakeによって作られた流れ
-  Eigen::Vector3d centroid = vb.at(i, j).Centroid();
-  InducedVelocity(&vw, centroid, wake_first, wake_last);
-  Eigen::Vector3d v_morphing;
-  morphing.Velocity(&v_morphing, centroid, t);
-  const Eigen::Vector3d V = inlet - v_morphing + vw;
-
-  // 端っこのパネルでは差を使わない
-  const double dg_dx =
-      (i == 0 ? vb.at(i, j).gamma()
-              : vb.at(i, j).gamma() - vb.at(i - 1, j).gamma()) /
-      vb.at(i, j).CalcC();
-  const double dg_dy =
-      (j == 0 ? vb.at(i, j).gamma()
-              : vb.at(i, j).gamma() - vb.at(i, j - 1).gamma()) /
-      vb.at(i, j).CalcB();
-  const double dg_dt = (vb.at(i, j).gamma() - vb_prev.at(i, j).gamma()) / dt;
-
-  return rho * (V.dot(vb.at(i, j).TanVecChord()) * dg_dx +
-                V.dot(vb.at(i, j).TanVecSpan()) * dg_dy + dg_dt);
-}
-
-template <class InputIterator>
-auto CalcLoad(const VortexContainer& vb,
+AerodynamicLoad CalcLoad(const VortexContainer& vb,
                          const VortexContainer& vb_prev,
                          InputIterator wake_first, InputIterator wake_last,
-                         const Morphing& morphing, const Eigen::Vector3d& inlet,
+                         const Morphing& morphing, const Eigen::Vector3d& freestream,
                          const double rho, const double t, const double dt) {
   Eigen::Vector3d F = Eigen::Vector3d::Zero();
-  double Pin=0, Pout;
   for (std::size_t i = 0; i < vb.rows(); i++) {
     for (std::size_t j = 0; j < vb.cols(); j++) {
-      Eigen::Vector3d dL, dD;
-      double dPin;
-      CalcLoadOnPanel(&dL, &dD, &dPin, i, j, vb, vb_prev, wake_first, wake_last,
-                      morphing, inlet, rho, t, dt);
-      const Eigen::Vector3d dF = dL + dD;
-      F += dF;
-      Pin += dPin;
+      const Eigen::Vector3d centroid = vb.at(i, j).Centroid();
+      const Eigen::Vector3d normal = vb.at(i, j).Normal();
+
+      const Eigen::Vector3d Um =
+          internal::CalcUm(morphing, centroid, freestream, t);
+      const Eigen::Matrix3d P = internal::CalcProjectionOperator(Um);
+      Eigen::Vector3d Ubc, Uw;
+      ChordwiseInducedVelocity(&Ubc, centroid, vb.cbegin(), vb.cend());
+      InducedVelocity(&Uw, centroid, wake_first, wake_last);
+      const double alpha = vb.at(i, j).AngleOfAttack(Um);
+
+      const double Llocal =
+          internal::CalcLocalLift(i, j, vb, vb_prev, Um, Uw, alpha, rho, dt);
+      const double Dlocal = internal::CalcLocalDrag(i, j, vb, vb_prev, P, Ubc,
+                                                    Uw, alpha, rho, dt);
+
+      Eigen::Vector3d Um_ = Um;
+      Um_.normalize();
+
+      F += Um_ * Dlocal + P * normal * Llocal;
     }
   }
-  Pout = CalcPout(F, inlet);
-
-  AerodynamicLoad res {F, Pin, Pout};
-  return res;
+  return AerodynamicLoad {F, 0, 0};
 }
+
+}  // namespace calc_load
 
 namespace calc_load {
 namespace internal {
