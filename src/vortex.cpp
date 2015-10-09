@@ -133,4 +133,13 @@ double VortexRing::CalcB() const {
   return (this->nodes()[0] - this->nodes()[3]).norm();
 }
 
+void VortexRing::ForEachSegment(
+    std::function<void(const Eigen::Vector3d&, const Eigen::Vector3d&)> func) {
+  for (std::size_t i = 0; i < nodes_.size(); i++) {
+    const Vector3d& start = nodes_[(i + 1) % nodes_.size()];
+    const Vector3d& end = nodes_[i];
+    func(start, end);
+  }
+}
+
 }  // namespace UVLM

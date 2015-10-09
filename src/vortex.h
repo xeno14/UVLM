@@ -116,13 +116,7 @@ class VortexRing {
    * func(const Eigen::Vector3d& start, const Eigen::Vector3d& end)
    */
   void ForEachSegment(std::function<void(const Eigen::Vector3d&,
-                                         const Eigen::Vector3d&)> func) {
-    for (std::size_t i = 0; i < nodes_.size(); i++) {
-      const Vector3d& start = nodes_[(i + 1) % nodes_.size()];
-      const Vector3d& end = nodes_[i];
-      func(start, end);
-    }
-  }
+                                         const Eigen::Vector3d&)> func);
 
   /**
    * angle of attack
