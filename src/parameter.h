@@ -32,12 +32,12 @@ namespace internal {
 class Converter {
  public:
   virtual ~Converter() {}
-  virtual void convert(void* ptr, const YAML::Node& node) = 0;
+  virtual void Convert(void* ptr, const YAML::Node& node) = 0;
 };
 
 class IntConverter : public Converter {
  public:
-  virtual void convert(void* ptr, const YAML::Node& node) {
+  virtual void Convert(void* ptr, const YAML::Node& node) {
     *((int*)ptr) = node.as<int>();
   }
 };
@@ -66,6 +66,15 @@ class ParamManager {
   void Register(std::string name, void* ptr, Converter* converter) {
     params_[name] = Param{ptr, converter};
   }
+
+  void InitParam(const YAML::Node& node) {
+    for (auto it=params_.begin(); it!=params_.end(); ++it) {
+      std::string key = it->first;
+      auto* value_ptr = it->second.ptr;
+      auto* converter = it->second.converter;
+      converter->Convert(value_ptr, node);
+    }
+  }
 };
 
 class Registerer {
@@ -86,4 +95,4 @@ void InitParam(const YAML::Node& node);
 #define DEFINE_PARAM_int(name, default_value)                              \
   int PARAM_##name = default_value;                                        \
   UVLM::parameter::internal::Registerer _UVLM_parameter_Registerer_##name( \
-      #name, &PARAM_##name, new IntConverter());
+      #name, &PARAM_##name, new UVLM::parameter::internal::IntConverter());

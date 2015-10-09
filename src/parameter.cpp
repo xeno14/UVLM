@@ -9,7 +9,7 @@ namespace UVLM {
 namespace parameter {
 
 void InitParam(const YAML::Node& node) {
-  // loop for key and value
+  internal::ParamManager::instance().InitParam(node);
 }
 
 }  // namespace parameter
