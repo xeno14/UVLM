@@ -61,7 +61,7 @@ class VortexRingTest : public ::testing::Test {
   virtual void TearDown() { ring.Clear(); }
   UVLM::VortexRing ring;
 
-  UVLM::VortexRing GetSquaredRing(double l) {
+  UVLM::VortexRing GetSquareRing(double l) {
     UVLM::VortexRing res;
     res.PushNode(Vector3d(0, 0, 0))
        .PushNode(Vector3d(l, 0, 0))
@@ -113,24 +113,41 @@ TEST_F(VortexRingTest, ChordwiseBiotSavartLaw) {
 }
 
 TEST_F(VortexRingTest, Normal) {
-  auto v = GetSquaredRing(20000);
+  auto v = GetSquareRing(20000);
   auto n = v.Normal();
   EXPECT_VECTOR3D_EQ(0, 0, 1, n);
 }
 
 TEST_F(VortexRingTest, Tangent) {
-  auto v = GetSquaredRing(20000);
+  auto v = GetSquareRing(20000);
   auto t = v.Tangent();
   EXPECT_VECTOR3D_EQ(1, 0, 0, t);
 }
 
 TEST_F(VortexRingTest, AngleOfAttack) {
-  auto v = GetSquaredRing(1);
+  auto v = GetSquareRing(1);
   const double alpha = 0.1;
   Vector3d Q = {cos(alpha), 0 , sin(alpha)};
   EXPECT_DOUBLE_EQ(alpha, v.AngleOfAttack(Q));
 }
 
+TEST_F(VortexRingTest, ForEach) {
+  auto v = GetSquareRing(1);
+  std::vector<Eigen::Vector3d> starts;
+  std::vector<Eigen::Vector3d> ends;
+  v.ForEachSegment([&](const auto& start, const auto& end) {
+    starts.emplace_back(start);
+    ends.emplace_back(end);
+  });
+  EXPECT_VECTOR3D_EQ(1, 0, 0, starts[0]);
+  EXPECT_VECTOR3D_EQ(0, 0, 0, ends[0]);
+  EXPECT_VECTOR3D_EQ(1, 1, 0, starts[1]);
+  EXPECT_VECTOR3D_EQ(1, 0, 0, ends[1]);
+  EXPECT_VECTOR3D_EQ(0, 1, 0, starts[2]);
+  EXPECT_VECTOR3D_EQ(1, 1, 0, ends[2]);
+  EXPECT_VECTOR3D_EQ(0, 0, 0, starts[3]);
+  EXPECT_VECTOR3D_EQ(0, 1, 0, ends[3]);
+}
 
 class ChordSpanTest : public ::testing::Test {
  protected:
