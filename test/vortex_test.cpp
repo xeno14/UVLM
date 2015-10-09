@@ -95,7 +95,7 @@ TEST_F(VortexRingTest, BiotSavartLaw) {
   ring.BiotSavartLaw(&result, pos);
   EXPECT_DOUBLE_EQ(0, result.x());
   EXPECT_DOUBLE_EQ(0, result.y());
-  EXPECT_DOUBLE_EQ(4*M_SQRT2, result.z());
+  EXPECT_DOUBLE_EQ(-4*M_SQRT2, result.z());
 }
 
 TEST_F(VortexRingTest, ChordwiseBiotSavartLaw) {
@@ -109,7 +109,7 @@ TEST_F(VortexRingTest, ChordwiseBiotSavartLaw) {
   ring.ChordwiseBiotSavartLaw(&result, pos);
   EXPECT_DOUBLE_EQ(0, result.x());
   EXPECT_DOUBLE_EQ(0, result.y());
-  EXPECT_DOUBLE_EQ(2*M_SQRT2, result.z());
+  EXPECT_DOUBLE_EQ(-2*M_SQRT2, result.z());
 }
 
 TEST_F(VortexRingTest, Normal) {
