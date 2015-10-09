@@ -26,6 +26,7 @@
 
 DEFINE_string(run_name, "", "name of run");
 DEFINE_bool(disable_wake, false, "disable wake shedding");
+DEFINE_bool(use_joukowski, false, "force calculation method");
 
 namespace {
 
@@ -162,8 +163,14 @@ void CalcLoadProcess(const double t, const double dt) {
     const double rho = 1;
     const double S = c.chord() * c.span();
     auto wake = GetWake(containers);
-    auto load = UVLM::calc_load::CalcLoadJoukowski(
-        c, c_prev, wake.first, wake.second, m, inlet, rho, t, dt);
+    Eigen::Vector3d load;
+    if (FLAGS_use_joukowski) {
+      load = UVLM::calc_load::CalcLoadJoukowski(
+          c, c_prev, wake.first, wake.second, m, inlet, rho, t, dt);
+    } else {
+      load = UVLM::calc_load::CalcLoad(c, c_prev, wake.first, wake.second, m,
+                                       inlet, rho, t, dt);
+    }
     const double U = inlet.norm();
     auto coeff = load.F / (0.5 * rho * U * U * S);
 
