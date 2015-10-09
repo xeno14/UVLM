@@ -96,6 +96,7 @@ add_library(wing
             ${PROTO_DIR}/uvlm.pb.cc
             src/wing/rect.cpp
             src/wing/naca00XX.cpp)
+enable_gflags(wing)          
 target_link_libraries(wing protobuf)
 
 add_executable(naca00XX src/wing/naca00XX_main.cpp)
