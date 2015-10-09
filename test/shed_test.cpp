@@ -24,13 +24,14 @@ TEST_F(InducedVelocityTest, many_rings) {
   for (std::size_t i = 0; i < N; i++) {
     rings.emplace_back(v);
   }
+  ASSERT_EQ(20, rings.size());
 
   Eigen::Vector3d pos(0, 0, 0);
 
-  // 4sqrt(2)の流れがN個重ねあわせる
+  // -4sqrt(2)の流れがN個重ねあわせる
   Eigen::Vector3d res;
   InducedVelocity(&res, pos, rings.begin(), rings.end());
-  EXPECT_VECTOR3D_EQ(0, 0, N * 4 * M_SQRT2, res);
+  EXPECT_VECTOR3D_EQ(0, 0, -4 * M_SQRT2 * N, res);
 }
 
 TEST_F(InducedVelocityTest, chordwise_many_rings) {
@@ -45,5 +46,5 @@ TEST_F(InducedVelocityTest, chordwise_many_rings) {
   // 2sqrt(2)の流れがN個重ねあわせる
   Eigen::Vector3d res;
   ChordwiseInducedVelocity(&res, pos, rings.begin(), rings.end());
-  EXPECT_VECTOR3D_EQ(0, 0, N * 4 * M_SQRT2 / 2, res);
+  EXPECT_VECTOR3D_EQ(0, 0, -4 * M_SQRT2 / 2 * N, res);
 }

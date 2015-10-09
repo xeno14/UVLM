@@ -35,7 +35,7 @@ void AdvectWake(OutputIterator wake_first, OutputIterator wake_last,
 }
 
 template <class InputIterator>
-void InducedVelocity(Eigen::Vector3d* const result,
+void InducedVelocity(Eigen::Vector3d* result,
                      const Eigen::Vector3d& pos,
                      InputIterator first, InputIterator last) {
   *result = Eigen::Vector3d::Zero();
