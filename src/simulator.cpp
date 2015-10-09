@@ -7,6 +7,7 @@
 
 #include "../proto/uvlm.pb.h"
 #include "calc_load/calc_load.h"
+#include "calc_load/joukowski.h"
 #include "uvlm_vortex_ring.h"
 #include "morphing.h"
 #include "linear.h"
@@ -161,8 +162,8 @@ void CalcLoadProcess(const double t, const double dt) {
     const double rho = 1;
     const double S = c.chord() * c.span();
     auto wake = GetWake(containers);
-    auto load = UVLM::calc_load::CalcLoad(c, c_prev, wake.first, wake.second, m,
-                                          inlet, rho, t, dt);
+    auto load = UVLM::calc_load::CalcLoadJoukowski(
+        c, c_prev, wake.first, wake.second, m, inlet, rho, t, dt);
     const double U = inlet.norm();
     auto coeff = load.F / (0.5 * rho * U * U * S);
 

@@ -25,9 +25,9 @@ void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
   Eigen::Vector3d pos, U;
   v.ForEachSegment([&](const auto& start, const auto& end) {
     pos = (start + end) / 2;
-    BiotSavartLaw(&U, vortex_first, vortex_last, pos);
+    InducedVelocity(&U, pos, vortex_first, vortex_last);
     U += freestream;
-    *result += U.cross(end - start) * rho * v.gamma()
+    *result += U.cross(end - start) * rho * v.gamma();
   });
 }
 
