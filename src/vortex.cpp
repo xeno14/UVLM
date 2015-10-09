@@ -47,7 +47,7 @@ void VortexRing::BiotSavartLaw(Vector3d* result, const Vector3d& pos,
   *result = ::Eigen::Vector3d::Zero();
   Vector3d tmp;
   this->ForEachSegment(
-      [&tmp, result, &pos, gamma](const auto& start, const auto& end) {
+      [&](const auto& start, const auto& end) {
         ::UVLM::BiotSavartLaw(&tmp, start, end, pos);
         *result += tmp;
       });
@@ -130,16 +130,6 @@ double VortexRing::CalcC() const {
 
 double VortexRing::CalcB() const {
   return (this->nodes()[0] - this->nodes()[3]).norm();
-}
-
-void VortexRing::ForEachSegment(
-    std::function<void(const Eigen::Vector3d&, const Eigen::Vector3d&)> func)
-    const {
-  for (std::size_t i = 0; i < nodes_.size(); i++) {
-    const Vector3d& start = nodes_[(i + 1) % nodes_.size()];
-    const Vector3d& end = nodes_[i];
-    func(start, end);
-  }
 }
 
 }  // namespace UVLM
