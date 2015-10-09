@@ -63,6 +63,7 @@ inline double CalcLocalLift(const std::size_t i, const std::size_t j,
   const VortexRing& v_prev = vb_prev.at(i, j);
   const double b = v.CalcB();
   const double c = v.CalcC();
+  // -1: direction of gamma is opposite to the articles
   return rho * b * c * cos(alpha) *
          ((Um + Uw).dot(v.TanVecChord()) * CalcChordwiseDGamma(i, j, vb) / c +
           (Um + Uw).dot(v.TanVecSpan()) * CalcSpanwiseDGamma(i, j, vb) / b +
