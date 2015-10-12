@@ -3,7 +3,14 @@
  * @brief Add description here
  */
 
+#include "../util.h"
 #include "rect.h"
+
+#include <algorithm>
+#include <gflags/gflags.h>
+
+DEFINE_bool(chebyshev_chord, false, "use chebyshev in chordwise direction");
+DEFINE_bool(chebyshev_span, false, "use chebyshev in spanwise direction");
 
 namespace UVLM {
 namespace wing {
@@ -15,13 +22,25 @@ void RectGenerator::Generate(UVLM::proto::Wing* wing) {
   const double span = span_;
   const int rows = rows_;
   const int cols = cols_;
-  const double dx = chord / rows;
-  const double dy = span / cols;
 
-  for (int i = 0; i <= rows; i++) {
-    for (int j = 0; j <= cols; j++) {
-      double x = i * dx;
-      double y = j * dy;
+  std::vector<double> xs(rows), ys(cols);
+  if (FLAGS_chebyshev_chord) {
+    auto theta = linspace(M_PI_2, 0, rows + 1);
+    std::transform(theta.begin(), theta.end(), xs.begin(),
+                   [span](double t) { return span * cos(t); });
+  } else {
+    xs = linspace(0, span, rows + 1);
+  }
+  if (FLAGS_chebyshev_span) {
+    auto theta = linspace(M_PI_2, 0, cols + 1);
+    std::transform(theta.begin(), theta.end(), ys.begin(),
+                   [chord](double t) { return chord * cos(t); });
+  } else {
+    ys = linspace(0, chord, cols + 1);
+  }
+
+  for (const double x : xs) {
+    for (const double y : ys) {
       double z = 0;
       auto* point = wing->add_points();
       point->set_x(x);
