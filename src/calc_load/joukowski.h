@@ -16,18 +16,17 @@ namespace calc_load {
 namespace internal {
 
 // unstready part
-template <class InputIterator>
-void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
-                            InputIterator vortex_first,
-                            InputIterator vortex_last,
-                            const Eigen::Vector3d& freestream,
-                            const double rho) {
-  Eigen::Vector3d pos, U;
-  v.ForEachSegment([&](const auto& start, const auto& end) {
+inline void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
+                            const Morphing& morphing,
+                            const Eigen::Vector3d& freestream, const double rho,
+                            const double t) {
+  Eigen::Vector3d pos, pos0, Um;
+  v.ForEachSegment([&](const auto& start, const auto& end, const auto& start0,
+                       const auto& end0) {
     pos = (start + end) / 2;
-    InducedVelocity(&U, pos, vortex_first, vortex_last);
-    U += freestream;
-    *result += U.cross(end - start) * rho * v.gamma();
+    pos0 = (start0 + end0) / 2;
+    Um = internal::CalcUm(morphing, pos0, freestream, t);
+    *result += Um.cross(end - start) * rho * v.gamma();
   });
 }
 
@@ -50,11 +49,10 @@ AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
                          const double rho, const double t, const double dt) {
   Eigen::Vector3d F = Eigen::Vector3d::Zero();
   Eigen::Vector3d dF_st, dF_unst;
-  const auto& vortices = vb.vortices();
   for (std::size_t i = 0; i < vb.rows(); i++) {
     for (std::size_t j = 0; j < vb.cols(); j++) {
-      internal::JoukowskiSteadyOnPanel(&dF_st, vb.at(i, j), vortices->begin(),
-                                       vortices->end(), freestream, rho);
+      internal::JoukowskiSteadyOnPanel(&dF_st, vb.at(i, j), morphing,
+                                       freestream, rho, t);
       internal::JoukowskiUnsteadyOnPanel(&dF_unst, vb.at(i, j),
                                          vb_prev.at(i, j), rho, dt);
       F += dF_st + dF_unst;

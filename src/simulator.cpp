@@ -163,7 +163,8 @@ void CalcLoadProcess(const double t, const double dt) {
     const double rho = 1;
     const double S = c.chord() * c.span();
     auto wake = GetWake(containers);
-    Eigen::Vector3d load;
+
+    UVLM::calc_load::AerodynamicLoad load;
     if (FLAGS_use_joukowski) {
       load = UVLM::calc_load::CalcLoadJoukowski(
           c, c_prev, wake.first, wake.second, m, inlet, rho, t, dt);
