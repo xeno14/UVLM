@@ -23,6 +23,10 @@ void BiotSavartLaw(Vector3d* result,
                    const Vector3d& start, const Vector3d& end,
                    const Vector3d& pos) {
   double h = DistanceLineAndPoint(start, end, pos);
+  if (h < 1e-10) {
+    *result = Eigen::Vector3d::Zero();
+    return;
+  }
 
   Vector3d direction = end - start;
   direction.normalize();
@@ -37,9 +41,9 @@ void BiotSavartLaw(Vector3d* result,
   *result *= (cos1 - cos2) / (4. * M_PI * h);
 
   // OMAJINAI
-  if (std::isnan(result->x()) || std::isnan(result->y()) ||
-      std::isnan(result->z()))
-    *result = Eigen::Vector3d::Zero();
+  // if (std::isnan(result->x()) || std::isnan(result->y()) ||
+  //     std::isnan(result->z()))
+  //   *result = Eigen::Vector3d::Zero();
 }
 
 void VortexRing::BiotSavartLaw(Vector3d* result, const Vector3d& pos,

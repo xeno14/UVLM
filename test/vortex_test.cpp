@@ -52,6 +52,26 @@ TEST_F(BiotSavartLawTest, finite_length) {
   EXPECT_NEAR(0, result.z(), EPS);
 }
 
+TEST_F(BiotSavartLawTest, midpoint) {
+  a << M_SQRT2, 2, M_PI;
+  b << 100, 2121, 12434;
+  c = (a + b) / 2;
+  UVLM::BiotSavartLaw(&result, a, b, c);
+  EXPECT_NEAR(0, result.norm(), EPS);
+}
+
+TEST_F(BiotSavartLawTest, endpoint) {
+  a << M_PI, M_SQRT2, -1;
+  b << 0, 0, 1;
+  c = a;
+  UVLM::BiotSavartLaw(&result, a, b, c);
+  EXPECT_NEAR(0, result.norm(), EPS);
+
+  c = b;
+  UVLM::BiotSavartLaw(&result, a, b, c);
+  EXPECT_NEAR(0, result.norm(), EPS);
+}
+
 
 class VortexRingTest : public ::testing::Test {
  protected:
