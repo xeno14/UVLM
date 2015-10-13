@@ -56,8 +56,9 @@ int main(int argc, char* argv[]) {
   const double alpha = DegToRad(PARAM_alpha);   // angle of attack
 
   UVLM::Morphing m;
+  m.set_alpha(-alpha);
   UVLM::simulator::AddWing(wing, m);
-  UVLM::simulator::SetInlet(U * cos(alpha), 0, U * sin(alpha));
+  UVLM::simulator::SetInlet(U, 0, 0);
   UVLM::simulator::SetOutputPath(FLAGS_output);
   UVLM::simulator::SetOutputLoadPath(FLAGS_output_load);
 
