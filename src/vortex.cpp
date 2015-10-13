@@ -19,31 +19,24 @@ double DistanceLineAndPoint(const Vector3d& start,
   return (diff - direction.dot(diff) * direction).norm();
 }
 
-void BiotSavartLaw(Vector3d* result,
-                   const Vector3d& start, const Vector3d& end,
+void BiotSavartLaw(Vector3d* result, const Vector3d& start, const Vector3d& end,
                    const Vector3d& pos) {
-  double h = DistanceLineAndPoint(start, end, pos);
-  if (h < 1e-10) {
+  // see Katz and Plotkin p.255
+  Eigen::Vector3d r0 = end - start;
+  Eigen::Vector3d r1 = pos - start;
+  Eigen::Vector3d r2 = pos - end;
+  Eigen::Vector3d d = r1.cross(r2);
+  double d_len = d.norm();
+  double r1_len = r1.norm();
+  double r2_len = r2.norm();
+  static const double eps = 1e-10;  // cut off length
+  if (d_len * d_len < eps || r1_len < eps || r2_len < eps) {
     *result = Eigen::Vector3d::Zero();
     return;
   }
-
-  Vector3d direction = end - start;
-  direction.normalize();
-
-  Vector3d diff1 = pos - start; diff1.normalize();
-  Vector3d diff2 = pos - end;   diff2.normalize();
-  double cos1 = diff1.dot(direction);
-  double cos2 = diff2.dot(direction);
-
-  *result = direction.cross(diff1);
-  result->normalize();
-  *result *= (cos1 - cos2) / (4. * M_PI * h);
-
-  // OMAJINAI
-  // if (std::isnan(result->x()) || std::isnan(result->y()) ||
-  //     std::isnan(result->z()))
-  //   *result = Eigen::Vector3d::Zero();
+  const double K = 1. / 4. / M_PI / d.squaredNorm() *
+                   r0.dot(r1 / r1.norm() - r2 / r2.norm());
+  *result = d * K;
 }
 
 void VortexRing::BiotSavartLaw(Vector3d* result, const Vector3d& pos,
