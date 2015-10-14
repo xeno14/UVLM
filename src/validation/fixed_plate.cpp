@@ -58,9 +58,11 @@ int main(int argc, char* argv[]) {
 
   UVLM::Morphing m;
   if (FLAGS_rotate_wing) {
+    LOG(INFO) << "rotate wing";
     m.set_alpha(alpha);
     UVLM::simulator::SetInlet(U, 0, 0);
   } else {
+    LOG(INFO) << "rotate free stream";
     UVLM::simulator::SetInlet(U * cos(alpha), 0, U * sin(alpha));
   }
   UVLM::simulator::AddWing(wing, m);
