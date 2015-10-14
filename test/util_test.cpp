@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "util.h"
+#include <algorithm>
 
 TEST(linspaceTest, plus) {
   auto x = linspace(-1, 1, 3);
@@ -14,4 +15,17 @@ TEST(linspaceTest, minus) {
   EXPECT_DOUBLE_EQ(1, x[0]);
   EXPECT_DOUBLE_EQ(0, x[1]);
   EXPECT_DOUBLE_EQ(-1, x[2]);
+}
+
+TEST(linspaceTest, cheby) {
+  auto theta = linspace(M_PI_2, 0, 10);
+  std::vector<double> x(theta.size());
+  EXPECT_DOUBLE_EQ(M_PI_2, *(theta.begin()));
+  EXPECT_DOUBLE_EQ(0, *(theta.rbegin()));
+  std::transform(theta.begin(), theta.end(), x.begin(),
+                 [](double t) { return cos(t); });
+  x[0] = 0;
+  x[1] = 1;
+  EXPECT_EQ(0, *(x.begin()));
+  EXPECT_EQ(1, *(x.rbegin()));
 }
