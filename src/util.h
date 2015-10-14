@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cmath>
+#include <utility>
 #include <vector>
 
 #ifndef CHECK_OPEN
@@ -24,6 +25,17 @@ inline std::vector<double> linspace(double a, double b, std::size_t N) {
   std::vector<double> res;
   for (std::size_t i = 0; i < N; i++) {
     res.push_back(a + i * dx);
+  }
+  return res;
+}
+
+inline std::vector<std::pair<std::size_t, std::size_t>> DoubleLoop(
+    std::size_t imax, std::size_t jmax) {
+  std::vector<std::pair<std::size_t, std::size_t>> res;
+  for (std::size_t i = 0; i < imax; ++i) {
+    for (std::size_t j = 0; j < jmax; ++j) {
+      res.emplace_back(i, j);
+    }
   }
   return res;
 }

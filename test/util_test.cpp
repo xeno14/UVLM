@@ -29,3 +29,19 @@ TEST(linspaceTest, cheby) {
   EXPECT_EQ(0, *(x.begin()));
   EXPECT_EQ(1, *(x.rbegin()));
 }
+
+TEST(DoubleLoop, test) {
+  auto result = DoubleLoop(2, 3);
+  EXPECT_EQ(0, result[0].first);
+  EXPECT_EQ(0, result[0].second);
+  EXPECT_EQ(0, result[1].first);
+  EXPECT_EQ(1, result[1].second);
+  EXPECT_EQ(0, result[2].first);
+  EXPECT_EQ(2, result[2].second);
+  EXPECT_EQ(1, result[3].first);
+  EXPECT_EQ(0, result[3].second);
+  EXPECT_EQ(1, result[4].first);
+  EXPECT_EQ(1, result[4].second);
+  EXPECT_EQ(1, result[5].first);
+  EXPECT_EQ(2, result[5].second);
+}
