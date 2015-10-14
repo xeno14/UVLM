@@ -31,7 +31,7 @@ inline void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
     pos0 = (start0 + end0) / 2;
     UVLM::InducedVelocity(&Um, pos, vortices_first, vortices_last);
     // U = Ub + Uw + Um + Uinfty
-    U = Um + internal::CalcUm(morphing, pos0, freestream, t) + freestream;
+    U = Um + internal::CalcUm(morphing, pos0, freestream, t);
     *result += U.cross(end - start) * rho * v.gamma();
   });
 }
