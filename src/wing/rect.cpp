@@ -27,14 +27,14 @@ void RectGenerator::Generate(UVLM::proto::Wing* wing) {
   if (FLAGS_chebyshev_chord) {
     auto theta = linspace(M_PI_2, 0, rows + 1);
     std::transform(theta.begin(), theta.end(), xs.begin(),
-                   [span](double t) { return span * cos(t); });
+                   [chord](double t) { return chord * cos(t); });
   } else {
     xs = linspace(0, chord, rows + 1);
   }
   if (FLAGS_chebyshev_span) {
     auto theta = linspace(M_PI_2, 0, cols + 1);
     std::transform(theta.begin(), theta.end(), ys.begin(),
-                   [chord](double t) { return chord * cos(t); });
+                   [span](double t) { return span * cos(t); });
   } else {
     ys = linspace(0, span, cols + 1);
   }
