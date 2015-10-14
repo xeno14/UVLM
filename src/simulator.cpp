@@ -99,9 +99,13 @@ void MorphingProcess(const double t) {
   }
 }
 
-void AdvectProcess(const double dt) {
+void AdvectProcess(std::vector<UVLM::VortexRing>* wake, const double dt) {
   const std::size_t wake_offset = WakeOffset();
-  UVLM::AdvectWake(vortices->begin() + wake_offset, vortices->end(),
+  wake->clear();
+  // copy current wake vortices
+  wake->insert(wake->begin(), vortices->cbegin() + wake_offset,
+               vortices->cend());
+  UVLM::AdvectWake(wake,
                    vortices->cbegin(), vortices->cend(), rings, inlet, dt);
 }
 
@@ -169,6 +173,7 @@ void CalcLoadProcess(const double t, const double dt) {
       load = UVLM::calc_load::CalcLoadJoukowski(
           c, c_prev, wake.first, wake.second, m, inlet, rho, t, dt);
     } else {
+      LOG(FATAL) << "CalcLoad in Katz-Plotkin method is deprecated";
       load = UVLM::calc_load::CalcLoad(c, c_prev, wake.first, wake.second, m,
                                        inlet, rho, t, dt);
     }
@@ -234,8 +239,12 @@ void Start(const std::size_t steps, const double dt) {
 
     if (!FLAGS_disable_wake) {
       auto shed = internal::ShedProcess(dt);
-      internal::AdvectProcess(dt);
+      std::vector<UVLM::VortexRing> wake_next;
+      internal::AdvectProcess(&wake_next, dt);
       internal::MorphingProcess(t);
+      // Renew wake vortices
+      std::copy(wake_next.cbegin(), wake_next.cend(),
+                vortices->begin() + wake_offset);
       internal::AppendShedProcess(&shed);
 
       // TODO remove rings

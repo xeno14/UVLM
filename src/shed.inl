@@ -21,17 +21,15 @@ void AdvectWakeImpl(OutputIterator wake_first, OutputIterator wake_last,
 
 }  // namespace internal
 
-template <class InputIterator, class OutputIterator>
-void AdvectWake(OutputIterator wake_first, OutputIterator wake_last,
+template <class InputIterator>
+void AdvectWake(std::vector<UVLM::VortexRing>* wake,
                 InputIterator vortices_first, InputIterator vortices_last,
                 const UVLMVortexRing& rings,
                 const Eigen::Vector3d& Vinfty, const double dt) {
-  std::vector<VortexRing> new_wake(wake_first, wake_last);
   // TODO こいつが悪い
   // internal::AdvectWakeImpl(new_wake.begin(), new_wake.end(), vortices_first,
   //                          vortices_last, Vinfty, dt);
-  internal::AdvectWakeImpl(&new_wake, rings, Vinfty, dt);
-  std::copy(new_wake.begin(), new_wake.end(), wake_first);
+  internal::AdvectWakeImpl(wake, rings, Vinfty, dt);
 }
 
 template <class InputIterator>

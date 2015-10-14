@@ -44,8 +44,8 @@ void AdvectWakeImpl(std::vector<VortexRing>* result,
                     const UVLMVortexRing& rings, const Eigen::Vector3d& Vinfty,
                     const double dt);
 
-template <class InputIterator, class OutputIterator>
-void AdvectWakeImpl(OutputIterator wake_first, OutputIterator wake_last,
+template <class InputIterator>
+void AdvectWakeImpl(std::vector<UVLM::VortexRing>* wake,
                     InputIterator vortices_first, InputIterator vortices_last,
                     const Eigen::Vector3d& Vinfty, const double dt);
 
