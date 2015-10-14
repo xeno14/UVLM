@@ -106,13 +106,6 @@ target_link_libraries(naca00XX wing)
 
 add_subdirectory(test)
 
-add_executable(validation
-               ${PROTO_DIR}/uvlm.pb.cc
-               src/wing/naca00XX.cpp
-               src/validation_main.cpp)
-enable_gflags(validation)
-target_link_libraries(validation uvlm wing protobuf glog yaml-cpp)
-
 add_executable(calc_load src/calc_load/calc_load_main.cpp)
 enable_gflags(calc_load)
 target_link_libraries(calc_load uvlm glog)
@@ -138,7 +131,6 @@ install (
   result_to_gnuplot
   result_to_vtk
   naca00XX
-  validation
   flapping_validation
   plunging_validation
   fixed_plate
