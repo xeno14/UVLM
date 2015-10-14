@@ -61,10 +61,10 @@ void Morphing::PrepareMatrix(Eigen::Matrix3d* m, const Eigen::Vector3d& x0,
           0, -sin(phi), cos(phi);
 
   Eigen::Matrix3d attack;
-  const double theta = alpha_;
-  attack << cos(theta), 0, -sin(theta),
+  const double alpha = alpha_;
+  attack << cos(alpha), 0, sin(alpha),
             0, 1, 0,
-            sin(theta), 0, cos(theta);
+           -sin(alpha), 0, cos(alpha);
 
   Eigen::Matrix3d twist;
   const double beta = twist_(x0, t);
