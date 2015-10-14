@@ -23,15 +23,19 @@ inline void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
                                    const Morphing& morphing,
                                    const Eigen::Vector3d& freestream,
                                    const double rho, const double t) {
-  Eigen::Vector3d pos, pos0;
-  Eigen::Vector3d U, Um;
+  Eigen::Vector3d mid, mid0;
+  Eigen::Vector3d U;    // velocity on the point
+  Eigen::Vector3d Um;   // velocity contribution from the surface motion
+  Eigen::Vector3d Uind; // induced velocity from all vortices
+  *result = Eigen::Vector3d::Zero();
   v.ForEachSegment([&](const auto& start, const auto& end, const auto& start0,
                        const auto& end0) {
-    pos = (start + end) / 2;
-    pos0 = (start0 + end0) / 2;
-    UVLM::InducedVelocity(&Um, pos, vortices_first, vortices_last);
-    // U = Ub + Uw + Um + Uinfty
-    U = Um + internal::CalcUm(morphing, pos0, freestream, t);
+    mid = (start + end) / 2;
+    mid0 = (start0 + end0) / 2;
+    UVLM::InducedVelocity(&Uind, mid, vortices_first, vortices_last);
+    // U = (Ub + Uw) + Um = Uind + Um
+    Um = internal::CalcUm(morphing, mid0, freestream, t);
+    U = Uind + Um;
     *result += U.cross(end - start) * rho * v.gamma();
   });
 }
