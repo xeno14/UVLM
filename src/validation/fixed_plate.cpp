@@ -16,6 +16,7 @@
 DEFINE_string(input, "", "setting yaml");
 DEFINE_string(output, "", "output path");
 DEFINE_string(output_load, "", "output load path");
+DEFINE_bool(rotate_wing, false, "rotate wing instead of freestream");
 
 namespace {
 YAML::Node config;
@@ -56,9 +57,13 @@ int main(int argc, char* argv[]) {
   const double alpha = DegToRad(PARAM_alpha);   // angle of attack
 
   UVLM::Morphing m;
-  m.set_alpha(alpha);
+  if (FLAGS_rotate_wing) {
+    m.set_alpha(alpha);
+    UVLM::simulator::SetInlet(U, 0, 0);
+  } else {
+    UVLM::simulator::SetInlet(U * cos(alpha), 0, U * sin(alpha));
+  }
   UVLM::simulator::AddWing(wing, m);
-  UVLM::simulator::SetInlet(U, 0, 0);
   UVLM::simulator::SetOutputPath(FLAGS_output);
   UVLM::simulator::SetOutputLoadPath(FLAGS_output_load);
 
