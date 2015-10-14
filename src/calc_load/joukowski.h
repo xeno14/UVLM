@@ -24,9 +24,9 @@ inline void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
                                    const Eigen::Vector3d& freestream,
                                    const double rho, const double t) {
   Eigen::Vector3d mid, mid0;
-  Eigen::Vector3d U;    // velocity on the point
-  Eigen::Vector3d Um;   // velocity contribution from the surface motion
-  Eigen::Vector3d Uind; // induced velocity from all vortices
+  Eigen::Vector3d U;     // velocity on the point
+  Eigen::Vector3d Um;    // velocity contribution from the surface motion
+  Eigen::Vector3d Uind;  // induced velocity from all vortices
   *result = Eigen::Vector3d::Zero();
   v.ForEachSegment([&](const auto& start, const auto& end, const auto& start0,
                        const auto& end0) {
@@ -62,8 +62,10 @@ AerodynamicLoad CalcLoadJoukowski(
   const auto& vortices = *vb.vortices();
   for (std::size_t i = 0; i < vb.rows(); i++) {
     for (std::size_t j = 0; j < vb.cols(); j++) {
-      internal::JoukowskiSteadyOnPanel(&dF_st, vb.at(i, j), vortices.begin(),
-                                       vortices.end(), morphing, freestream,
+      dF_st = Eigen::Vector3d::Zero();
+      dF_unst = Eigen::Vector3d::Zero();
+      internal::JoukowskiSteadyOnPanel(&dF_st, vb.at(i, j), vortices.cbegin(),
+                                       vortices.cend(), morphing, freestream,
                                        rho, t);
       internal::JoukowskiUnsteadyOnPanel(&dF_unst, vb.at(i, j),
                                          vb_prev.at(i, j), rho, dt);
