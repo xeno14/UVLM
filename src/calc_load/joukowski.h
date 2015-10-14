@@ -8,6 +8,7 @@
 #include "../../proto/uvlm.pb.h"
 #include "../vortex_container.h"
 #include "../shed.h"
+#include "../util.h"
 #include "../morphing.h"
 #include "calc_load.h"
 
@@ -60,17 +61,18 @@ AerodynamicLoad CalcLoadJoukowski(
   Eigen::Vector3d F = Eigen::Vector3d::Zero();
   Eigen::Vector3d dF_st, dF_unst;
   const auto& vortices = *vb.vortices();
-  for (std::size_t i = 0; i < vb.rows(); i++) {
-    for (std::size_t j = 0; j < vb.cols(); j++) {
-      dF_st = Eigen::Vector3d::Zero();
-      dF_unst = Eigen::Vector3d::Zero();
-      internal::JoukowskiSteadyOnPanel(&dF_st, vb.at(i, j), vortices.cbegin(),
-                                       vortices.cend(), morphing, freestream,
-                                       rho, t);
-      internal::JoukowskiUnsteadyOnPanel(&dF_unst, vb.at(i, j),
-                                         vb_prev.at(i, j), rho, dt);
-      F += dF_st + dF_unst;
-    }
+  auto dim = DoubleLoop(vb.rows(), vb.cols());
+  for (std::size_t index = 0; index < dim.size(); ++index) {
+    const auto i = dim[index].first;
+    const auto j = dim[index].second;
+    dF_st = Eigen::Vector3d::Zero();
+    dF_unst = Eigen::Vector3d::Zero();
+    internal::JoukowskiSteadyOnPanel(&dF_st, vb.at(i, j), vortices.cbegin(),
+                                     vortices.cend(), morphing, freestream, rho,
+                                     t);
+    internal::JoukowskiUnsteadyOnPanel(&dF_unst, vb.at(i, j), vb_prev.at(i, j),
+                                       rho, dt);
+    F += dF_st + dF_unst;
   }
   return AerodynamicLoad{F, 0, 0};
 }
