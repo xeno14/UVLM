@@ -82,15 +82,15 @@ void VortexRing::SaveReferenceNode() {
 }
 
 Vector3d VortexRing::Normal() const {
-  Vector3d diff1 = nodes_[2] - nodes_[0];
-  Vector3d diff2 = nodes_[3] - nodes_[1];
-  Vector3d res = diff1.cross(diff2);
+  // see Ghommem 2011 (5.1)
+  Eigen::Vector3d res = (nodes_[1] - nodes_[3]).cross(nodes_[2] - nodes_[0]);
   res.normalize();
   return res;
 }
 
 Vector3d VortexRing::Tangent() const {
-  Vector3d res = nodes_[2] - nodes_[1] + nodes_[1] - nodes_[3];
+  // see Ghommem 2011 (5.2)
+  Vector3d res = (nodes_[1] - nodes_[3]) + (nodes_[2] - nodes_[0]);
   res.normalize();
   return res;
 }
