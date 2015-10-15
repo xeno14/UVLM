@@ -58,22 +58,28 @@ AerodynamicLoad CalcLoadJoukowski(
     InputIterator wake_first, InputIterator wake_last, const Morphing& morphing,
     const Eigen::Vector3d& freestream, const double rho, const double t,
     const double dt) {
-  Eigen::Vector3d F = Eigen::Vector3d::Zero();
-  Eigen::Vector3d dF_st, dF_unst;
   const auto& vortices = *vb.vortices();
   auto dim = DoubleLoop(vb.rows(), vb.cols());
-  for (std::size_t index = 0; index < dim.size(); ++index) {
+  double Fx=0, Fy=0, Fz=0;
+  std::size_t index;
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:Fx, Fy, Fz)
+#endif
+  for (index = 0; index < dim.size(); ++index) {
     const auto i = dim[index].first;
     const auto j = dim[index].second;
-    dF_st = Eigen::Vector3d::Zero();
-    dF_unst = Eigen::Vector3d::Zero();
+    Eigen::Vector3d dF_st = Eigen::Vector3d::Zero();
+    Eigen::Vector3d dF_unst = Eigen::Vector3d::Zero();
     internal::JoukowskiSteadyOnPanel(&dF_st, vb.at(i, j), vortices.cbegin(),
                                      vortices.cend(), morphing, freestream, rho,
                                      t);
     internal::JoukowskiUnsteadyOnPanel(&dF_unst, vb.at(i, j), vb_prev.at(i, j),
                                        rho, dt);
-    F += dF_st + dF_unst;
+    Fx += dF_st.x() + dF_unst.x();
+    Fy += dF_st.y() + dF_unst.y();
+    Fz += dF_st.z() + dF_unst.z();
   }
+  Eigen::Vector3d F(Fx, Fy, Fz);
   return AerodynamicLoad{F, 0, 0};
 }
 
