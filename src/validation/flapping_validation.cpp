@@ -66,9 +66,10 @@ int main(int argc, char* argv[]) {
   m.set_twist([&](const Eigen::Vector3d& x0, double t) {
     return BETA * fabs(x0.y()) / SPAN * sin(OMEGA * t + PHI0);
   });
+  m.set_alpha(ALPHA);
 
   UVLM::simulator::AddWing(wing, m);
-  UVLM::simulator::SetInlet(PARAM_U * cos(ALPHA), 0, PARAM_U * sin(ALPHA));
+  UVLM::simulator::SetInlet(PARAM_U, 0, 0);
   UVLM::simulator::SetOutputPath(FLAGS_output);
   UVLM::simulator::SetOutputLoadPath(FLAGS_output_load);
 
