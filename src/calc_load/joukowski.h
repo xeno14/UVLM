@@ -23,14 +23,19 @@ inline void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
                                    InputIterator vortices_last,
                                    const Morphing& morphing,
                                    const Eigen::Vector3d& freestream,
-                                   const double rho, const double t) {
+                                   const double rho, const double t,
+                                   bool edge_flag) {
   Eigen::Vector3d mid, mid0;
   Eigen::Vector3d U;     // velocity on the point
   Eigen::Vector3d Um;    // velocity contribution from the surface motion
   Eigen::Vector3d Uind;  // induced velocity from all vortices
   *result = Eigen::Vector3d::Zero();
-  v.ForEachSegment([&](const auto& start, const auto& end, const auto& start0,
-                       const auto& end0) {
+  for (std::size_t i = 0; i < v.nodes().size(); i++) {
+    if (edge_flag && i == 1) continue;  // ignore trailing edge
+    const Vector3d& start = v.nodes()[(i + 1) % v.nodes().size()];
+    const Vector3d& end = v.nodes()[i];
+    const Vector3d& start0 = v.nodes0()[(i + 1) % v.nodes().size()];
+    const Vector3d& end0 = v.nodes0()[i];
     mid = (start + end) / 2;
     mid0 = (start0 + end0) / 2;
     UVLM::InducedVelocity(&Uind, mid, vortices_first, vortices_last);
@@ -38,7 +43,7 @@ inline void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
     Um = internal::CalcUm(morphing, mid0, freestream, t);
     U = Uind + Um;
     *result += U.cross(end - start) * rho * v.gamma();
-  });
+  };
 }
 
 // unstready part
@@ -72,7 +77,7 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
     Eigen::Vector3d dF_unst = Eigen::Vector3d::Zero();
     internal::JoukowskiSteadyOnPanel(&dF_st, vb.at(i, j), vortices.cbegin(),
                                      vortices.cend(), morphing, freestream, rho,
-                                     t);
+                                     t, i+1==vb.rows());
     internal::JoukowskiUnsteadyOnPanel(&dF_unst, vb.at(i, j), vb_prev.at(i, j),
                                        rho, dt);
     Fx += dF_st.x() + dF_unst.x();
