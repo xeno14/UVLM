@@ -52,12 +52,12 @@ inline void JoukowskiUnsteadyOnPanel(Eigen::Vector3d* result,
 
 }  // namespace internal
 
-template <class InputIterator>
-AerodynamicLoad CalcLoadJoukowski(
-    const VortexContainer& vb, const VortexContainer& vb_prev,
-    InputIterator wake_first, InputIterator wake_last, const Morphing& morphing,
-    const Eigen::Vector3d& freestream, const double rho, const double t,
-    const double dt) {
+inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
+                                  const VortexContainer& vb_prev,
+                                  const Morphing& morphing,
+                                  const Eigen::Vector3d& freestream,
+                                  const double rho, const double t,
+                                  const double dt) {
   const auto& vortices = *vb.vortices();
   auto dim = DoubleLoop(vb.rows(), vb.cols());
   double Fx=0, Fy=0, Fz=0;
