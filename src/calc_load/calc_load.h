@@ -30,10 +30,9 @@ inline Eigen::Vector3d CalcUm(const Morphing& morphing,
                               const Eigen::Vector3d& x0, 
                               const Eigen::Vector3d& freestream,
                               const double t) {
-  Eigen::Vector3d res;
-  morphing.Velocity(&res, x0, t);
-  res = freestream - res;
-  return res;
+  Eigen::Vector3d Uls;
+  morphing.Velocity(&Uls, x0, t);
+  return freestream - Uls;
 }
 
 inline double CalcChordwiseDGamma(const std::size_t i, const std::size_t j,
