@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
   const double BETA = 4 * M_PI / 180;                 // twising amp at wing tip
   // const double CHORD = wing.chord();
   const double SPAN = wing.span();
-  const double ALPHA = PARAM_alpha;
+  const double ALPHA = PARAM_alpha / 180. * M_PI;
   const double PHI0 = PARAM_phi0;
 
   UVLM::Morphing m;
