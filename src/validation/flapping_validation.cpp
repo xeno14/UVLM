@@ -16,6 +16,7 @@ DEFINE_string(input, "", "setting yaml");
 DEFINE_string(output, "", "output path");
 DEFINE_string(output_load, "", "output load path");
 DEFINE_bool(calc_load, false, "calc load mode");
+DEFINE_int32(wing_digit, 12, "wing digit for NACA00XX");
 
 namespace {
 YAML::Node config;
@@ -29,7 +30,7 @@ auto InitWing() {
   const auto param = config["parameter"];
   DEFINE_PARAM_VERBOSE(int, rows, param);
   DEFINE_PARAM_VERBOSE(int, cols, param);
-  UVLM::wing::NACA00XXGenerator(12, 1., 4., PARAM_rows, PARAM_cols)
+  UVLM::wing::NACA00XXGenerator(FLAGS_wing_digit, 1., 4., PARAM_rows, PARAM_cols)
       .Generate(&wing);
   UVLM::wing::SetOrigin(&wing, {0, 0, 0});
   return wing;
