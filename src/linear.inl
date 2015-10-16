@@ -81,7 +81,6 @@ OutputIterator CalcMorphingVelocityOnWing(InputIterator panel_first,
                                           const Morphing& morphing, double t,
                                           OutputIterator result) {
   Eigen::Vector3d Vls;  // velocity of lifting surface
-  Eigen::Vector3d x0;   // position of collocation point at initial cond
 
   for (auto panel = panel_first; panel != panel_last; ++panel, ++result) {
     morphing.Velocity(&Vls, panel->ReferenceCentroid(), t);

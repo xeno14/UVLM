@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "vortex.h"
 #include "testutil.h"
+#include "vortex.h"
 
 using UVLM::VortexRing;
 
@@ -80,15 +80,6 @@ class VortexRingTest : public ::testing::Test {
   virtual void SetUp() {}
   virtual void TearDown() { ring.Clear(); }
   UVLM::VortexRing ring;
-
-  UVLM::VortexRing GetSquareRing(double l) {
-    UVLM::VortexRing res;
-    res.PushNode(Vector3d(0, 0, 0))
-       .PushNode(Vector3d(l, 0, 0))
-       .PushNode(Vector3d(l, l, 0))
-       .PushNode(Vector3d(0, l, 0));
-    return res;
-  }
 };
 
 TEST_F(VortexRingTest, Assemble) {

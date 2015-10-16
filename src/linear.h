@@ -5,7 +5,7 @@
 #pragma once
 
 #include "morphing.h"
-#include "uvlm_vortex_ring.h"
+#include "vortex_container.h"
 
 #include <vector>
 
