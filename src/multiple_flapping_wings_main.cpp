@@ -42,8 +42,6 @@ int main(int argc, char* argv[]) {
   const auto param = config["parameter"];
 
   DEFINE_PARAM_VERBOSE(double, U, param);
-  DEFINE_PARAM_VERBOSE(double, alpha, param);
-  DEFINE_PARAM_VERBOSE(double, phi0, param);
 
   const double U = PARAM_U;                           // Upstream velocity
   const double K = 0.5;                               // Reduced frequency
@@ -51,12 +49,14 @@ int main(int argc, char* argv[]) {
   const double OMEGA = 2 * U * K / C;                 // Flapping frequency
   const double PHI = 15 * M_PI / 180;                 // Angle of flapping
   // const double CHORD = wing.chord();
-  const double PHI0 = PARAM_phi0;
+  const double PHI0 = 0;
 
   UVLM::Morphing m;
   m.set_flap([&](double t) { return PHI * sin(OMEGA * t + PHI0); });
 
   UVLM::simulator::AddWing(InitWing(0, 0), m);
+  UVLM::simulator::AddWing(InitWing(0, 10), m);
+  UVLM::simulator::AddWing(InitWing(0, -10), m);
   UVLM::simulator::SetInlet(PARAM_U, 0, 0);
   UVLM::simulator::SetOutputPath(FLAGS_output);
   UVLM::simulator::SetOutputLoadPath(FLAGS_output_load);
