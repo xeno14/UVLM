@@ -156,7 +156,8 @@ void OutputSnapshot2(const std::size_t step, const double t) {
 // TODO multiple output
 void CalcLoadProcess(const double t, const double dt) {
   std::vector<Eigen::Vector3d> loads;
-  std::stringstream line;
+  std::vector<double> data;
+  data.push_back(t);
   for (std::size_t i=0; i<containers.size(); i++) {
     const auto& c = containers[i];
     const auto& c_prev = containers_prev[i];
@@ -177,12 +178,15 @@ void CalcLoadProcess(const double t, const double dt) {
     const double U = inlet.norm();
     auto coeff = load.F / (0.5 * rho * U * U * S);
 
-    line << t << "\t" << coeff.x() << "\t" << coeff.y() << "\t" << coeff.z()
-      << "\t" << load.Pin << "\t" << load.Pout;
+    data.push_back(coeff.x());
+    data.push_back(coeff.y());
+    data.push_back(coeff.z());
+    data.push_back(load.Pin);
+    data.push_back(load.Pout);
   }
   std::ofstream ofs(output_load_path, std::ios::app);
   CHECK((bool)ofs) << "Unable to open " << output_load_path;
-  ofs << line.str() << std::endl;
+  ofs << UVLM::util::join("\t", data.begin(), data.end()) << std::endl;
 }
 
 }  // namespace internal

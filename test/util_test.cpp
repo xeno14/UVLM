@@ -45,3 +45,11 @@ TEST(DoubleLoop, test) {
   EXPECT_EQ(1, result[5].first);
   EXPECT_EQ(2, result[5].second);
 }
+
+TEST(JoinTest, test) {
+  auto a = {1, 2, 3};
+  EXPECT_EQ("1 2 3", UVLM::util::join(" ", a.begin(), a.end()));
+
+  auto b = {"a", "b", "c"};
+  EXPECT_EQ("a___b___c", UVLM::util::join("___", b.begin(), b.end()));
+}

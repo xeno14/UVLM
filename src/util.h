@@ -7,6 +7,7 @@
 #include <cmath>
 #include <utility>
 #include <vector>
+#include <sstream>
 
 #ifndef CHECK_OPEN
 #define CHECK_OPEN(fp)                                                         \
@@ -39,3 +40,22 @@ inline std::vector<std::pair<std::size_t, std::size_t>> DoubleLoop(
   }
   return res;
 }
+
+namespace UVLM {
+namespace util {
+
+template <class InputIterator>
+std::string join(const std::string& sep, InputIterator first,
+                 InputIterator last) {
+  std::stringstream ss;
+  while (first != last) {
+    ss << *first << sep;
+    ++first;
+  }
+  std::string res(ss.str());
+  res.resize(res.size() - sep.size());
+  return res;
+}
+
+}  // namespace util
+}  // namespace UVLM
