@@ -194,6 +194,7 @@ void InitSimulator() {
 void AddWing(const ::UVLM::proto::Wing& wing, const ::UVLM::Morphing& m) {
   wings.emplace_back(wing);
   morphings.emplace_back(m);
+  morphings.rbegin()->set_origin(UVLM::PointToVector3d(wing.origin()));
 }
 
 void SetInlet(double x, double y, double z) {
