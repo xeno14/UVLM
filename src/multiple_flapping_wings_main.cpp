@@ -19,6 +19,12 @@ DEFINE_bool(calc_load, false, "calc load mode");
 
 namespace {
 YAML::Node config;
+
+const double ar = 4;
+const double span = 1.2;
+const double chord = 1.2 / ar;
+const double frequency = 4;  // [Hz]
+const double forward_velocity = 15;
 }
 
 auto InitWing(double x0, double y0) {
@@ -29,9 +35,8 @@ auto InitWing(double x0, double y0) {
   const auto param = config["parameter"];
   DEFINE_PARAM_VERBOSE(int, rows, param);
   DEFINE_PARAM_VERBOSE(int, cols, param);
-  const double span = 1;
-  const double chord = span/4;
-  UVLM::wing::RectGenerator(chord, span/2, PARAM_rows, PARAM_cols).Generate(&wing);
+  UVLM::wing::RectGenerator(chord, span / 2, PARAM_rows, PARAM_cols)
+      .Generate(&wing);
   UVLM::wing::SetOrigin(&wing, {x0, y0, 0});
   return wing;
 }
@@ -47,21 +52,18 @@ int main(int argc, char* argv[]) {
 
   DEFINE_PARAM_VERBOSE(double, U, param);
 
-  const double U = PARAM_U;                           // Upstream velocity
-  const double K = 0.5;                               // Reduced frequency
-  const double C = 1;                                 // Chord length
-  const double OMEGA = 2 * U * K / C;                 // Flapping frequency
-  const double PHI = 15 * M_PI / 180;                 // Angle of flapping
-  // const double CHORD = wing.chord();
-  const double PHI0 = 0;
+  const double OMEGA = M_PI * 2 * frequency;  // Flapping frequency
+  // TODO angle???
+  const double PHI = 15 * M_PI / 180;  // Angle of flapping
+  const double PHI0 = -M_PI_2;
 
   UVLM::Morphing m;
   m.set_flap([&](double t) { return PHI * sin(OMEGA * t + PHI0); });
   // TODO position in parameter file
   UVLM::simulator::AddWing(InitWing(0, 0), m);
-  UVLM::simulator::AddWing(InitWing(1, 1), m);
-  UVLM::simulator::AddWing(InitWing(1, -1), m);
-  UVLM::simulator::SetInlet(PARAM_U, 0, 0);
+  UVLM::simulator::AddWing(InitWing(span, span), m);
+  UVLM::simulator::AddWing(InitWing(span, -span), m);
+  UVLM::simulator::SetInlet(forward_velocity, 0, 0);
   UVLM::simulator::SetOutputPath(FLAGS_output);
   UVLM::simulator::SetOutputLoadPath(FLAGS_output_load);
 
