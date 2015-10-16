@@ -4,7 +4,6 @@
  */
 
 #include "naca00XX.h"
-#include "wing.h"
 
 #include <gflags/gflags.h>
 #include <cmath>
@@ -21,34 +20,14 @@ double NACA00XX(double x, double c, int xx) {
 }
 
 void NACA00XXGenerator::Generate(UVLM::proto::Wing* wing) {
-  const int xx = digit_;
+  // 長方形の翼を生成してzの値のみを変更する
+  RectGenerator::Generate(wing);
+
   const double chord = chord_;
-  const double span = span_;
-  const int rows = rows_;
-  const int cols = cols_;
-  const double dx = chord / rows;
-  const double dy = span / cols;
-
-  if (verbose_) {
-    std::cerr << "NACA00" << xx << std::endl;
-    std::cerr << "Chord: " << chord << std::endl;
-    std::cerr << "Span: " << span << std::endl;
-    std::cerr << rows << "x" << cols << std::endl;
-    std::cerr << dx << "@" << dy << "\n";
-  }
-
-  wing->set_cols(cols);
-  wing->set_rows(rows);
-  for (int i = 0; i <= rows; i++) {
-    for (int j = 0; j <= cols; j++) {
-      double x = i * dx;
-      double y = j * dy;
-      double z = NACA00XX(x, chord, xx);
-      auto* point = wing->add_points();
-      point->set_x(x);
-      point->set_y(y);
-      point->set_z(z);
-    }
+  const int digit = digit_;
+  for (int i = 0; i < wing->points_size(); i++) {
+    auto* p = wing->mutable_points(i);
+    p->set_z(NACA00XX(p->x(), chord, digit));
   }
 }
 

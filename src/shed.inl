@@ -21,27 +21,38 @@ void AdvectWakeImpl(OutputIterator wake_first, OutputIterator wake_last,
 
 }  // namespace internal
 
-template <class InputIterator, class OutputIterator>
-void AdvectWake(OutputIterator wake_first, OutputIterator wake_last,
+template <class InputIterator>
+void AdvectWake(std::vector<UVLM::VortexRing>* wake,
                 InputIterator vortices_first, InputIterator vortices_last,
                 const UVLMVortexRing& rings,
                 const Eigen::Vector3d& Vinfty, const double dt) {
-  std::vector<VortexRing> new_wake(wake_first, wake_last);
   // TODO こいつが悪い
   // internal::AdvectWakeImpl(new_wake.begin(), new_wake.end(), vortices_first,
   //                          vortices_last, Vinfty, dt);
-  internal::AdvectWakeImpl(&new_wake, rings, Vinfty, dt);
-  std::copy(new_wake.begin(), new_wake.end(), wake_first);
+  internal::AdvectWakeImpl(wake, rings, Vinfty, dt);
 }
 
 template <class InputIterator>
-void InducedVelocity(Eigen::Vector3d* const result,
+void InducedVelocity(Eigen::Vector3d* result,
                      const Eigen::Vector3d& pos,
                      InputIterator first, InputIterator last) {
   *result = Eigen::Vector3d::Zero();
   Eigen::Vector3d tmp;
   while (first != last) {
     first->BiotSavartLaw(&tmp, pos);
+    *result += tmp;
+    ++first;
+  }
+}
+
+template <class InputIterator>
+void ChordwiseInducedVelocity(Eigen::Vector3d* const result,
+                              const Eigen::Vector3d& pos, InputIterator first,
+                              InputIterator last) {
+  *result = Eigen::Vector3d::Zero();
+  Eigen::Vector3d tmp;
+  while (first != last) {
+    first->ChordwiseBiotSavartLaw(&tmp, pos);
     *result += tmp;
     ++first;
   }

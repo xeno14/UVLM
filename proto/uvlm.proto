@@ -23,6 +23,11 @@ message Wing {
   repeated Point points = 3;
 
   optional Point origin = 4;  // 原点
+
+  optional double chord = 5;  // chord length
+  optional double span = 6;   // span length
+
+  // Next: 7
 }
 
 // 渦輪
@@ -56,8 +61,12 @@ message Snapshot2 {
     required uint32 cols = 2;
     optional uint32 id = 3;
     optional Point origin = 4;
+    optional double chord = 5;
+    optional double span = 6;
   }
   repeated ContainerShape container_shapes = 2;
 
   repeated VortexRing vortices = 3;
+
+  // Next: 5
 }

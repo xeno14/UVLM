@@ -5,8 +5,9 @@
 #pragma once
 
 #include "../proto/uvlm.pb.h"
+#include "vortex_container.h"
+#include "wing_builder.h"
 #include "uvlm_vortex_ring.h"
-
 
 namespace UVLM {
 
@@ -36,6 +37,19 @@ inline proto::VortexRing VortexRingToProto(const VortexRing& v) {
   return res;
 }
 
+/**
+ *
+ * @todo node0のコピー
+ */
+inline UVLM::VortexRing ProtoToVortexRing(const proto::VortexRing& v) {
+  UVLM::VortexRing res;
+  res.set_gamma(v.gamma());
+  for (const auto& node : v.nodes()) {
+    res.PushNode(PointToVector3d(node));
+  }
+  return res;
+}
+
 inline void UVLMVortexRingToBird(proto::FlyingWing* bird,
                                  const UVLMVortexRing& rings) {
   bird->Clear();
@@ -49,6 +63,22 @@ inline void UVLMVortexRingToBird(proto::FlyingWing* bird,
   }
   auto* origin = bird->mutable_origin();
   *origin = Vector3dToPoint(rings.origin());
+}
+
+inline auto Snapshot2ToContainers(
+    std::vector<UVLM::VortexContainer>* containers,
+    const proto::Snapshot2& snapshot2) {
+  auto vortices = std::make_shared<std::vector<UVLM::VortexRing>>(
+      snapshot2.vortices().size());
+  std::transform(snapshot2.vortices().begin(), snapshot2.vortices().end(),
+                 vortices->begin(), ProtoToVortexRing);
+
+  containers->clear();
+  for (const auto& shape : snapshot2.container_shapes()) {
+    containers->emplace_back(vortices, shape.rows(), shape.cols(), shape.id(),
+                             shape.chord(), shape.span());
+  }
+  return vortices;
 }
 
 }  // namespace UVLM
