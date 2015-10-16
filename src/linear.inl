@@ -75,6 +75,40 @@ Eigen::VectorXd CalcRhsMorphing(InputIterator1 bound_first,
   return res;
 }
 
+template <class InputIterator, class OutputIterator>
+OutputIterator CalcMorphingVelocityOnWing(InputIterator panel_first,
+                                          InputIterator panel_last,
+                                          const Morphing& morphing, double t,
+                                          OutputIterator result) {
+  Eigen::Vector3d Vls;  // velocity of lifting surface
+  Eigen::Vector3d x0;   // position of collocation point at initial cond
+
+  for (auto panel = panel_first; panel != panel_last; ++panel, ++result) {
+    morphing.Velocity(&Vls, panel->ReferenceCentroid(), t);
+    *result = Vls.dot(panel->Normal());
+  }
+  return result;
+}
+
+inline Eigen::VectorXd CalcRhsMorphings(
+    const std::vector<VortexContainer>& containers,
+    const std::vector<Morphing>& morphings, double t) {
+  const std::size_t wake_offset = 
+      ::UVLM::CountTotalSize(containers.begin(), containers.end());
+  if (containers.size() != morphings.size()) {
+    LOG(FATAL) << "containers and morphings have to be same size";
+  }
+  Eigen::VectorXd res(wake_offset);
+  std::vector<double> rhs(wake_offset);
+  auto it = rhs.begin();
+  for (std::size_t i=0; i<containers.size(); i++) {
+    it = CalcMorphingVelocityOnWing(containers[i].cbegin(),
+                                    containers[i].cend(), morphings[i], t, it);
+  }
+  std::copy(rhs.begin(), rhs.end(), res.data());
+  return res;
+}
+
 }  // namespace internal
 
 template <class InputIterator1, class InputIterator2>
@@ -87,6 +121,33 @@ Eigen::VectorXd SolveLinearProblem(InputIterator1 bound_first,
   Eigen::MatrixXd A = internal::CalcMatrix(bound_first, bound_last);
   Eigen::VectorXd rhs =
       internal::CalcRhsMorphing(bound_first, bound_last, morphing, t)
+      - internal::CalcRhsFreeStream(freestream, bound_first, bound_last);
+      - internal::CalcRhsWake(bound_first, bound_last, wake_first, wake_last);
+  Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
+  if (!solver.isInvertible()) {
+    LOG(FATAL) << "Matrix is not invertible.";
+  }
+  return solver.solve(rhs);
+}
+
+Eigen::VectorXd SolveLinearProblem(
+    const std::vector<VortexContainer>& containers,
+    const std::vector<Morphing>& morphings, const Eigen::Vector3d& freestream,
+    const double t) {
+  // All vortex rings
+  const auto& vortices = containers.begin()->vortices();
+  const std::size_t wake_offset =
+      ::UVLM::CountTotalSize(containers.begin(), containers.end());
+
+  auto bound_first = vortices->begin();
+  auto bound_last = vortices->begin() + wake_offset;
+  auto wake_first = vortices->begin() + wake_offset;
+  auto wake_last = vortices->end();
+
+  Eigen::MatrixXd A =
+      internal::CalcMatrix(bound_first, bound_last);
+  Eigen::VectorXd rhs =
+      // internal::CalcRhsMorphing(bound_first, bound_last, morphing, t)
       - internal::CalcRhsFreeStream(freestream, bound_first, bound_last);
       - internal::CalcRhsWake(bound_first, bound_last, wake_first, wake_last);
   Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
