@@ -32,9 +32,8 @@ auto InitWing(double x0, double y0) {
 
   // wing span=1
   // aspect ratio=4
-  const auto param = config["parameter"];
-  DEFINE_PARAM_VERBOSE(int, rows, param);
-  DEFINE_PARAM_VERBOSE(int, cols, param);
+  DEFINE_PARAM_VERBOSE(int, rows, config);
+  DEFINE_PARAM_VERBOSE(int, cols, config);
   UVLM::wing::RectGenerator(chord, span / 2, PARAM_rows, PARAM_cols)
       .Generate(&wing);
   UVLM::wing::SetOrigin(&wing, {x0, y0, 0});
@@ -48,9 +47,6 @@ int main(int argc, char* argv[]) {
   FLAGS_logtostderr = true;
 
   config = YAML::LoadFile(FLAGS_input);
-  const auto param = config["parameter"];
-
-  DEFINE_PARAM_VERBOSE(double, U, param);
 
   const double OMEGA = M_PI * 2 * frequency;  // Flapping frequency
   // TODO angle???
@@ -59,7 +55,7 @@ int main(int argc, char* argv[]) {
 
   UVLM::Morphing m;
   m.set_flap([&](double t) { return PHI * sin(OMEGA * t + PHI0); });
-  // TODO position in parameter file
+  // TODO position in configeter file
   UVLM::simulator::AddWing(InitWing(0, 0), m);
   UVLM::simulator::AddWing(InitWing(span, span), m);
   UVLM::simulator::AddWing(InitWing(span, -span), m);
@@ -67,9 +63,8 @@ int main(int argc, char* argv[]) {
   UVLM::simulator::SetOutputPath(FLAGS_output);
   UVLM::simulator::SetOutputLoadPath(FLAGS_output_load);
 
-  const auto setting = config["setting"];
-  DEFINE_PARAM_VERBOSE(int, steps, setting);
-  DEFINE_PARAM_VERBOSE(double, dt, setting);
+  DEFINE_PARAM_VERBOSE(int, steps, config);
+  DEFINE_PARAM_VERBOSE(double, dt, config);
 
   if (FLAGS_calc_load) {
     // todo
