@@ -152,6 +152,8 @@ void OutputSnapshot2(const std::size_t step, const double t) {
   snapshot.SerializeToOstream(&ofs);
 }
 
+
+// TODO multiple output
 void CalcLoadProcess(const double t, const double dt) {
   std::vector<Eigen::Vector3d> loads;
   std::stringstream line;
