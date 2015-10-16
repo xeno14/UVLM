@@ -24,10 +24,14 @@ YAML::Node config;
 auto InitWing(double x0, double y0) {
   UVLM::proto::Wing wing;
 
+  // wing span=1
+  // aspect ratio=4
   const auto param = config["parameter"];
   DEFINE_PARAM_VERBOSE(int, rows, param);
   DEFINE_PARAM_VERBOSE(int, cols, param);
-  UVLM::wing::RectGenerator(1., 4., PARAM_rows, PARAM_cols).Generate(&wing);
+  const double span = 1;
+  const double chord = span/4;
+  UVLM::wing::RectGenerator(chord, span/2, PARAM_rows, PARAM_cols).Generate(&wing);
   UVLM::wing::SetOrigin(&wing, {x0, y0, 0});
   return wing;
 }
@@ -53,10 +57,10 @@ int main(int argc, char* argv[]) {
 
   UVLM::Morphing m;
   m.set_flap([&](double t) { return PHI * sin(OMEGA * t + PHI0); });
-
+  // TODO position in parameter file
   UVLM::simulator::AddWing(InitWing(0, 0), m);
-  UVLM::simulator::AddWing(InitWing(0, 10), m);
-  UVLM::simulator::AddWing(InitWing(0, -10), m);
+  UVLM::simulator::AddWing(InitWing(1, 1), m);
+  UVLM::simulator::AddWing(InitWing(1, -1), m);
   UVLM::simulator::SetInlet(PARAM_U, 0, 0);
   UVLM::simulator::SetOutputPath(FLAGS_output);
   UVLM::simulator::SetOutputLoadPath(FLAGS_output_load);
