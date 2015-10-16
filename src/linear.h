@@ -111,7 +111,7 @@ Eigen::VectorXd SolveLinearProblem(InputIterator1 bound_first,
 /**
  * @brief Solve simultaneous equations obtained from no-penetration condition.
  */
-Eigen::VectorXd SolveLinearProblem(
+inline Eigen::VectorXd SolveLinearProblem(
     const std::vector<VortexContainer>& containers,
     const std::vector<Morphing>& morphings, const Eigen::Vector3d& freestream,
     const double t);

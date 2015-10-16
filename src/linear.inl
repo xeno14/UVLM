@@ -146,7 +146,7 @@ Eigen::VectorXd SolveLinearProblem(
   Eigen::MatrixXd A =
       internal::CalcMatrix(bound_first, bound_last);
   Eigen::VectorXd rhs =
-      // internal::CalcRhsMorphing(bound_first, bound_last, morphing, t)
+      internal::CalcRhsMorphings(containers, morphings, t)
       - internal::CalcRhsFreeStream(freestream, bound_first, bound_last);
       - internal::CalcRhsWake(bound_first, bound_last, wake_first, wake_last);
   Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
