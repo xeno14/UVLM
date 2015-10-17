@@ -65,27 +65,35 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
                                   const double dt) {
   const auto& vortices = *vb.vortices();
   auto dim = DoubleLoop(vb.rows(), vb.cols());
-  double Fx=0, Fy=0, Fz=0;
-  std::size_t index;
+  double Fx=0, Fy=0, Fz=0, Pin=0, Pout=0;
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:Fx, Fy, Fz)
+#pragma omp parallel for reduction(+:Fx, Fy, Fz, Pin)
 #endif
-  for (index = 0; index < dim.size(); ++index) {
+  for (std::size_t index = 0; index < dim.size(); ++index) {
     const auto i = dim[index].first;
     const auto j = dim[index].second;
     Eigen::Vector3d dF_st = Eigen::Vector3d::Zero();
     Eigen::Vector3d dF_unst = Eigen::Vector3d::Zero();
+
+
     internal::JoukowskiSteadyOnPanel(&dF_st, vb.at(i, j), vortices.cbegin(),
                                      vortices.cend(), morphing, freestream, rho,
                                      t, i+1==vb.rows());
     internal::JoukowskiUnsteadyOnPanel(&dF_unst, vb.at(i, j), vb_prev.at(i, j),
                                        rho, dt);
-    Fx += dF_st.x() + dF_unst.x();
-    Fy += dF_st.y() + dF_unst.y();
-    Fz += dF_st.z() + dF_unst.z();
+    const Eigen::Vector3d dF = dF_st + dF_unst;
+    Fx += dF.x();
+    Fy += dF.y();
+    Fz += dF.z();
+
+    // TODO duplicate Joukowski
+    Eigen::Vector3d Vls;    // velocity of motion
+    morphing.Velocity(&Vls, vb.at(i, j).ReferenceCentroid(), t);
+    Pin += dF.dot(Vls);
   }
   Eigen::Vector3d F(Fx, Fy, Fz);
-  return AerodynamicLoad{F, 0, 0};
+  Pout = Fx * freestream.norm() * (-1);    // assume foward flight
+  return AerodynamicLoad{F, Pin, Pout};
 }
 
 }  // namespace calc_load
