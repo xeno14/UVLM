@@ -63,8 +63,8 @@ int main(int argc, char* argv[]) {
   m.set_flap([&](double t) { return PHI * sin(OMEGA * t + PHI0); });
   UVLM::simulator::AddWing(InitWing(0, 0), m);
   for (int i = 1; i < PARAM_lines; i++) {
-    UVLM::simulator::AddWing(InitWing(-PARAM_xrel * i, PARAM_yrel * i), m);
-    UVLM::simulator::AddWing(InitWing(-PARAM_xrel * i, -PARAM_yrel * i), m);
+    UVLM::simulator::AddWing(InitWing(PARAM_xrel * i, PARAM_yrel * i), m);
+    UVLM::simulator::AddWing(InitWing(PARAM_xrel * i, -PARAM_yrel * i), m);
   }
   UVLM::simulator::SetInlet(forward_velocity, 0, 0);
   UVLM::simulator::SetOutputPath(FLAGS_output);
