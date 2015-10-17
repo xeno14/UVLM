@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 
   const double OMEGA = M_PI * 2 * frequency;  // Flapping frequency
   // TODO angle???
-  const double PHI = 15 * M_PI / 180;  // Angle of flapping
+  const double PHI = M_PI / 4;  // Angle of flapping (Ghommem2014)
   const double PHI0 = -M_PI_2;
 
   UVLM::Morphing m;
