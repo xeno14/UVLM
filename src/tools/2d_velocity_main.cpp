@@ -21,7 +21,7 @@ DEFINE_string(output, "", "output filename");
 DEFINE_string(filetype, "csv", "csv or tsv");
 DEFINE_string(plane, "xz", "coordinate plane. e.g. 'xy', 'yz', 'xz'");
 DEFINE_string(range, "[-1:1]x[-1:1]",
-              "Calculate range. e.g. if plane=='xy', [-1:1:-2:2] will plot x "
+              "Calculate range. e.g. if plane=='xy', [-1:1]x[-2:2] will plot x "
               "in [-1, 1], y in [-2:2]");
 DEFINE_double(plane_position, 0, "position of plane");
 
@@ -39,7 +39,8 @@ void CheckPlane(const std::string& plane) {
 auto ParseRange(const std::string& range) {
   // TODO check format
   double x0, y0, x1, y1;
-  sscanf(range.c_str(), "[%lf:%lf]x[%lf:%lf]", &x0, &y0, &x1, &y1);
+  CHECK(sscanf(range.c_str(), "[%lf:%lf]x[%lf:%lf]", &x0, &y0, &x1, &y1) == 4)
+      << "Something wrong with FLAGS_range format: " << range;
   return std::make_tuple(x0, y0, x1, y1);
 }
 
