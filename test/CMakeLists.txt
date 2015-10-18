@@ -3,6 +3,7 @@ include_directories(../src)
 # Wing test
 add_gtest(rect_test rect_test.cpp wing)
 add_gtest(naca00XX_test naca00XX_test.cpp wing)
+add_gtest(naca4digit_test naca4digit_test.cpp wing)
 
 # UVLM test
 add_gtest(morphing_test morphing_test.cpp morphing)
