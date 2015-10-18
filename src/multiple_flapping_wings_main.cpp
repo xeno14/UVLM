@@ -20,7 +20,7 @@ DEFINE_bool(calc_load, false, "calc load mode");
 namespace {
 YAML::Node config;
 
-const double ar = 4;
+const double ar = 6;
 const double span = 1.2;
 const double chord = 1.2 / ar;
 const double frequency = 4;  // [Hz]
@@ -30,8 +30,6 @@ const double forward_velocity = 15;
 auto InitWing(double x0, double y0) {
   UVLM::proto::Wing wing;
 
-  // wing span=1
-  // aspect ratio=4
   DEFINE_PARAM_VERBOSE(int, rows, config);
   DEFINE_PARAM_VERBOSE(int, cols, config);
   UVLM::wing::RectGenerator(chord, span / 2, PARAM_rows, PARAM_cols)
