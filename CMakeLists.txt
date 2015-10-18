@@ -95,6 +95,7 @@ target_link_libraries(uvlm morphing protobuf glog)
 add_library(wing
             ${PROTO_DIR}/uvlm.pb.cc
             src/wing/rect.cpp
+            src/wing/naca4digit.cpp
             src/wing/naca00XX.cpp)
 enable_gflags(wing)          
 target_link_libraries(wing protobuf)
@@ -102,7 +103,6 @@ target_link_libraries(wing protobuf)
 add_executable(naca00XX src/wing/naca00XX_main.cpp)
 enable_gflags(naca00XX)
 target_link_libraries(naca00XX wing)
-
 
 add_subdirectory(test)
 
