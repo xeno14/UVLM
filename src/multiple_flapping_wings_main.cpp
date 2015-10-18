@@ -21,10 +21,9 @@ namespace {
 YAML::Node config;
 
 const double ar = 6;
-const double span = 1.2;
-const double chord = 1.2 / ar;
-const double frequency = 4;  // [Hz]
-const double forward_velocity = 15;
+const double chord = 1;
+const double span = chord * ar;
+const double forward_velocity = 1;
 }
 
 auto InitWing(double x0, double y0) {
@@ -52,13 +51,16 @@ int main(int argc, char* argv[]) {
   DEFINE_PARAM_VERBOSE(double, xrel, config);
   DEFINE_PARAM_VERBOSE(double, yrel, config);
 
-  const double OMEGA = M_PI * 2 * frequency;  // Flapping frequency
+  const double K = 0.1;
+  const double OMEGA = K * 2 * forward_velocity / chord;
   // TODO angle???
   const double PHI = M_PI / 4;  // Angle of flapping (Ghommem2014)
   const double PHI0 = -M_PI_2;
+  const double alpha = 4.0 / 180.0 * M_PI;  // angle of attack 4 degree
 
   UVLM::Morphing m;
   m.set_flap([&](double t) { return PHI * sin(OMEGA * t + PHI0); });
+  m.set_alpha(alpha);
   UVLM::simulator::AddWing(InitWing(0, 0), m);
   for (int i = 1; i < PARAM_lines; i++) {
     UVLM::simulator::AddWing(InitWing(PARAM_xrel * i, PARAM_yrel * i), m);
