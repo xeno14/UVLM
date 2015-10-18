@@ -5,39 +5,71 @@
 
 #include "../proto_adaptor.h"
 #include "../shed.h"
+#include "../util.h"
 
+#include <cstdio>
 #include <fstream>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <vector>
+#include <map>
+#include <set>
 
-DEFINE_double(xmin, -1, "left most x");
-DEFINE_double(zmin, -1.5, "down most z");
-DEFINE_double(xmax, 3, "right most x");
-DEFINE_double(zmax, 1.5, "up most z");
 DEFINE_int32(resolution, 100, "number of points for each edge");
 DEFINE_string(input, "", "snapshot2");
 DEFINE_string(output, "", "output filename");
 DEFINE_string(filetype, "csv", "csv or tsv");
+DEFINE_string(plane, "xz", "coordinate plane. e.g. 'xy', 'yz', 'xz'");
+DEFINE_string(range, "[-1:1]x[-1:1]",
+              "Calculate range. e.g. if plane=='xy', [-1:1:-2:2] will plot x "
+              "in [-1, 1], y in [-2:2]");
+DEFINE_double(plane_position, 0, "position of plane");
 
 namespace {
 
-void CreatePoints(std::vector<Eigen::Vector3d>* points) {
-  points->clear();
-  const std::size_t resolution = FLAGS_resolution;
-  const double xmin = FLAGS_xmin;
-  const double zmin = FLAGS_zmin;
-  const double xmax = FLAGS_xmax;
-  const double zmax = FLAGS_zmax;
-  const double dx = (xmax - xmin) / resolution;
-  const double dz = (zmax - zmin) / resolution;
+void CheckPlane(const std::string& plane) {
+  CHECK(plane.size() == 2) << "FLAGS_plane must be size 2";
+  CHECK(plane[0] != plane[1]) << "FLAGS_plane must have different charactors";
+  CHECK(std::string("xyz").find(plane[0]) != std::string::npos)
+      << "Charactors in FLAGS_plane must be one of 'xyz'";
+  CHECK(std::string("xyz").find(plane[1]) != std::string::npos)
+      << "Charactors in FLAGS_plane must be one of 'xyz'";
+}
 
-  for (std::size_t i = 0; i < resolution; i++) {
-    for (std::size_t j = 0; j < resolution; j++) {
-      double x = xmin + dx * i;
-      double y = 0;
-      double z = zmin + dz * j;
-      points->emplace_back(x, y, z);
+auto ParseRange(const std::string& range) {
+  // TODO check format
+  double x0, y0, x1, y1;
+  sscanf(range.c_str(), "[%lf:%lf]x[%lf:%lf]", &x0, &y0, &x1, &y1);
+  return std::make_tuple(x0, y0, x1, y1);
+}
+
+void CreatePoints(std::vector<Eigen::Vector3d>* points) {
+  CheckPlane(FLAGS_plane);
+  std::map<char, std::vector<double>> pos;
+  std::set<char> keys {'x', 'y', 'z'};
+  double min0, max0, min1, max1;
+  std::tie(min0, max0, min1, max1) = ParseRange(FLAGS_range);
+  LOG(INFO) << "range: " << min0 << "," << max0 << " x " << min1 << "," << max1;
+
+  // 0
+  const char key0 = FLAGS_plane[0];
+  pos[key0] =
+      linspace(min0, max0, FLAGS_resolution);
+  keys.erase(key0);
+  // 1
+  const char key1 = FLAGS_plane[1];
+  pos[key1] =
+      linspace(min1, max1, FLAGS_resolution);
+  keys.erase(key1);
+  // 2
+  const char key2 = *keys.begin();
+  pos[key2].push_back(FLAGS_plane_position);
+
+  for (double x : pos['x']) {
+    for (double y : pos['y']) {
+      for (double z : pos['z']) {
+        points->emplace_back(x, y, z);
+      }
     }
   }
 }
