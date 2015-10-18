@@ -31,7 +31,7 @@ auto InitWing(double x0, double y0) {
 
   DEFINE_PARAM_VERBOSE(int, rows, config);
   DEFINE_PARAM_VERBOSE(int, cols, config);
-  UVLM::wing::RectGenerator(chord, span / 2, PARAM_rows, PARAM_cols)
+  UVLM::wing::NACA4digitGenerator(83, chord, span / 2, PARAM_rows, PARAM_cols)
       .Generate(&wing);
   UVLM::wing::SetOrigin(&wing, {x0, y0, 0});
   return wing;
