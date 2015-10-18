@@ -17,7 +17,7 @@ namespace wing {
  * @param c chord length
  * @param xx number
  */
-inline double NACA4digit(double x, double c, int xx);
+double NACA4digit(double x, double c, int xx);
 
 class NACA4digitGenerator : public RectGenerator {
  public:

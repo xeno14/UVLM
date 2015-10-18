@@ -16,9 +16,9 @@ double NACA4digit(double x, double c, int xx) {
   const double p = second / 10.0;
 
   double res = 0;
-  if (x <= p * c) {
+  if (0 <= x && x <= p * c) {
     res = m * x / p / p * (2 * p - x / c);
-  } else {
+  } else if (p * c <= x && x <= c) {
     res = m * (c - x) / (1 - p) / (1 - p) * (1 + x / c - 2 * p);
   }
   return res;
