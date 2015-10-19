@@ -12,6 +12,7 @@
 #include "../vortex_container.h"
 #include "../shed.h"
 #include "../morphing.h"
+#include "../uvlm_vortex_ring.h"
 
 #include <glog/logging.h>
 
@@ -97,12 +98,13 @@ struct AerodynamicLoad {
   double Pin, Pout;
 };
 
-template <class InputIterator>
-AerodynamicLoad CalcLoad(const VortexContainer& vb,
-                         const VortexContainer& vb_prev,
-                         InputIterator wake_first, InputIterator wake_last,
-                         const Morphing& morphing, const Eigen::Vector3d& freestream,
-                         const double rho, const double t, const double dt) {
+inline AerodynamicLoad CalcLoad(const VortexContainer& vb,
+                                const VortexContainer& vb_prev,
+                                const UVLMVortexRing& rings,
+                                const Morphing& morphing,
+                                const Eigen::Vector3d& freestream,
+                                const double rho, const double t,
+                                const double dt) {
   Eigen::Vector3d F = Eigen::Vector3d::Zero();
   double Pin = 0;
 #ifdef DEBUG_KATZ
@@ -117,8 +119,8 @@ AerodynamicLoad CalcLoad(const VortexContainer& vb,
           internal::CalcUm(morphing, centroid, freestream, t);
       const Eigen::Matrix3d P = internal::CalcProjectionOperator(Um);
       Eigen::Vector3d Ubc, Uw;
-      ChordwiseInducedVelocity(&Ubc, centroid, vb.cbegin(), vb.cend());
-      InducedVelocity(&Uw, centroid, wake_first, wake_last);
+      rings.ChordwiseInducedVelocity(&Ubc, centroid);
+      rings.InducedVelocityByWake(&Uw, centroid);
       const double alpha = vb.at(i, j).AngleOfAttack(Um);
 
       const double Llocal =

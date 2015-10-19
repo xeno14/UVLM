@@ -164,18 +164,14 @@ void CalcLoadProcess(const double t, const double dt) {
     const auto& m = morphings[i];
     const double rho = 1;
     const double S = c.chord() * c.span();
-    auto wake = GetWake(containers);
 
     UVLM::calc_load::AerodynamicLoad load, load2;
     if (FLAGS_use_joukowski) {
       load =
           UVLM::calc_load::CalcLoadJoukowski(c, c_prev, rings, m, inlet, rho, t, dt);
-      load2 = UVLM::calc_load::CalcLoad(c, c_prev, wake.first, wake.second, m,
-                                       inlet, rho, t, dt);
     } else {
-      LOG(FATAL) << "CalcLoad in Katz-Plotkin method is deprecated";
-      load = UVLM::calc_load::CalcLoad(c, c_prev, wake.first, wake.second, m,
-                                       inlet, rho, t, dt);
+      // LOG(FATAL) << "CalcLoad in Katz-Plotkin method is deprecated";
+      load = UVLM::calc_load::CalcLoad(c, c_prev, rings, m, inlet, rho, t, dt);
     }
     const double U = inlet.norm();
     auto coeff =  load.F / (0.5 * rho * U * U * S);

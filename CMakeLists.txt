@@ -87,7 +87,6 @@ add_library(uvlm
             src/vortex.cpp
             src/uvlm_vortex_ring.cpp
             src/wing_builder.cpp
-            src/calc_load/calc_load.cpp
             src/simulator.cpp)
 target_link_libraries(uvlm morphing protobuf glog)
 
@@ -105,10 +104,6 @@ enable_gflags(naca00XX)
 target_link_libraries(naca00XX wing)
 
 add_subdirectory(test)
-
-add_executable(calc_load src/calc_load/calc_load_main.cpp)
-enable_gflags(calc_load)
-target_link_libraries(calc_load uvlm glog)
 
 add_executable(flapping_validation src/validation/flapping_validation.cpp)
 target_link_libraries(flapping_validation uvlm wing protobuf glog yaml-cpp)
@@ -138,7 +133,6 @@ install (
   flapping_validation
   plunging_validation
   fixed_plate
-  calc_load
   2d_velocity
   multiple_flapping_wings
   DESTINATION /usr/local/bin)
