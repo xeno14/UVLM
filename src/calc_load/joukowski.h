@@ -7,6 +7,7 @@
 
 #include "../../proto/uvlm.pb.h"
 #include "../vortex_container.h"
+#include "../uvlm_vortex_ring.cpp"
 #include "../shed.h"
 #include "../util.h"
 #include "../morphing.h"
@@ -21,6 +22,7 @@ template <class InputIterator>
 inline void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
                                    InputIterator vortices_first,
                                    InputIterator vortices_last,
+                                   const UVLM::UVLMVortexRing& rings,
                                    const Morphing& morphing,
                                    const Eigen::Vector3d& freestream,
                                    const double rho, const double t,
@@ -31,14 +33,14 @@ inline void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
   Eigen::Vector3d Uind;  // induced velocity from all vortices
   *result = Eigen::Vector3d::Zero();
   for (std::size_t i = 0; i < v.nodes().size(); i++) {
-    if (edge_flag && i == 1) continue;  // ignore trailing edge
+    if (edge_flag && i == 1) continue;  // ignore trailing edge_end
     const Vector3d& start = v.nodes()[(i + 1) % v.nodes().size()];
     const Vector3d& end = v.nodes()[i];
     const Vector3d& start0 = v.nodes0()[(i + 1) % v.nodes().size()];
     const Vector3d& end0 = v.nodes0()[i];
     mid = (start + end) / 2;
     mid0 = (start0 + end0) / 2;
-    UVLM::InducedVelocity(&Uind, mid, vortices_first, vortices_last);
+    rings.InducedVelocity(&Uind, mid);
     // U = (Ub + Uw) + Um = Uind + Um
     Um = internal::CalcUm(morphing, mid0, freestream, t);
     U = Uind + Um;
@@ -59,6 +61,7 @@ inline void JoukowskiUnsteadyOnPanel(Eigen::Vector3d* result,
 
 inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
                                   const VortexContainer& vb_prev,
+                                  const UVLM::UVLMVortexRing& rings,
                                   const Morphing& morphing,
                                   const Eigen::Vector3d& freestream,
                                   const double rho, const double t,
@@ -66,6 +69,10 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
   const auto& vortices = *vb.vortices();
   auto dim = DoubleLoop(vb.rows(), vb.cols());
   double Fx=0, Fy=0, Fz=0, Pin=0, Pout=0;
+
+#ifdef DEBUG_JOU
+  LOG(INFO) << "JOU\n";
+#endif
 // #ifdef _OPENMP
 // #pragma omp parallel for reduction(+:Fx, Fy, Fz, Pin)
 // #endif
@@ -77,7 +84,7 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
 
 
     internal::JoukowskiSteadyOnPanel(&dF_st, vb.at(i, j), vortices.cbegin(),
-                                     vortices.cend(), morphing, freestream, rho,
+                                     vortices.cend(), rings, morphing, freestream, rho,
                                      t, i+1==vb.rows());
     internal::JoukowskiUnsteadyOnPanel(&dF_unst, vb.at(i, j), vb_prev.at(i, j),
                                        rho, dt);
@@ -86,19 +93,20 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
     Fy += dF.y();
     Fz += dF.z();
 
-    auto pos = vb.at(i,j).Centroid();
-    std::cout << pos.x() << " " << pos.y() << " " << pos.z() << " " << Fx << " "
-              << Fy << " " << Fz << std::endl;
-    // for (const auto& node : vb.at(i,j).nodes()) {
-    //   std::cout << node.x() << " " << node.y() << " " << node.z() << "\n";
-    // }
+#ifdef DEBUG_JOU
+      auto pos = vb.at(i,j).Centroid();
+      std::cout << pos.x() << " " << pos.y() << " " << pos.z() << " " << dF.x()
+        << " " << dF.y() << " " << dF.z() << " " << vb.at(i,j).gamma() << std::endl;
+#endif
 
     // TODO duplicate Joukowski
     Eigen::Vector3d Vls;    // velocity of motion
     morphing.Velocity(&Vls, vb.at(i, j).ReferenceCentroid(), t);
     Pin += dF.dot(Vls);
   }
+#ifdef DEBUG_JOU
   std::cout << "\n\n";
+#endif
   Eigen::Vector3d F(Fx, Fy, Fz);
   Pout = Fx * freestream.norm() * (-1);    // assume foward flight
   return AerodynamicLoad{F, Pin, Pout};

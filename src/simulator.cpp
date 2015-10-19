@@ -169,7 +169,7 @@ void CalcLoadProcess(const double t, const double dt) {
     UVLM::calc_load::AerodynamicLoad load, load2;
     if (FLAGS_use_joukowski) {
       load =
-          UVLM::calc_load::CalcLoadJoukowski(c, c_prev, m, inlet, rho, t, dt);
+          UVLM::calc_load::CalcLoadJoukowski(c, c_prev, rings, m, inlet, rho, t, dt);
       load2 = UVLM::calc_load::CalcLoad(c, c_prev, wake.first, wake.second, m,
                                        inlet, rho, t, dt);
     } else {
