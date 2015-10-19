@@ -167,7 +167,7 @@ void CalcLoadProcess(const double t, const double dt) {
     const double rho = 1;
     const double S = c.chord() * c.span();
 
-    UVLM::calc_load::AerodynamicLoad load, load2;
+    UVLM::calc_load::AerodynamicLoad load;
     if (FLAGS_use_joukowski) {
       load = UVLM::calc_load::CalcLoadJoukowski(c, c_prev, rings, m, inlet, rho,
                                                 t, dt);
@@ -177,18 +177,12 @@ void CalcLoadProcess(const double t, const double dt) {
     }
     const double U = inlet.norm();
     auto coeff = load.F / (0.5 * rho * U * U * S);
-    auto coeff2 = load2.F / (0.5 * rho * U * U * S);
 
     data.push_back(coeff.x());
     data.push_back(coeff.y());
     data.push_back(coeff.z());
     data.push_back(load.Pin);
     data.push_back(load.Pout);
-    data.push_back(coeff2.x());
-    data.push_back(coeff2.y());
-    data.push_back(coeff2.z());
-    data.push_back(load2.Pin);
-    data.push_back(load2.Pout);
   }
   std::ofstream ofs(output_load_path, std::ios::app);
   CHECK((bool)ofs) << "Unable to open " << output_load_path;
