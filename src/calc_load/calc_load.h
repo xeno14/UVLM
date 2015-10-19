@@ -16,9 +16,6 @@
 
 #include <glog/logging.h>
 
-// #define DEBUG_KATZ
-#define DEBUG_JOU
-
 namespace UVLM {
 namespace calc_load {
 namespace internal {
@@ -107,9 +104,7 @@ inline AerodynamicLoad CalcLoad(const VortexContainer& vb,
                                 const double dt) {
   Eigen::Vector3d F = Eigen::Vector3d::Zero();
   double Pin = 0;
-#ifdef DEBUG_KATZ
   LOG(INFO) << "KATZ\n";
-#endif
   for (std::size_t i = 0; i < vb.rows(); i++) {
     for (std::size_t j = 0; j < vb.cols(); j++) {
       const Eigen::Vector3d centroid = vb.at(i, j).Centroid();
@@ -132,18 +127,14 @@ inline AerodynamicLoad CalcLoad(const VortexContainer& vb,
       Um_.normalize();
 
       Eigen::Vector3d dF = Um_ * Dlocal + P * normal * Llocal;
-#ifdef DEBUG_KATZ
       auto pos = vb.at(i,j).Centroid();
       std::cout << pos.x() << " " << pos.y() << " " << pos.z() << " " << dF.x()
         << " " << dF.y() << " " << dF.z() << " " << vb.at(i,j).gamma() << std::endl;
-#endif
       F += dF;
       Pin += dF.dot(Um) * (-1);
     }
   }
-#ifdef DEBUG_KATZ
   std::cout << "\n\n";
-#endif
   return AerodynamicLoad {F, Pin, F.x() * freestream.norm() * (-1)};
 }
 

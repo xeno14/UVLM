@@ -54,8 +54,12 @@ std::size_t WakeOffset() {
 }
 
 void CheckReady() {
-  if (morphings.size() == 0) LOG(FATAL) << FLAGS_run_name << " " << "No morphing";
-  if (wings.size() == 0) LOG(FATAL) << FLAGS_run_name << " " << "No wing";
+  if (morphings.size() == 0)
+    LOG(FATAL) << FLAGS_run_name << " "
+               << "No morphing";
+  if (wings.size() == 0)
+    LOG(FATAL) << FLAGS_run_name << " "
+               << "No wing";
 
   std::ofstream ofs_load(output_load_path);
   // TODO check output path is writable
@@ -105,8 +109,8 @@ void AdvectProcess(std::vector<UVLM::VortexRing>* wake, const double dt) {
   // copy current wake vortices
   wake->insert(wake->begin(), vortices->cbegin() + wake_offset,
                vortices->cend());
-  UVLM::AdvectWake(wake,
-                   vortices->cbegin(), vortices->cend(), rings, inlet, dt);
+  UVLM::AdvectWake(wake, vortices->cbegin(), vortices->cend(), rings, inlet,
+                   dt);
 }
 
 void AppendShedProcess(std::vector<std::vector<UVLM::VortexRing>>* shed) {
@@ -122,8 +126,7 @@ void AppendShedProcess(std::vector<std::vector<UVLM::VortexRing>>* shed) {
 
 void SolveLinearProblem(double t) {
   const std::size_t wake_offset = internal::WakeOffset();
-  auto gamma = ::UVLM::SolveLinearProblem(
-      containers, morphings, inlet, t);
+  auto gamma = ::UVLM::SolveLinearProblem(containers, morphings, inlet, t);
   for (std::size_t i = 0; i < wake_offset; i++) {
     vortices->at(i).set_gamma(gamma(i));
   }
@@ -152,13 +155,12 @@ void OutputSnapshot2(const std::size_t step, const double t) {
   snapshot.SerializeToOstream(&ofs);
 }
 
-
 // TODO multiple output
 void CalcLoadProcess(const double t, const double dt) {
   std::vector<Eigen::Vector3d> loads;
   std::vector<double> data;
   data.push_back(t);
-  for (std::size_t i=0; i<containers.size(); i++) {
+  for (std::size_t i = 0; i < containers.size(); i++) {
     const auto& c = containers[i];
     const auto& c_prev = containers_prev[i];
     const auto& m = morphings[i];
@@ -167,14 +169,14 @@ void CalcLoadProcess(const double t, const double dt) {
 
     UVLM::calc_load::AerodynamicLoad load, load2;
     if (FLAGS_use_joukowski) {
-      load =
-          UVLM::calc_load::CalcLoadJoukowski(c, c_prev, rings, m, inlet, rho, t, dt);
+      load = UVLM::calc_load::CalcLoadJoukowski(c, c_prev, rings, m, inlet, rho,
+                                                t, dt);
     } else {
       // LOG(FATAL) << "CalcLoad in Katz-Plotkin method is deprecated";
       load = UVLM::calc_load::CalcLoad(c, c_prev, rings, m, inlet, rho, t, dt);
     }
     const double U = inlet.norm();
-    auto coeff =  load.F / (0.5 * rho * U * U * S);
+    auto coeff = load.F / (0.5 * rho * U * U * S);
     auto coeff2 = load2.F / (0.5 * rho * U * U * S);
 
     data.push_back(coeff.x());
@@ -222,7 +224,8 @@ void Start(const std::size_t steps, const double dt) {
 
   // Main loop
   for (std::size_t step = 1; step <= steps; ++step) {
-    LOG(INFO) << FLAGS_run_name << " " << "step: " << step;
+    LOG(INFO) << FLAGS_run_name << " "
+              << "step: " << step;
     const double t = dt * step;
     const std::size_t wake_offset = internal::WakeOffset();
 
@@ -238,6 +241,9 @@ void Start(const std::size_t steps, const double dt) {
 
     // TODO remove rings
     LOG(INFO) << "copy";
+    CHECK(wake_offset == rings.bound_vortices().size())
+        << "bound vortex size mismatch " << wake_offset << " "
+        << rings.bound_vortices().size();
     std::copy(vortices->begin(), vortices->begin() + wake_offset,
               rings.bound_vortices().begin());
     internal::OutputSnapshot2(step, t);
@@ -255,12 +261,15 @@ void Start(const std::size_t steps, const double dt) {
       internal::MorphingProcess(t);
       // Renew wake vortices
       LOG(INFO) << "copy";
+      CHECK(wake_next.size() == vortices->size()-wake_offset) << "size mismatch";
       std::copy(wake_next.cbegin(), wake_next.cend(),
                 vortices->begin() + wake_offset);
       internal::AppendShedProcess(&shed);
 
       // TODO remove rings
       rings.wake_vortices().resize(vortices->size() - wake_offset);
+      CHECK((vortices->size() - wake_offset) == rings.wake_vortices().size())
+          << "wake size mismatch";
       std::copy(vortices->begin() + wake_offset, vortices->end(),
                 rings.wake_vortices().begin());
     }
