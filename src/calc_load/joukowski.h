@@ -89,7 +89,7 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
     // TODO duplicate Joukowski
     Eigen::Vector3d Vls;    // velocity of motion
     morphing.Velocity(&Vls, vb.at(i, j).ReferenceCentroid(), t);
-    Pin += dF.dot(Vls);
+    Pin += dF.dot(Vls) * (-1);
   }
   Eigen::Vector3d F(Fx, Fy, Fz);
   Pout = Fx * freestream.norm() * (-1);    // assume foward flight
