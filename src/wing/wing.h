@@ -7,6 +7,7 @@
 
 #include "rect.h"
 #include "naca00XX.h"
+#include "naca4digit.h"
 #include "../../proto/uvlm.pb.h"
 #include <eigen3/Eigen/Core>
 

@@ -15,8 +15,10 @@ class NACA0012Test : public ::testing::Test {
     std::ifstream ifs(UVLM_PROJECT_SOURCE_DIR "/test/wing/data/NACA0012.dat");
     if (!ifs) std::exit(EXIT_FAILURE);
     double x, z;
-    ifs >> x >> z;
-    data.emplace_back(x, z);
+    while(!ifs.eof()) {
+      ifs >> x >> z;
+      data.emplace_back(x, z);
+    }
   }
   virtual void SetUp() {}
 

@@ -36,6 +36,7 @@ void Morphing::Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& x0,
   *x = Eigen::Vector3d::UnitZ() * gamma_z +
        T * (x_ref + Eigen::Vector3d::UnitZ() * gamma_b);
 
+  if (x_ref.y() == 0) x->y() = 0;
   if (is_negative) x->y() *= -1;
 
   *x += origin_;
