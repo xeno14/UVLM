@@ -166,23 +166,31 @@ void CalcLoadProcess(const double t, const double dt) {
     const double S = c.chord() * c.span();
     auto wake = GetWake(containers);
 
-    UVLM::calc_load::AerodynamicLoad load;
+    UVLM::calc_load::AerodynamicLoad load, load2;
     if (FLAGS_use_joukowski) {
       load =
           UVLM::calc_load::CalcLoadJoukowski(c, c_prev, m, inlet, rho, t, dt);
+      load2 = UVLM::calc_load::CalcLoad(c, c_prev, wake.first, wake.second, m,
+                                       inlet, rho, t, dt);
     } else {
       LOG(FATAL) << "CalcLoad in Katz-Plotkin method is deprecated";
       load = UVLM::calc_load::CalcLoad(c, c_prev, wake.first, wake.second, m,
                                        inlet, rho, t, dt);
     }
     const double U = inlet.norm();
-    auto coeff = load.F / (0.5 * rho * U * U * S);
+    auto coeff =  load.F / (0.5 * rho * U * U * S);
+    auto coeff2 = load2.F / (0.5 * rho * U * U * S);
 
     data.push_back(coeff.x());
     data.push_back(coeff.y());
     data.push_back(coeff.z());
     data.push_back(load.Pin);
     data.push_back(load.Pout);
+    data.push_back(coeff2.x());
+    data.push_back(coeff2.y());
+    data.push_back(coeff2.z());
+    data.push_back(load2.Pin);
+    data.push_back(load2.Pout);
   }
   std::ofstream ofs(output_load_path, std::ios::app);
   CHECK((bool)ofs) << "Unable to open " << output_load_path;
@@ -223,28 +231,34 @@ void Start(const std::size_t steps, const double dt) {
     const std::size_t wake_offset = internal::WakeOffset();
 
     // Save circulations of bound vortices at the previous step
+    LOG(INFO) << "copy";
     containers_prev.resize(containers.size());
     CopyContainers(containers.begin(), containers.end(),
                    containers_prev.begin());
 
     // 連立方程式を解いて翼の上の循環を求める
+    LOG(INFO) << "linear";
     internal::SolveLinearProblem(t);
 
     // TODO remove rings
+    LOG(INFO) << "copy";
     std::copy(vortices->begin(), vortices->begin() + wake_offset,
               rings.bound_vortices().begin());
     internal::OutputSnapshot2(step, t);
     if (output_load_path.size()) {
+      LOG(INFO) << "calc load";
       internal::CalcLoadProcess(t, dt);
     }
     if (step == steps) break;
 
     if (!FLAGS_disable_wake) {
+      LOG(INFO) << "shed and advect";
       auto shed = internal::ShedProcess(dt);
       std::vector<UVLM::VortexRing> wake_next;
       internal::AdvectProcess(&wake_next, dt);
       internal::MorphingProcess(t);
       // Renew wake vortices
+      LOG(INFO) << "copy";
       std::copy(wake_next.cbegin(), wake_next.cend(),
                 vortices->begin() + wake_offset);
       internal::AppendShedProcess(&shed);

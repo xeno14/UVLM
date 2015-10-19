@@ -99,6 +99,7 @@ AerodynamicLoad CalcLoad(const VortexContainer& vb,
                          const Morphing& morphing, const Eigen::Vector3d& freestream,
                          const double rho, const double t, const double dt) {
   Eigen::Vector3d F = Eigen::Vector3d::Zero();
+  double Pin = 0;
   for (std::size_t i = 0; i < vb.rows(); i++) {
     for (std::size_t j = 0; j < vb.cols(); j++) {
       const Eigen::Vector3d centroid = vb.at(i, j).Centroid();
@@ -120,10 +121,12 @@ AerodynamicLoad CalcLoad(const VortexContainer& vb,
       Eigen::Vector3d Um_ = Um;
       Um_.normalize();
 
-      F += Um_ * Dlocal + P * normal * Llocal;
+      Eigen::Vector3d dF = Um_ * Dlocal + P * normal * Llocal;
+      F += dF;
+      Pin += dF.dot(Um) * (-1);
     }
   }
-  return AerodynamicLoad {F, 0, 0};
+  return AerodynamicLoad {F, Pin, F.x() * freestream.norm() * (-1)};
 }
 
 }  // namespace calc_load
