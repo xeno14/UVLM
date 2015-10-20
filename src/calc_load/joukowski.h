@@ -71,9 +71,9 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
   double Fx=0, Fy=0, Fz=0, Pin=0, Pout=0;
 
   LOG(INFO) << "JOU\n";
-// #ifdef _OPENMP
-// #pragma omp parallel for reduction(+:Fx, Fy, Fz, Pin)
-// #endif
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:Fx, Fy, Fz, Pin)
+#endif
   for (std::size_t index = 0; index < dim.size(); ++index) {
     const auto i = dim[index].first;
     const auto j = dim[index].second;
@@ -91,16 +91,16 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
     Fy += dF.y();
     Fz += dF.z();
 
-      auto pos = vb.at(i,j).Centroid();
-      std::cout << pos.x() << " " << pos.y() << " " << pos.z() << " " << dF.x()
-        << " " << dF.y() << " " << dF.z() << " " << vb.at(i,j).gamma() << std::endl;
+      // auto pos = vb.at(i,j).Centroid();
+      // std::cout << pos.x() << " " << pos.y() << " " << pos.z() << " " << dF.x()
+      //   << " " << dF.y() << " " << dF.z() << " " << vb.at(i,j).gamma() << std::endl;
 
     // TODO duplicate Joukowski
     Eigen::Vector3d Vls;    // velocity of motion
     morphing.Velocity(&Vls, vb.at(i, j).ReferenceCentroid(), t);
     Pin += dF.dot(Vls);
   }
-  std::cout << "\n\n";
+  // std::cout << "\n\n";
   Eigen::Vector3d F(Fx, Fy, Fz);
   Pout = Fx * freestream.norm() * (-1);    // assume foward flight
   return AerodynamicLoad{F, Pin, Pout};
