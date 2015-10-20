@@ -50,21 +50,28 @@ int main(int argc, char* argv[]) {
 
   DEFINE_PARAM_VERBOSE(double, xrel, config);
   DEFINE_PARAM_VERBOSE(double, yrel, config);
+  DEFINE_PARAM_VERBOSE(double, delta_phi, config);
 
   const double K = 0.1;
   const double OMEGA = K * 2 * forward_velocity / chord;
   // TODO angle???
   const double PHI = M_PI / 4;  // Angle of flapping (Ghommem2014)
-  const double PHI0 = -M_PI_2;
   const double alpha = 4.0 / 180.0 * M_PI;  // angle of attack 4 degree
 
   UVLM::Morphing m;
-  m.set_flap([&](double t) { return PHI * sin(OMEGA * t + PHI0); });
+  m.set_flap([&](double t) { return PHI * cos(OMEGA * t); });
   m.set_alpha(alpha);
   UVLM::simulator::AddWing(InitWing(0, 0), m);
+  double delta_phi = 0;
   for (int i = 1; i < PARAM_lines; i++) {
-    UVLM::simulator::AddWing(InitWing(PARAM_xrel * i, PARAM_yrel * i), m);
-    UVLM::simulator::AddWing(InitWing(PARAM_xrel * i, -PARAM_yrel * i), m);
+    delta_phi += PARAM_delta_phi;
+    UVLM::Morphing m_behind;
+    m_behind.set_flap(
+        [&](double t) { return PHI * cos(OMEGA * t + delta_phi); });
+    UVLM::simulator::AddWing(InitWing(PARAM_xrel * i, PARAM_yrel * i),
+                             m_behind);
+    UVLM::simulator::AddWing(InitWing(PARAM_xrel * i, -PARAM_yrel * i),
+                             m_behind);
   }
   UVLM::simulator::SetInlet(forward_velocity, 0, 0);
   UVLM::simulator::SetOutputPath(FLAGS_output);
