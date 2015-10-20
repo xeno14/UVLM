@@ -62,10 +62,12 @@ int main(int argc, char* argv[]) {
   m.set_flap([&](double t) { return PHI * cos(OMEGA * t); });
   m.set_alpha(alpha);
   UVLM::simulator::AddWing(InitWing(0, 0), m);
+  double delta_phi = 0;
   for (int i = 1; i < PARAM_lines; i++) {
+    delta_phi += PARAM_delta_phi;
     UVLM::Morphing m_behind;
     m_behind.set_flap(
-        [&](double t) { return PHI * cos(OMEGA * t + PARAM_delta_phi); });
+        [&](double t) { return PHI * cos(OMEGA * t + delta_phi); });
     UVLM::simulator::AddWing(InitWing(PARAM_xrel * i, PARAM_yrel * i),
                              m_behind);
     UVLM::simulator::AddWing(InitWing(PARAM_xrel * i, -PARAM_yrel * i),
