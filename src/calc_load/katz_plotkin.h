@@ -20,9 +20,9 @@ namespace UVLM {
 namespace calc_load {
 namespace internal {
 inline double CalcLocalLiftSt(const Eigen::Vector3d& Um, const Eigen::Vector3d& Uw,
-                     const Eigen::Vector3d& grad, const double A,
+                     const Eigen::Vector3d& grad, const double b, const double c,
                      const double alpha, const double rho) {
-  return rho * (Um + Uw).dot(grad) * A * cos(alpha);
+  return rho * (Um + Uw).dot(grad) * b * c * cos(alpha);
 }
 
 inline double CalcLocalDragSt(const Eigen::Vector3d& Ubc,
@@ -34,6 +34,8 @@ inline double CalcLocalDragSt(const Eigen::Vector3d& Ubc,
 }
 
 // TODO unsteady term
+
+
 
 }  // namespace internal
 

@@ -18,6 +18,7 @@ AerodynamicLoad CalcLoadKatzPlotkin(const VortexContainer& c, const VortexContai
                          const Eigen::Vector3d& freestream, const double rho,
                          const double t, const double dt) {
   
+  LOG(INFO) << "Katz";
   Eigen::Vector3d F;
   double Pin=0, Pout=0;
 
@@ -40,7 +41,7 @@ AerodynamicLoad CalcLoadKatzPlotkin(const VortexContainer& c, const VortexContai
     rings.InducedVelocityByChordwiseBound(&Ubc, centroid);
 
     const double Lst =
-        internal::CalcLocalLiftSt(Um, Uw, c.Grad(i, j), db * dc, alpha, rho);
+        internal::CalcLocalLiftSt(Um, Uw, c.Grad(i, j), db, dc, alpha, rho);
     const double Dst =
         internal::CalcLocalDragSt(Um, Ubc, P, n, c.DeltaGamma(i, j), db, rho);
     const double Lunst = 0;

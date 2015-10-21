@@ -7,7 +7,6 @@
 
 #include "../proto/uvlm.pb.h"
 #include "calc_load/calc_load.h"
-#include "calc_load/joukowski.h"
 #include "uvlm_vortex_ring.h"
 #include "morphing.h"
 #include "linear.h"
@@ -160,6 +159,11 @@ void CalcLoadProcess(const double t, const double dt) {
   std::vector<Eigen::Vector3d> loads;
   std::vector<double> data;
   data.push_back(t);
+  if (FLAGS_use_joukowski) {
+    LOG(INFO) << "joukowski";
+  } else {
+    LOG(INFO) << "Katz and Plotkin";
+  }
   for (std::size_t i = 0; i < containers.size(); i++) {
     const auto& c = containers[i];
     const auto& c_prev = containers_prev[i];
@@ -172,7 +176,8 @@ void CalcLoadProcess(const double t, const double dt) {
       load = UVLM::calc_load::CalcLoadJoukowski(c, c_prev, rings, m, inlet, rho,
                                                 t, dt);
     } else {
-      LOG(FATAL) << "CalcLoad in Katz-Plotkin method is deprecated";
+      load = UVLM::calc_load::CalcLoadKatzPlotkin(c, c_prev, m, rings, inlet,
+                                                  rho, t, dt);
     }
     const double U = inlet.norm();
     auto coeff = load.F / (0.5 * rho * U * U * S);
