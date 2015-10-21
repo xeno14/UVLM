@@ -33,10 +33,6 @@ inline double CalcLocalDragSt(const Eigen::Vector3d& Ubc,
   return rho * (-(Ubc + Uw).dot(P * n) * dg * b);
 }
 
-// TODO unsteady term
-
-
-
 }  // namespace internal
 
 AerodynamicLoad CalcLoadKatzPlotkin(const VortexContainer& c,

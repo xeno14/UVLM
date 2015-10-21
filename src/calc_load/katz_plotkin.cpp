@@ -27,26 +27,32 @@ AerodynamicLoad CalcLoadKatzPlotkin(const VortexContainer& c, const VortexContai
     const auto i = dim[index].first, j = dim[index].second;
     const auto& v = c.at(dim[index].first, dim[index].second);
 
-    Eigen::Vector3d dF_st, dF_unst;
     const Eigen::Vector3d centroid = v.Centroid();
     const double db = v.CalcB();    // panel length
     const double dc = v.CalcC();    // panel length
 
+    // prepare
     const auto Um = internal::CalcUm(morphing, centroid, freestream, t);
     const auto P = internal::CalcProjectionOperator(Um);
     const auto n = v.Normal();
     const double alpha = v.AngleOfAttack(Um);
+
     Eigen::Vector3d Uw, Ubc;
     rings.InducedVelocityByWake(&Uw, centroid);
     rings.InducedVelocityByChordwiseBound(&Ubc, centroid);
 
+    // steady part
     const double Lst =
         internal::CalcLocalLiftSt(Um, Uw, c.Grad(i, j), db, dc, alpha, rho);
     const double Dst =
         internal::CalcLocalDragSt(Um, Ubc, P, n, c.DeltaGamma(i, j), db, rho);
-    const double Lunst = 0;
-    const double Dunst = 0;
 
+    // unstready part
+    const double dg_dt = (c.at(i, j).gamma() - cp.at(i, j).gamma()) /dt;
+    const double Lunst = rho * dg_dt * db * dc * cos(alpha);
+    const double Dunst = rho * dg_dt * db * dc * sin(alpha);
+
+    // sum
     const Eigen::Vector3d e_drag = Um / Um.norm();
     const Eigen::Vector3d e_lift = P * n;
     F += e_drag * (Dst + Dunst) + e_lift * (Lst + Lunst);
