@@ -11,7 +11,7 @@
 #include "../shed.h"
 #include "../util.h"
 #include "../morphing.h"
-#include "calc_load.h"
+#include "functions.h"
 
 namespace UVLM {
 namespace calc_load {

@@ -35,6 +35,12 @@ message VortexRing {
   optional double gamma = 1;    // 循環
   repeated Point nodes = 2;     // 節の位置
   repeated Point nodes0 = 3;    // 節の基準位置（原点固定の場合、初期位置に相当）
+
+  optional double Um_x = 4;
+  optional double Um_y = 5;
+  optional double Um_z = 6;
+
+  // Next: 7
 }
 
 // 個体

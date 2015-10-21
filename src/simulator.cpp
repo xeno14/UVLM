@@ -172,8 +172,7 @@ void CalcLoadProcess(const double t, const double dt) {
       load = UVLM::calc_load::CalcLoadJoukowski(c, c_prev, rings, m, inlet, rho,
                                                 t, dt);
     } else {
-      // LOG(FATAL) << "CalcLoad in Katz-Plotkin method is deprecated";
-      load = UVLM::calc_load::CalcLoad(c, c_prev, rings, m, inlet, rho, t, dt);
+      LOG(FATAL) << "CalcLoad in Katz-Plotkin method is deprecated";
     }
     const double U = inlet.norm();
     auto coeff = load.F / (0.5 * rho * U * U * S);
