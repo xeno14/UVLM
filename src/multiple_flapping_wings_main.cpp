@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
   const double OMEGA = K * 2 * forward_velocity / chord;
   // TODO angle???
   const double PHI = M_PI / 4;  // Angle of flapping (Ghommem2014)
-  const double alpha = 4.0 / 180.0 * M_PI;  // angle of attack 4 degree
+  const double alpha = 5.0 / 180.0 * M_PI;  // angle of attack 4 degree
 
   UVLM::Morphing m;
   m.set_flap([&](double t) { return PHI * cos(OMEGA * t); });

@@ -48,7 +48,11 @@ AerodynamicLoad CalcLoadKatzPlotkin(const VortexContainer& c, const VortexContai
         internal::CalcLocalDragSt(Um, Ubc, P, n, c.DeltaGamma(i, j), db, rho);
 
     // unstready part
-    const double dg_dt = (c.at(i, j).gamma() - cp.at(i, j).gamma()) /dt;
+    double dg_dt = (c.at(i, j).gamma() - cp.at(i, j).gamma()) /dt;
+    if (i > 0) {
+      dg_dt += (c.at(i - 1, j).gamma() - cp.at(i - 1, j).gamma()) / dt;
+    }
+    dg_dt /= 2;
     const double Lunst = rho * dg_dt * db * dc * cos(alpha);
     const double Dunst = rho * dg_dt * db * dc * sin(alpha);
 

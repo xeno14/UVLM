@@ -178,6 +178,9 @@ void CalcLoadProcess(const double t, const double dt) {
     } else {
       load = UVLM::calc_load::CalcLoadKatzPlotkin(c, c_prev, m, rings, inlet,
                                                   rho, t, dt);
+      // auto load2  = UVLM::calc_load::CalcLoadJoukowski(c, c_prev, rings, m, inlet, rho,
+      //                                           t, dt);
+      // load.F.x() = load2.F.x();
     }
     const double U = inlet.norm();
     auto coeff = load.F / (0.5 * rho * U * U * S);
