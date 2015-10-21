@@ -166,6 +166,13 @@ TEST_F(VortexRingTest, ForEach) {
   EXPECT_VECTOR3D_EQ(0, 1, 0, ends[3]);
 }
 
+TEST_F(VortexRingTest, Impulse) {
+  auto v = GetSquareRing(2);
+  v.set_gamma(10);
+  auto i = v.Impulse();
+  EXPECT_VECTOR3D_EQ(0, 0, -4*10, i);
+}
+
 class ChordSpanTest : public ::testing::Test {
  protected:
   virtual void SetUp() {

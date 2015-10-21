@@ -114,6 +114,11 @@ class VortexRing {
   double CalcB() const;
 
   /**
+   * @brief Vortex impulse
+   */
+  Eigen::Vector3d Impulse() const;
+
+  /**
    * @brief loop for each line segment of ring
    *
    * start and end are given for the function. the function must be formed
