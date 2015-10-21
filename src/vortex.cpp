@@ -95,6 +95,10 @@ Vector3d VortexRing::Tangent() const {
   return res;
 }
 
+Vector3d VortexRing::Tangent2() const {
+  return Normal().cross(Tangent());
+}
+
 Vector3d VortexRing::Centroid() const {
   return (nodes_[0] + nodes_[1] + nodes_[2] + nodes_[3]) / 4;
 }

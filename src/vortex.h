@@ -75,6 +75,10 @@ class VortexRing {
    */
   Vector3d Tangent() const;
 
+  /** @brief tangent vector perpendiculer to normal and tangent
+   */
+  Vector3d Tangent2() const;
+
   /** @brief 中心の位置 
    *  @todo ちゃんと計算する
    */

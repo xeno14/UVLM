@@ -135,6 +135,12 @@ TEST_F(VortexRingTest, Tangent) {
   EXPECT_VECTOR3D_EQ(1, 0, 0, t);
 }
 
+TEST_F(VortexRingTest, Tangent2) {
+  auto v = GetSquareRing(20000);
+  auto t = v.Tangent2();
+  EXPECT_VECTOR3D_EQ(0, 1, 0, t);
+}
+
 TEST_F(VortexRingTest, AngleOfAttack) {
   auto v = GetSquareRing(1);
   const double alpha = 0.1;
