@@ -59,7 +59,9 @@ AerodynamicLoad CalcLoadKatzPlotkin(const VortexContainer& c, const VortexContai
     // sum
     const Eigen::Vector3d e_drag = Um / Um.norm();
     const Eigen::Vector3d e_lift = P * n;
-    F += e_drag * (Dst + Dunst) + e_lift * (Lst + Lunst);
+    const Eigen::Vector3d dF = e_drag * (Dst + Dunst) + e_lift * (Lst + Lunst);
+    F += dF;
+    Pin += (-1)*Um.dot(n) * dF.dot(n);
   }
 
   return AerodynamicLoad{F, Pin, Pout};
