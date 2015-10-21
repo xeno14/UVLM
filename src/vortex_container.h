@@ -115,7 +115,9 @@ class VortexContainer {
   std::size_t size() const { return cols_ * rows_; }
 
   auto begin() { return vortices_->begin() + Index(0); }
+  auto begin() const { return vortices_->begin() + Index(0); }
   auto end() { return vortices_->begin() + Index(rows_ * cols_); }
+  auto end() const { return vortices_->begin() + Index(rows_ * cols_); }
   auto edge_begin() { return vortices_->begin() + Index(rows_ - 1, 0); }
   auto edge_end() { return end(); }
   auto cbegin() const { return vortices_->cbegin() + Index(0); }
