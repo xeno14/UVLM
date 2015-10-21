@@ -78,7 +78,7 @@ class UVLMVortexRing {
     internal::InducedVelocityByVortices(result, pos, wake_vortices_);
   }
 
-  inline void ChordwiseInducedVelocity(Eigen::Vector3d* const result,
+  inline void InducedVelocityByChordwiseBound(Eigen::Vector3d* const result,
                                 const Eigen::Vector3d& pos) const {
     internal::InducedVelocityByChordwiseVortices(result, pos, bound_vortices_);
   }

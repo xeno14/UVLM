@@ -84,6 +84,17 @@ class VortexContainer {
     }
   }
 
+  double DeltaGamma(std::size_t i, std::size_t j) const {
+    const double g = this->at(i, j).gamma();
+    const double g_i = i == 0 ? 0 : this->at(i - 1, j).gamma(); // leading edge
+    return g - g_i;
+  }
+
+  Eigen::Vector3d Grad(std::size_t i, std::size_t j) const {
+    const auto& v = this->at(i, j);
+    return v.Tangent() * DeltaGamma(i,j) / v.CalcC();
+  }
+
   const vortices_ptr_t& vortices() const { return vortices_; }
   std::size_t cols() const { return cols_; }
   std::size_t rows() const { return rows_; }
