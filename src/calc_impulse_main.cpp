@@ -68,7 +68,7 @@ auto CalcImpulse(const std::string& snapshot2_path) {
   const auto wakeoffset =
       UVLM::CountTotalSize(containers.begin(), containers.end());
   // TODO multiple wings
-  auto vortex_impulse = CalcVortexImpulse(vortices->begin() + wakeoffset, vortices->end());
+  auto vortex_impulse = CalcVortexImpulse(vortices->begin(), vortices->end());
   auto pressure_impulse =
       CalcPressureImpulse(containers[0].begin(), containers[0].end());
   return std::make_tuple(t, vortex_impulse, pressure_impulse);
