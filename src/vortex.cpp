@@ -133,6 +133,14 @@ double VortexRing::CalcB() const {
   return (this->nodes()[0] - this->nodes()[3]).norm();
 }
 
+double VortexRing::CalcArea() const {
+  Eigen::Vector3d u1 = nodes_[1] - nodes_[0];
+  Eigen::Vector3d u2 = nodes_[3] - nodes_[0];
+  Eigen::Vector3d v1 = nodes_[3] - nodes_[2];
+  Eigen::Vector3d v2 = nodes_[1] - nodes_[2];
+  return (u1.cross(u2).norm() + v1.cross(v2).norm()) / 2;
+}
+
 Eigen::Vector3d VortexRing::Impulse() const {
   return (nodes_[0] - nodes_[1]).cross(nodes_[3] - nodes_[0]) * gamma_;
 }

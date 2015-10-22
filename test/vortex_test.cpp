@@ -201,3 +201,7 @@ TEST_F(ChordSpanTest, c) {
 TEST_F(ChordSpanTest, b) {
   EXPECT_DOUBLE_EQ(2, v.CalcB());
 }
+
+TEST_F(ChordSpanTest, area) {
+  EXPECT_NEAR(2.05, v.CalcArea(), EPS);
+}

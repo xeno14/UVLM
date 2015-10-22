@@ -114,6 +114,12 @@ class VortexRing {
   double CalcB() const;
 
   /**
+   * @brief Area of ring
+   * sum of triangles
+   */
+  double CalcArea() const;
+
+  /**
    * @brief Vortex impulse
    */
   Eigen::Vector3d Impulse() const;
