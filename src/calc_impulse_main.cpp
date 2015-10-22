@@ -44,6 +44,16 @@ auto CalcVortexImpulse(InputIterator first, InputIterator last) {
   return res;
 }
 
+// TODO think about its deffinition more carafully
+template <class InputIterator>
+auto CalcPressureImpulse(InputIterator first, InputIterator last) {
+  Eigen::Vector3d res;
+  for (auto it = first; it!=last; ++it) {
+    res += it->Impulse() * (-1);
+  }
+  return res;
+} 
+
 auto CalcImpulse(const std::string& snapshot2_path) {
   std::ifstream ifs(snapshot2_path, std::ios::binary);
   CHECK((bool)ifs) << "Unable to open " << FLAGS_input;
@@ -55,9 +65,11 @@ auto CalcImpulse(const std::string& snapshot2_path) {
   std::vector<UVLM::VortexContainer> containers;
   auto vortices = UVLM::Snapshot2ToContainers(&containers, snapshot);
 
+  // TODO multiple wings
   auto vortex_impulse = CalcVortexImpulse(vortices->begin(), vortices->end());
-  // TODO calc pressure impulse
-  return std::make_tuple(t, vortex_impulse);
+  auto pressure_impulse =
+      CalcPressureImpulse(containers[0].begin(), containers[0].end());
+  return std::make_tuple(t, vortex_impulse, pressure_impulse);
 }
 }  // anonymous namespace
 
@@ -72,10 +84,12 @@ int main(int argc, char* argv[]) {
   CHECK((bool)ofs) << "Unable to open " << FLAGS_output;
   for (const auto& path : GlobResult(FLAGS_input)) {
     LOG(INFO) << path;
-    Eigen::Vector3d impulse;
+    Eigen::Vector3d impulse, pressure_impulse;
     double t;
-    std::tie(t, impulse) = CalcImpulse(path);
-    std::vector<double> data{t, impulse.x(), impulse.y(), impulse.z()};
+    std::tie(t, impulse, pressure_impulse) = CalcImpulse(path);
+    std::vector<double> data{t, impulse.x(), impulse.y(), impulse.z(),
+                             pressure_impulse.x(), pressure_impulse.y(),
+                             pressure_impulse.z()};
     ofs << UVLM::util::join("\t", data.begin(), data.end()) << std::endl;
 
   }
