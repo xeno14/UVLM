@@ -117,7 +117,7 @@ class VortexRing {
    * @brief Area of ring
    * sum of triangles
    */
-  double CalcArea() const;
+  double Area() const;
 
   /**
    * @brief Vortex impulse

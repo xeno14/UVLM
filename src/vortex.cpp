@@ -133,7 +133,7 @@ double VortexRing::CalcB() const {
   return (this->nodes()[0] - this->nodes()[3]).norm();
 }
 
-double VortexRing::CalcArea() const {
+double VortexRing::Area() const {
   Eigen::Vector3d u1 = nodes_[1] - nodes_[0];
   Eigen::Vector3d u2 = nodes_[3] - nodes_[0];
   Eigen::Vector3d v1 = nodes_[3] - nodes_[2];
@@ -142,7 +142,8 @@ double VortexRing::CalcArea() const {
 }
 
 Eigen::Vector3d VortexRing::Impulse() const {
-  return (nodes_[0] - nodes_[1]).cross(nodes_[3] - nodes_[0]) * gamma_;
+  // -1 comes from clockwise loop
+  return Normal() * gamma_ * Area() * (-1);
 }
 
 }  // namespace UVLM

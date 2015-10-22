@@ -203,5 +203,5 @@ TEST_F(ChordSpanTest, b) {
 }
 
 TEST_F(ChordSpanTest, area) {
-  EXPECT_NEAR(2.05, v.CalcArea(), EPS);
+  EXPECT_NEAR(2.05, v.Area(), EPS);
 }
