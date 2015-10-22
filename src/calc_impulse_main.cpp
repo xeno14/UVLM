@@ -37,7 +37,7 @@ std::vector<std::string> GlobResult(const std::string& path) {
 
 template <class InputIterator>
 auto CalcVortexImpulse(InputIterator first, InputIterator last) {
-  Eigen::Vector3d res;
+  Eigen::Vector3d res = Eigen::Vector3d::Zero();
   for (auto it = first; it!=last; ++it) {
     res += it->Impulse();
   }
@@ -65,8 +65,10 @@ auto CalcImpulse(const std::string& snapshot2_path) {
   std::vector<UVLM::VortexContainer> containers;
   auto vortices = UVLM::Snapshot2ToContainers(&containers, snapshot);
 
+  const auto wakeoffset =
+      UVLM::CountTotalSize(containers.begin(), containers.end());
   // TODO multiple wings
-  auto vortex_impulse = CalcVortexImpulse(vortices->begin(), vortices->end());
+  auto vortex_impulse = CalcVortexImpulse(vortices->begin() + wakeoffset, vortices->end());
   auto pressure_impulse =
       CalcPressureImpulse(containers[0].begin(), containers[0].end());
   return std::make_tuple(t, vortex_impulse, pressure_impulse);
