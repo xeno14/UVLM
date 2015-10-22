@@ -12,6 +12,7 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <glob.h>
+#include <tuple>
 
 DEFINE_string(input, "", "path to result dir");
 DEFINE_string(output, "", "output path");
@@ -27,31 +28,30 @@ std::vector<std::string> GlobResult(const std::string& path) {
   CHECK(ret == 0);
   for (i = 0; i < globbuf.gl_pathc; i++) {
     res.emplace_back(globbuf.gl_pathv[i]);
-    std::cerr << *res.rbegin() << std::endl;
   }
   globfree(&globbuf);
   std::sort(res.begin(), res.end());
   return res;
 }
 
-Eigen::Vector3d CalcImpulse(const std::string& snapshot2_path) {
+auto CalcImpulse(const std::string& snapshot2_path) {
   std::ifstream ifs(snapshot2_path, std::ios::binary);
   CHECK((bool)ifs) << "Unable to open " << FLAGS_input;
 
   UVLM::proto::Snapshot2 snapshot;
   snapshot.ParseFromIstream(&ifs);
 
+  const double t = snapshot.t();
   std::vector<UVLM::VortexContainer> containers;
   auto vortices = UVLM::Snapshot2ToContainers(&containers, snapshot);
 
-  std::ofstream ofs(FLAGS_output);
   Eigen::Vector3d total_impulse;
   const auto wake_offset = CountTotalSize(containers.begin(), containers.end());
   for (auto it = vortices->cbegin() + wake_offset; it != vortices->cend();
        ++it) {
     total_impulse += it->Impulse();
   }
-  return total_impulse;
+  return std::make_tuple(t, total_impulse);
 }
 
 int main(int argc, char* argv[]) {
@@ -61,10 +61,16 @@ int main(int argc, char* argv[]) {
   FLAGS_logtostderr = true;
 
   auto paths = GlobResult(FLAGS_input);
-  //
-  // std::vector<double> data{total_impulse.x(), total_impulse.y(),
-  //                          total_impulse.z()};
-  // ofs << join("\t", data.begin(), data.end()) << std::endl;
+  std::ofstream ofs(FLAGS_output);
+  CHECK((bool)ofs) << "Unable to open " << FLAGS_output;
+  for (const auto& path : GlobResult(FLAGS_input)) {
+    LOG(INFO) << path;
+    Eigen::Vector3d impulse;
+    double t;
+    std::tie(t, impulse) = CalcImpulse(path);
+    std::vector<double> data{t, impulse.x(), impulse.y(), impulse.z()};
+    ofs << UVLM::util::join("\t", data.begin(), data.end()) << std::endl;
 
+  }
   return 0;
 }
