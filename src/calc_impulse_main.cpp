@@ -17,6 +17,7 @@
 DEFINE_string(input, "", "path to result dir");
 DEFINE_string(output, "", "output path");
 
+namespace {
 std::vector<std::string> GlobResult(const std::string& path) {
   std::vector<std::string> res;
   const std::string pattern = path + "/*";
@@ -34,6 +35,15 @@ std::vector<std::string> GlobResult(const std::string& path) {
   return res;
 }
 
+template <class InputIterator>
+auto CalcVortexImpulse(InputIterator first, InputIterator last) {
+  Eigen::Vector3d res;
+  for (auto it = first; it!=last; ++it) {
+    res += it->Impulse();
+  }
+  return res;
+}
+
 auto CalcImpulse(const std::string& snapshot2_path) {
   std::ifstream ifs(snapshot2_path, std::ios::binary);
   CHECK((bool)ifs) << "Unable to open " << FLAGS_input;
@@ -45,14 +55,11 @@ auto CalcImpulse(const std::string& snapshot2_path) {
   std::vector<UVLM::VortexContainer> containers;
   auto vortices = UVLM::Snapshot2ToContainers(&containers, snapshot);
 
-  Eigen::Vector3d total_impulse;
-  const auto wake_offset = CountTotalSize(containers.begin(), containers.end());
-  for (auto it = vortices->cbegin() + wake_offset; it != vortices->cend();
-       ++it) {
-    total_impulse += it->Impulse();
-  }
-  return std::make_tuple(t, total_impulse);
+  auto vortex_impulse = CalcVortexImpulse(vortices->begin(), vortices->end());
+  // TODO calc pressure impulse
+  return std::make_tuple(t, vortex_impulse);
 }
+}  // anonymous namespace
 
 int main(int argc, char* argv[]) {
   google::InitGoogleLogging(argv[0]);
