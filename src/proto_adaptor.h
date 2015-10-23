@@ -81,4 +81,20 @@ inline auto Snapshot2ToContainers(
   return vortices;
 }
 
+inline void Snapshot2ToMorphingVelocities(
+    std::vector<Eigen::Vector3d>* centers,
+    std::vector<std::vector<Eigen::Vector3d>>* v_nodes,
+    const proto::Snapshot2& snapshot2) {
+  centers->clear();
+  v_nodes->clear();
+  for (const auto& mv : snapshot2.morphing_velocities()) {
+    centers->emplace_back(PointToVector3d(mv.center()));
+    std::vector<Eigen::Vector3d> a;
+    for (const auto& vn : mv.nodes()) {
+      a.emplace_back(PointToVector3d(vn));
+    }
+    v_nodes->emplace_back(a);
+  }
+}
+
 }  // namespace UVLM

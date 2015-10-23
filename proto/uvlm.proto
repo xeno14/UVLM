@@ -54,8 +54,8 @@ message Snapshot {
 }
 
 message MorphingVelocity {
-  optional Point center = 1;
-  repeated Point nodes = 2;
+  optional Point center = 1;  // velocity at centroid
+  repeated Point nodes = 2;   // velocity at each vortex segment
 
   // Next: 3
 }
@@ -74,7 +74,7 @@ message Snapshot2 {
   }
   repeated ContainerShape container_shapes = 2;
   repeated VortexRing vortices = 3;
-  repeated MorphingVelocity morphing_velocities = 4;
+  repeated MorphingVelocity morphing_velocities = 4;  // index is associated with vortices
 
   // Next: 5
 }
