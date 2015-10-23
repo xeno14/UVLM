@@ -51,8 +51,9 @@ int main(int argc, char* argv[]) {
   DEFINE_PARAM_VERBOSE(double, xrel, config);
   DEFINE_PARAM_VERBOSE(double, yrel, config);
   DEFINE_PARAM_VERBOSE(double, delta_phi, config);
+  DEFINE_PARAM_VERBOSE(double, k, config);
 
-  const double K = 0.1;
+  const double K = PARAM_k;
   const double OMEGA = K * 2 * forward_velocity / chord;
   // TODO angle???
   const double PHI = M_PI / 4;  // Angle of flapping (Ghommem2014)
