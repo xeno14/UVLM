@@ -72,18 +72,18 @@ auto CalcImpulse(const std::string& snapshot2_path) {
                                       snapshot);
 
   // TODO multiple wings
-  Eigen::Vector3d impulse;
-  Eigen::Vector3d other_term;
+  Eigen::Vector3d impulse =
+      CalcVortexImpulse(containers[0].begin(), containers[0].end());
+  Eigen::Vector3d other_term = Eigen::Vector3d::Zero();
   for (std::size_t i=0; i<containers[0].size(); i++) {
     const auto& v = containers[0][i];
-    impulse += v.Impulse();
     auto um = v_nodes[i].begin();
     v.ForEachSegment([&](const auto& start, const auto& end) {
       const Eigen::Vector3d l = end - start;
       const Eigen::Vector3d pos = (start + end) / 2;
       Eigen::Vector3d u;
       UVLM::internal::InducedVelocityByVortices(&u, pos, *vortices);
-      const Eigen::Vector3d ue = *um + u + freestreams[i];
+      const Eigen::Vector3d ue = *um + u - freestreams[i];
       other_term += ue.cross(l) * v.gamma();
       ++um;
     });
