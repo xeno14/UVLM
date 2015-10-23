@@ -6,6 +6,7 @@
 #include "../proto/uvlm.pb.h"
 #include "util.h"
 #include "proto_adaptor.h"
+#include "calc_impulse.h"
 
 #include <algorithm>
 #include <fstream>
@@ -75,18 +76,9 @@ auto CalcImpulse(const std::string& snapshot2_path) {
   Eigen::Vector3d impulse =
       CalcVortexImpulse(containers[0].begin(), containers[0].end());
   Eigen::Vector3d other_term = Eigen::Vector3d::Zero();
-  for (std::size_t i=0; i<containers[0].size(); i++) {
-    const auto& v = containers[0][i];
-    auto um = v_nodes[i].begin();
-    v.ForEachSegment([&](const auto& start, const auto& end) {
-      const Eigen::Vector3d l = end - start;
-      const Eigen::Vector3d pos = (start + end) / 2;
-      Eigen::Vector3d u;
-      UVLM::internal::InducedVelocityByVortices(&u, pos, *vortices);
-      const Eigen::Vector3d ue = *um + u - freestreams[i];
-      other_term += ue.cross(l) * v.gamma();
-      ++um;
-    });
+  for (std::size_t i = 0; i < containers[0].size(); i++) {
+    other_term += UVLM::calc_impulse::CalcLambVectorOnPanel(
+        containers[0][i], v_nodes[i], freestreams[i], *vortices);
   }
   return std::make_tuple(t, impulse, other_term);
 }
