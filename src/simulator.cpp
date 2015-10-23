@@ -148,17 +148,18 @@ void OutputSnapshot2(const std::size_t step, const double t) {
     snapshot.add_vortices()->CopyFrom(::UVLM::VortexRingToProto(vortex));
   }
   for (std::size_t i = 0; i < containers.size(); i++) {
-    const auto& m = morphings[i];
+    const auto& morphing = morphings[i];
     for (const auto& v : containers[i]) {
       auto* mv = snapshot.add_morphing_velocities();
+      mv->mutable_freestream()->CopyFrom(UVLM::Vector3dToPoint(inlet));
       Eigen::Vector3d vc;
-      m.Velocity(&vc, v.ReferenceCentroid(), t);
+      morphing.Velocity(&vc, v.ReferenceCentroid(), t);
       mv->mutable_center()->CopyFrom(::UVLM::Vector3dToPoint(vc));
       std::vector<Eigen::Vector3d> nodes;
       v.ForEachSegment([&](const auto& start, const auto& end,
                            const auto& start0, const auto& end0) {
         Eigen::Vector3d vel;
-        m.Velocity(&vel, (start0 + end0) / 2, t);
+        morphing.Velocity(&vel, (start0 + end0) / 2, t);
         nodes.push_back(vel);
       });
       for (const auto& vn : nodes) {

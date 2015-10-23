@@ -65,13 +65,30 @@ auto CalcImpulse(const std::string& snapshot2_path) {
   std::vector<UVLM::VortexContainer> containers;
   auto vortices = UVLM::Snapshot2ToContainers(&containers, snapshot);
 
-  const auto wakeoffset =
-      UVLM::CountTotalSize(containers.begin(), containers.end());
+  std::vector<Eigen::Vector3d> v_centers;
+  std::vector<Eigen::Vector3d> freestreams;
+  std::vector<std::vector<Eigen::Vector3d>> v_nodes;
+  UVLM::Snapshot2ToMorphingVelocities(&v_centers, &v_nodes, &freestreams,
+                                      snapshot);
+
   // TODO multiple wings
-  auto vortex_impulse = CalcVortexImpulse(vortices->begin(), vortices->end());
-  auto pressure_impulse =
-      CalcPressureImpulse(containers[0].begin(), containers[0].end());
-  return std::make_tuple(t, vortex_impulse, pressure_impulse);
+  Eigen::Vector3d impulse;
+  Eigen::Vector3d other_term;
+  for (std::size_t i=0; i<containers[0].size(); i++) {
+    const auto& v = containers[0][i];
+    impulse += v.Impulse();
+    auto um = v_nodes[i].begin();
+    v.ForEachSegment([&](const auto& start, const auto& end) {
+      const Eigen::Vector3d l = end - start;
+      const Eigen::Vector3d pos = (start + end) / 2;
+      Eigen::Vector3d u;
+      UVLM::internal::InducedVelocityByVortices(&u, pos, *vortices);
+      const Eigen::Vector3d ue = *um + u + freestreams[i];
+      other_term += ue.cross(l) * v.gamma();
+      ++um;
+    });
+  }
+  return std::make_tuple(t, impulse, other_term);
 }
 }  // anonymous namespace
 
@@ -86,12 +103,13 @@ int main(int argc, char* argv[]) {
   CHECK((bool)ofs) << "Unable to open " << FLAGS_output;
   for (const auto& path : GlobResult(FLAGS_input)) {
     LOG(INFO) << path;
-    Eigen::Vector3d impulse, pressure_impulse;
+    Eigen::Vector3d impulse;
+    Eigen::Vector3d other_term;
     double t;
-    std::tie(t, impulse, pressure_impulse) = CalcImpulse(path);
+    std::tie(t, impulse, other_term) = CalcImpulse(path);
     std::vector<double> data{t, impulse.x(), impulse.y(), impulse.z(),
-                             pressure_impulse.x(), pressure_impulse.y(),
-                             pressure_impulse.z()};
+                             other_term.x(), other_term.y(),
+                             other_term.z()};
     ofs << UVLM::util::join("\t", data.begin(), data.end()) << std::endl;
 
   }

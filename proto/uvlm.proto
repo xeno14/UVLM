@@ -54,10 +54,11 @@ message Snapshot {
 }
 
 message MorphingVelocity {
-  optional Point center = 1;  // velocity at centroid
-  repeated Point nodes = 2;   // velocity at each vortex segment
+  optional Point center = 1;      // velocity at centroid
+  repeated Point nodes = 2;       // velocity at each vortex segment
+  optional Point freestream = 3;  // freestream
 
-  // Next: 3
+  // Next: 4
 }
 
 // スナップショットver2 （案）
