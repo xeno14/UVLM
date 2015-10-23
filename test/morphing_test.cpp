@@ -137,4 +137,19 @@ TEST_F(MorphingVelocityTest, plug) {
   EXPECT_NEAR(0, v.x(), EPS);
   EXPECT_NEAR(0, v.y(), EPS);
   EXPECT_NEAR(0, v.z(), EPS);
+
+  morphing.Velocity(&v, {1, 2, 3}, M_PI/4);
+  EXPECT_NEAR(0, v.x(), EPS);
+  EXPECT_NEAR(0, v.y(), EPS);
+  EXPECT_NEAR(M_SQRT1_2, v.z(), EPS);
+}
+
+TEST_F(MorphingVelocityTest, plung2) {
+  morphing.set_plug(
+      [](double t) { return 0.175 * sin(t); });
+  Eigen::Vector3d v;
+  morphing.Velocity(&v, {100, 2000, 3333}, 0);
+  EXPECT_NEAR(0, v.x(), EPS);
+  EXPECT_NEAR(0, v.y(), EPS);
+  EXPECT_NEAR(0.175, v.z(), EPS);
 }
