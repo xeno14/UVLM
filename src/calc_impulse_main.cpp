@@ -75,12 +75,16 @@ auto CalcImpulse(const std::string& snapshot2_path) {
   // TODO multiple wings
   Eigen::Vector3d impulse =
       CalcVortexImpulse(containers[0].begin(), containers[0].end());
+  Eigen::Vector3d wake_impulse = CalcVortexImpulse(
+      vortices->begin() +
+          UVLM::CountTotalSize(containers.begin(), containers.end()),
+      vortices->end());
   Eigen::Vector3d other_term = Eigen::Vector3d::Zero();
   for (std::size_t i = 0; i < containers[0].size(); i++) {
     other_term += UVLM::calc_impulse::CalcLambVectorOnPanel(
         containers[0][i], v_nodes[i], freestreams[i], *vortices);
   }
-  return std::make_tuple(t, impulse, other_term);
+  return std::make_tuple(t, impulse, other_term, wake_impulse);
 }
 }  // anonymous namespace
 
@@ -97,13 +101,14 @@ int main(int argc, char* argv[]) {
     LOG(INFO) << path;
     Eigen::Vector3d impulse;
     Eigen::Vector3d other_term;
+    Eigen::Vector3d wake_impulse;
     double t;
-    std::tie(t, impulse, other_term) = CalcImpulse(path);
+    std::tie(t, impulse, other_term, wake_impulse) = CalcImpulse(path);
     std::vector<double> data{t, impulse.x(), impulse.y(), impulse.z(),
-                             other_term.x(), other_term.y(),
-                             other_term.z()};
+                             other_term.x(), other_term.y(), other_term.z(),
+                             wake_impulse.x(), wake_impulse.y(),
+                             wake_impulse.z()};
     ofs << UVLM::util::join("\t", data.begin(), data.end()) << std::endl;
-
   }
   return 0;
 }
