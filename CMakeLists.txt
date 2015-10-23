@@ -118,9 +118,6 @@ target_link_libraries(fixed_plate uvlm wing protobuf glog yaml-cpp)
 add_executable(2d_velocity src/tools/2d_velocity_main.cpp)
 target_link_libraries(2d_velocity uvlm protobuf glog)
 
-add_executable(wingtip_vortex src/tools/wingtip_vortex_main.cpp)
-target_link_libraries(wingtip_vortex uvlm protobuf glog)
-
 add_executable(multiple_flapping_wings src/multiple_flapping_wings_main.cpp)
 enable_gflags(multiple_flapping_wings)
 target_link_libraries(multiple_flapping_wings uvlm wing protobuf glog yaml-cpp)
