@@ -65,6 +65,7 @@ int main(int argc, char* argv[]) {
   FLAGS_logtostderr = true;
 
   Dump(FLAGS_input, FLAGS_output);
+  LOG(INFO) << FLAGS_output;
 
   return 0;
 }
