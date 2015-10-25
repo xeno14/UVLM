@@ -50,6 +50,7 @@ void Dump(const std::string& inpath, const std::string& outpath) {
         ofs << UVLM::util::join("\t", data.begin(), data.end())
             << std::endl;
       }
+      ofs << std::endl;
     }
   }
 }
