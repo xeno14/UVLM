@@ -52,6 +52,7 @@ void Dump(const std::string& inpath, const std::string& outpath) {
       }
       ofs << std::endl;
     }
+    ofs << std::endl << std::endl;
   }
 }
 
