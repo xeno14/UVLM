@@ -50,7 +50,7 @@ template <class InputIterator>
 auto CalcPressureImpulse(InputIterator first, InputIterator last) {
   Eigen::Vector3d res;
   for (auto it = first; it!=last; ++it) {
-    res += it->Impulse() * (-1);
+    res += it->Impulse();
   }
   return res;
 } 
