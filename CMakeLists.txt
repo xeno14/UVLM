@@ -126,6 +126,10 @@ add_executable(calc_impulse src/calc_impulse_main.cpp)
 enable_gflags(calc_impulse)
 target_link_libraries(calc_impulse uvlm protobuf glog yaml-cpp)
 
+add_executable(dump_circulation src/tools/dump_circulation_main.cpp)
+enable_gflags(dump_circulation)
+target_link_libraries(dump_circulation uvlm protobuf glog yaml-cpp)
+
 ###########################################################
 # install
 ###########################################################
