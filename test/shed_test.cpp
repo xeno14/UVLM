@@ -63,3 +63,16 @@ TEST(ConnectTrailingEdge, test) {
   EXPECT_VECTOR3D_EQ(100, 4, 0, wake[1].nodes()[2]);
   EXPECT_VECTOR3D_EQ(2, 4, 0, wake[1].nodes()[3]);
 }
+
+TEST(Advect, no_vortex) {
+  std::vector<VortexRing> wake{GetSquareRing(2, 0, 0)};
+  std::vector<VortexRing> dummy;
+  Eigen::Vector3d freestream(1, 0, 0);
+  UVLM::Advect(dummy.begin(), dummy.end(), wake.begin(), wake.end(), freestream,
+               0.1);
+  auto nodes = wake.begin()->nodes();
+  EXPECT_VECTOR3D_EQ(-1 + 0.1, -1, 0, nodes[0]);
+  EXPECT_VECTOR3D_EQ( 1 + 0.1, -1, 0, nodes[1]);
+  EXPECT_VECTOR3D_EQ( 1 + 0.1,  1, 0, nodes[2]);
+  EXPECT_VECTOR3D_EQ(-1 + 0.1,  1, 0, nodes[3]);
+}

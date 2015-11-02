@@ -45,6 +45,21 @@ void InducedVelocity(Eigen::Vector3d* result,
   }
 }
 
+template <class InputIterator, class OutputIterator>
+void Advect(InputIterator vortex_first, InputIterator vortex_last,
+            OutputIterator wake_first, OutputIterator wake_last,
+            const Eigen::Vector3d& freestream, const double dt) {
+  // TODO parallel
+  for (auto wake=wake_first; wake != wake_last; ++wake) {
+    for (auto& node : wake->nodes()) {
+      Eigen::Vector3d vel;
+      InducedVelocity(&vel, node, vortex_first, vortex_last);
+      vel += freestream;
+      node += vel * dt;
+    }
+  }
+}
+
 template <class InputIterator>
 void ChordwiseInducedVelocity(Eigen::Vector3d* const result,
                               const Eigen::Vector3d& pos, InputIterator first,
