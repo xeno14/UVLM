@@ -4,9 +4,9 @@
  * @brief Add description here
  */
 #pragma once
-
 #include "vortex.h"
 #include "uvlm_vortex_ring.h"
+#include "vortex_container.h"
 
 namespace UVLM {
 namespace internal {
@@ -68,6 +68,9 @@ void ShedAtTrailingEdge(InputIterator1 edge_first, InputIterator1 edge_last,
                         const UVLMVortexRing& rings,
                         const Eigen::Vector3d& Vinfty, const double t,
                         const double dt);
+
+template <class OutputIterator>
+void ConnectTrailingEdge(OutputIterator wake, const VortexContainer& c);
 
 template <class InputIterator, class OutputIterator>
 void AttachShedVorticesToEdge(InputIterator edge_first, InputIterator edge_last,

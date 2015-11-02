@@ -72,11 +72,21 @@ void ShedAtTrailingEdge(InputIterator1 edge_first, InputIterator1 edge_last,
     for (auto& node : result->nodes()) {
       // TODO ここがおかしい
       // InducedVelocity(&velocity, node, vortices_first, vortices_last);
-      rings.InducedVelocity(&velocity, node);
+      // rings.InducedVelocity(&velocity, node);
 
-      velocity += Vinfty;
+      // velocity = Vinfty;
+      velocity = Eigen::Vector3d(1, 0, 0);
       internal::Advect(&node, velocity, dt);
     }
+  }
+}
+
+template <class InputIterator, class OutputIterator>
+void ConnectTrailingEdge(InputIterator edge_first, InputIterator edge_last,
+                         OutputIterator wake) {
+  for (auto edge = edge_first; edge != edge_last; ++edge, ++wake) {
+    wake->nodes()[0] = edge->nodes()[1];
+    wake->nodes()[3] = edge->nodes()[2];
   }
 }
 
