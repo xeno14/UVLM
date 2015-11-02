@@ -76,22 +76,6 @@ void CreateContainers() {
               << "]: " << containers[i].rows() << " x " << containers[i].cols();
 }
 
-auto ShedProcess(const double dt) {
-  // shed[i]: 翼iから放出される渦
-  std::vector<std::vector<UVLM::VortexRing>> shed(containers.size());
-
-  // 放出する渦の計算
-  for (std::size_t i = 0; i < containers.size(); i++) {
-    auto edge_first = containers[i].edge_begin();
-    auto edge_last = containers[i].edge_end();
-    shed[i].resize(std::distance(edge_first, edge_last));
-    UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed[i].begin(),
-                             vortices->cbegin(), vortices->cend(), rings, inlet,
-                             0, dt);
-  }
-  return shed;
-}
-
 void MorphingProcess(const double t) {
   for (std::size_t i = 0; i < containers.size(); i++) {
     for (auto& vortex : containers[i]) {
@@ -99,27 +83,6 @@ void MorphingProcess(const double t) {
         morphings[i].Perfome(&vortex.nodes()[j], vortex.nodes0()[j], t);
       }
     }
-  }
-}
-
-void AdvectProcess(std::vector<UVLM::VortexRing>* wake, const double dt) {
-  const std::size_t wake_offset = WakeOffset();
-  wake->clear();
-  // copy current wake vortices
-  wake->insert(wake->begin(), vortices->cbegin() + wake_offset,
-               vortices->cend());
-  UVLM::AdvectWake(wake, vortices->cbegin(), vortices->cend(), rings, inlet,
-                   dt);
-}
-
-void AppendShedProcess(std::vector<std::vector<UVLM::VortexRing>>* shed) {
-  for (std::size_t i = 0; i < containers.size(); i++) {
-    UVLM::AttachShedVorticesToEdge(containers[i].edge_begin(),
-                                   containers[i].edge_end(),
-                                   shed->at(i).begin());
-  }
-  for (std::size_t i = 0; i < shed->size(); i++) {
-    vortices->insert(vortices->end(), shed->at(i).cbegin(), shed->at(i).cend());
   }
 }
 
@@ -260,13 +223,6 @@ void Start(const std::size_t steps, const double dt) {
     LOG(INFO) << "linear";
     internal::SolveLinearProblem(t);
 
-    // TODO remove rings
-    LOG(INFO) << "copy";
-    CHECK(wake_offset == rings.bound_vortices().size())
-        << "bound vortex size mismatch " << wake_offset << " "
-        << rings.bound_vortices().size();
-    std::copy(vortices->begin(), vortices->begin() + wake_offset,
-              rings.bound_vortices().begin());
     internal::OutputSnapshot2(step, t);
     if (output_load_path.size()) {
       LOG(INFO) << "calc load";
@@ -304,13 +260,6 @@ void Start(const std::size_t steps, const double dt) {
       vortices->resize(wake_offset + wake_next.size());
       std::copy(wake_next.cbegin(), wake_next.cend(),
                 vortices->begin() + wake_offset);
-
-      // TODO remove rings
-      rings.wake_vortices().resize(vortices->size() - wake_offset);
-      CHECK((vortices->size() - wake_offset) == rings.wake_vortices().size())
-          << "wake size mismatch";
-      std::copy(vortices->begin() + wake_offset, vortices->end(),
-                rings.wake_vortices().begin());
     }
   }
 }
