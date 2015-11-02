@@ -1,6 +1,6 @@
 /**
  * @file proto_adaptor.h
- * @brief Add description here
+ * @brief Adaptors from proto to UVLM classes
  */
 #pragma once
 
@@ -11,10 +11,12 @@
 
 namespace UVLM {
 
+/** @brief proto::Point to Eigen::Vector3d */
 inline Eigen::Vector3d PointToVector3d(const proto::Point& point) {
   return Eigen::Vector3d(point.x(), point.y(), point.z());
 }
 
+/** @brief Eigen::Vector3d to proto::Point */
 inline proto::Point Vector3dToPoint(const Eigen::Vector3d& vec) {
   proto::Point res;
   res.set_x(vec.x());
