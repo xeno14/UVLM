@@ -156,8 +156,8 @@ void CalcLoadProcess(const double t, const double dt) {
 
     UVLM::calc_load::AerodynamicLoad load;
     if (FLAGS_use_joukowski) {
-      load = UVLM::calc_load::CalcLoadJoukowski(c, c_prev, rings, m, inlet, rho,
-                                                t, dt);
+      load =
+          UVLM::calc_load::CalcLoadJoukowski(c, c_prev, m, inlet, rho, t, dt);
     } else {
       load = UVLM::calc_load::CalcLoadKatzPlotkin(c, c_prev, m, rings, inlet,
                                                   rho, t, dt);
@@ -202,7 +202,6 @@ void SetOutputLoadPath(const std::string& path) { output_load_path = path; }
 void Start(const std::size_t steps, const double dt) {
   internal::CheckReady();
   internal::CreateContainers();
-  rings.bound_vortices() = *vortices;
 
   internal::MorphingProcess(0);
 

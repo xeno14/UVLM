@@ -7,7 +7,6 @@
 
 #include "../../proto/uvlm.pb.h"
 #include "../vortex_container.h"
-#include "../uvlm_vortex_ring.cpp"
 #include "../shed.h"
 #include "../util.h"
 #include "../morphing.h"
@@ -22,7 +21,6 @@ template <class InputIterator>
 inline void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
                                    InputIterator vortices_first,
                                    InputIterator vortices_last,
-                                   const UVLM::UVLMVortexRing& rings,
                                    const Morphing& morphing,
                                    const Eigen::Vector3d& freestream,
                                    const double rho, const double t,
@@ -40,7 +38,7 @@ inline void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
     const Vector3d& end0 = v.nodes0()[i];
     mid = (start + end) / 2;
     mid0 = (start0 + end0) / 2;
-    rings.InducedVelocity(&Uind, mid);
+    UVLM::InducedVelocity(&Uind, mid, vortices_first, vortices_last);
     // U = (Ub + Uw) + Um = Uind + Um
     Um = internal::CalcUm(morphing, mid0, freestream, t);
     U = Uind + Um;
@@ -61,7 +59,6 @@ inline void JoukowskiUnsteadyOnPanel(Eigen::Vector3d* result,
 
 inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
                                   const VortexContainer& vb_prev,
-                                  const UVLM::UVLMVortexRing& rings,
                                   const Morphing& morphing,
                                   const Eigen::Vector3d& freestream,
                                   const double rho, const double t,
@@ -82,7 +79,7 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
 
 
     internal::JoukowskiSteadyOnPanel(&dF_st, vb.at(i, j), vortices.cbegin(),
-                                     vortices.cend(), rings, morphing, freestream, rho,
+                                     vortices.cend(), morphing, freestream, rho,
                                      t, i+1==vb.rows());
     internal::JoukowskiUnsteadyOnPanel(&dF_unst, vb.at(i, j), vb_prev.at(i, j),
                                        rho, dt);
