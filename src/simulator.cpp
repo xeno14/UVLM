@@ -276,16 +276,34 @@ void Start(const std::size_t steps, const double dt) {
 
     if (!FLAGS_disable_wake) {
       LOG(INFO) << "shed and advect";
-      auto shed = internal::ShedProcess(dt);
+      // advection
+      std::vector<std::vector<UVLM::VortexRing>> shed(containers.size());
+      for (std::size_t i=0; i<containers.size(); i++) {
+        shed[i].insert(shed[i].end(), containers[i].edge_begin(), 
+            containers[i].edge_end());
+        UVLM::Advect(vortices->cbegin(), vortices->cend(), shed[i].begin(),
+                     shed[i].end(), inlet, dt);
+      }
       std::vector<UVLM::VortexRing> wake_next;
-      internal::AdvectProcess(&wake_next, dt);
+      wake_next.insert(wake_next.end(), vortices->cbegin() + wake_offset,
+                       vortices->cend());
+      UVLM::Advect(vortices->cbegin(), vortices->cend(), wake_next.begin(),
+                   wake_next.end(), inlet, dt);
+
+      // morphing
       internal::MorphingProcess(t);
-      // Renew wake vortices
-      LOG(INFO) << "copy";
-      CHECK(wake_next.size() == vortices->size()-wake_offset) << "size mismatch";
+
+      // attatch
+      for (std::size_t i = 0; i < containers.size(); i++) {
+        UVLM::ConnectTrailingEdge(containers[i].edge_begin(),
+                                  containers[i].edge_end(), shed[i].begin());
+        wake_next.insert(wake_next.end(), shed[i].cbegin(), shed[i].cend());
+      }
+
+      // update
+      vortices->resize(wake_offset + wake_next.size());
       std::copy(wake_next.cbegin(), wake_next.cend(),
                 vortices->begin() + wake_offset);
-      internal::AppendShedProcess(&shed);
 
       // TODO remove rings
       rings.wake_vortices().resize(vortices->size() - wake_offset);

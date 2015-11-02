@@ -45,6 +45,10 @@ void AdvectWakeImpl(std::vector<VortexRing>* result,
                     const double dt);
 
 template <class InputIterator>
+void AdvectKernel(VortexRing* v, InputIterator first, InputIterator last,
+    const Eigen::Vector3d& freestream, const double dt);
+
+template <class InputIterator>
 void AdvectWakeImpl(std::vector<UVLM::VortexRing>* wake,
                     InputIterator vortices_first, InputIterator vortices_last,
                     const Eigen::Vector3d& Vinfty, const double dt);
@@ -83,6 +87,11 @@ template <class InputIterator, class OutputIterator>
 void Advect(InputIterator vortex_first, InputIterator vortex_last,
             OutputIterator wake_first, OutputIterator wake_last,
             const Eigen::Vector3d& freestream, const double dt);
+
+template <class InputIterator, class OutputIterator>
+void AdvectParallel(InputIterator vortex_first, InputIterator vortex_last,
+                    OutputIterator wake_first, OutputIterator wake_last,
+                    const Eigen::Vector3d& freestream, const double dt);
 
 template <class InputIterator, class OutputIterator>
 void AdvectWake(OutputIterator wake_first, OutputIterator wake_last,
