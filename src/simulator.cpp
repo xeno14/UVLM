@@ -287,8 +287,8 @@ void Start(const std::size_t steps, const double dt) {
       std::vector<UVLM::VortexRing> wake_next;
       wake_next.insert(wake_next.end(), vortices->cbegin() + wake_offset,
                        vortices->cend());
-      UVLM::Advect(vortices->cbegin(), vortices->cend(), wake_next.begin(),
-                   wake_next.end(), inlet, dt);
+      UVLM::AdvectParallel(vortices->cbegin(), vortices->cend(),
+                           wake_next.begin(), wake_next.end(), inlet, dt);
 
       // morphing
       internal::MorphingProcess(t);
