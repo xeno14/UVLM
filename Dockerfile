@@ -1,8 +1,8 @@
 FROM base/archlinux
 
-RUN pacman -Syy
 # to avoid keyring problem
 RUN sed -i "s/SigLevel    = Required DatabaseOptional/SigLevel = Never/" /etc/pacman.conf
+RUN yes | pacman -Sy
 RUN yes | pacman -S \
       gcc \
       glibc \
@@ -12,10 +12,15 @@ RUN yes | pacman -S \
       eigen \
       protobuf \
       gtest \
-      gflags
+      gflags \
+      google-glog \
+      boost \
+      yaml-cpp
 
 ADD . /tmp/uvlm
-RUN cd /tmp/uvlm && cmake . && make -j && make install
+RUN [ -d /tmp/uvlm/build ] || mkdir -p /tmp/uvlm/build
+RUN cd /tmp/uvlm/build && cmake .. && make -j && make install
+RUN cd /tmp/uvlm/build && make test
 
 VOLUME ["/data"]
 

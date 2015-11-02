@@ -5,7 +5,7 @@
 #pragma once
 
 #include "morphing.h"
-#include "uvlm_vortex_ring.h"
+#include "vortex_container.h"
 
 #include <vector>
 
@@ -72,12 +72,29 @@ Eigen::VectorXd CalcRhsMorphing(InputIterator1 bound_first,
                                 const Morphing& morphing, double t);
 
 /**
+ * @brief Calc velocity of morphing at each collocation point on panels
+ */
+template <class InputIterator, class OutputIterator>
+OutputIterator CalcMorphingVelocityOnWing(InputIterator panel_first,
+                                          InputIterator panel_last,
+                                          const Morphing& morphing, double t,
+                                          OutputIterator result);
+
+/**
  * @brief 右辺値の変形による寄与分
  */
 inline Eigen::VectorXd CalcRhsMorphing(const std::vector<VortexRing>& vortices,
                                 const Morphing& morphing, double t) {
   return CalcRhsMorphing(vortices.cbegin(), vortices.cend(), morphing, t);
 }
+
+/**
+ * @brief Calc right hand contributed from morphings 
+ * @pre containers and morphings have exactly same size
+ */
+inline Eigen::VectorXd CalcRhsMorphings(
+    const std::vector<VortexContainer>& containers,
+    const std::vector<Morphing>& morphings, double t);
 
 }  // namespace internal
 
@@ -90,6 +107,14 @@ Eigen::VectorXd SolveLinearProblem(InputIterator1 bound_first,
                                    InputIterator2 wake_last,
                                    const Eigen::Vector3d Vinfty,
                                    const Morphing& morphing, const double t);
+
+/**
+ * @brief Solve simultaneous equations obtained from no-penetration condition.
+ */
+inline Eigen::VectorXd SolveLinearProblem(
+    const std::vector<VortexContainer>& containers,
+    const std::vector<Morphing>& morphings, const Eigen::Vector3d& freestream,
+    const double t);
 
 }  // namespace UVLM
 

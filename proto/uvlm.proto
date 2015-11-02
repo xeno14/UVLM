@@ -23,6 +23,11 @@ message Wing {
   repeated Point points = 3;
 
   optional Point origin = 4;  // 原点
+
+  optional double chord = 5;  // chord length
+  optional double span = 6;   // span length
+
+  // Next: 7
 }
 
 // 渦輪
@@ -30,6 +35,8 @@ message VortexRing {
   optional double gamma = 1;    // 循環
   repeated Point nodes = 2;     // 節の位置
   repeated Point nodes0 = 3;    // 節の基準位置（原点固定の場合、初期位置に相当）
+
+  // Next: 4
 }
 
 // 個体
@@ -46,6 +53,13 @@ message Snapshot {
   repeated FlyingWing flying_wings = 2;
 }
 
+message MorphingVelocity {
+  optional Point center = 1;      // velocity at centroid
+  repeated Point nodes = 2;       // velocity at each vortex segment
+  optional Point freestream = 3;  // freestream
+
+  // Next: 4
+}
 
 // スナップショットver2 （案）
 message Snapshot2 {
@@ -56,8 +70,12 @@ message Snapshot2 {
     required uint32 cols = 2;
     optional uint32 id = 3;
     optional Point origin = 4;
+    optional double chord = 5;
+    optional double span = 6;
   }
   repeated ContainerShape container_shapes = 2;
-
   repeated VortexRing vortices = 3;
+  repeated MorphingVelocity morphing_velocities = 4;  // index is associated with vortices
+
+  // Next: 5
 }

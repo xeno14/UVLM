@@ -1,0 +1,9 @@
+parameter:
+  U: 1.0       # freestream velocity
+  rows: 10     # chordwise discretization
+  cols: 10     # spanwise discretization
+  k: 0.5       # reduced frequency
+  phi0: 0      # initial phase of heaving oscillation
+setting:
+  dt: 0.1      # time discretization
+  steps: 50    # number of steps

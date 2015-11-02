@@ -25,6 +25,7 @@ inline double DefaultFunc2(const Eigen::Vector3d&, double) { return 0; }
 class Morphing {
  public:
   Morphing();
+  Morphing(const Morphing&);
   ~Morphing() = default;
 
   /** @brief 変形を行う
@@ -32,9 +33,8 @@ class Morphing {
    *  @param x0 reference frameでの座標
    *  @param t  時刻
    */
-  void Perfome(Eigen::Vector3d* x,
-               const Eigen::Vector3d& x0, const double t,
-               const double dt) const;
+  void Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& x0,
+               const double t) const;
 
   /** @brief 変形速度
    *

@@ -7,7 +7,6 @@
 
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
-
 #include <initializer_list>
 #include <vector>
 
@@ -50,9 +49,17 @@ class VortexRing {
    */
   void BiotSavartLaw(Vector3d* result, const Vector3d& pos, double gamma) const;
 
+  void ChordwiseBiotSavartLaw(Vector3d* result, const Vector3d& pos,
+                              double gamma) const;
+
   /** @brief この渦の循環の値を使ったBiotSavartLaw */
   inline void BiotSavartLaw(Vector3d* result, const Vector3d& pos) const {
     BiotSavartLaw(result, pos, gamma_);
+  }
+
+  inline void ChordwiseBiotSavartLaw(Vector3d* result,
+                                     const Vector3d& pos) const {
+    return ChordwiseBiotSavartLaw(result, pos, gamma_);
   }
 
   VortexRing& PushNode(const Vector3d& pos);
@@ -63,6 +70,15 @@ class VortexRing {
    *  @todo キャッシュする
    */
   Vector3d Normal() const;
+
+  /** @brief tangent vector
+   */
+  Vector3d Tangent() const;
+
+  /** @brief tangent vector perpendiculer to normal and tangent
+   */
+  Vector3d Tangent2() const;
+
   /** @brief 中心の位置 
    *  @todo ちゃんと計算する
    */
@@ -76,6 +92,77 @@ class VortexRing {
   const std::vector<Vector3d>& nodes0() const { return nodes0_; }
 
   void Clear() { nodes_.clear(); }
+
+  /**
+   * i方向(chordwise)の規格化した接ベクトルを返す
+   */
+  Eigen::Vector3d TanVecChord() const;
+
+  /**
+   * j方向(spanwise)の規格化した接ベクトルを返す
+   */
+  Eigen::Vector3d TanVecSpan() const;
+
+  /**
+   * 渦輪のchord方向の長さを求める
+   */
+  double CalcC() const;
+
+  /**
+   * 渦輪のspan方向の長さを求める
+   */
+  double CalcB() const;
+
+  /**
+   * @brief Area of ring
+   * sum of triangles
+   */
+  double Area() const;
+
+  /**
+   * @brief Vortex impulse
+   */
+  Eigen::Vector3d Impulse() const;
+
+  /**
+   * @brief loop for each line segment of ring
+   *
+   * start and end are given for the function. the function must be formed
+   * func(const Eigen::Vector3d& start, const Eigen::Vector3d& end)
+   */
+  inline void ForEachSegment(std::function<void(const Eigen::Vector3d&,
+                                         const Eigen::Vector3d&)> func) const {
+    for (std::size_t i = 0; i < nodes_.size(); i++) {
+      const Vector3d& start = nodes_[(i + 1) % nodes_.size()];
+      const Vector3d& end = nodes_[i];
+      func(start, end);
+    }
+  }
+
+  /**
+   * @brief loop for each line segment of ring with reference positions
+   *
+   * start, end, start0 and end0 are given for the function. the function must
+   * be formed
+   * func(const Eigen::Vector3d& start, const Eigen::Vector3d& end)
+   */
+  inline void ForEachSegment(
+      std::function<void(const Eigen::Vector3d&, const Eigen::Vector3d&,
+                         const Eigen::Vector3d&, const Eigen::Vector3d&)> func)
+      const {
+    for (std::size_t i = 0; i < nodes_.size(); i++) {
+      const Vector3d& start = nodes_[(i + 1) % nodes_.size()];
+      const Vector3d& end = nodes_[i];
+      const Vector3d& start0 = nodes0_[(i + 1) % nodes_.size()];
+      const Vector3d& end0 = nodes0_[i];
+      func(start, end, start0, end0);
+    }
+  }
+
+  /**
+   * angle of attack
+   */
+  double AngleOfAttack(const Eigen::Vector3d& Q) const;
 
  private:
   double gamma_;
