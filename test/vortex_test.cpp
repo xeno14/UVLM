@@ -129,10 +129,29 @@ TEST_F(VortexRingTest, Normal) {
   EXPECT_VECTOR3D_EQ(0, 0, 1, n);
 }
 
+TEST_F(VortexRingTest, Normal_lean) {
+  VortexRing v;
+  v.PushNode(Vector3d(0, 0, 0))   // 0
+   .PushNode(Vector3d(1, 0, 1))   // 1
+   .PushNode(Vector3d(1, 1, 1))   // 2
+   .PushNode(Vector3d(0, 1, 0));  // 3
+  EXPECT_VECTOR3D_EQ(-M_SQRT1_2, 0, M_SQRT1_2, v.Normal());
+}
+
 TEST_F(VortexRingTest, Tangent) {
   auto v = GetSquareRing(20000);
   auto t = v.Tangent();
   EXPECT_VECTOR3D_EQ(1, 0, 0, t);
+}
+
+TEST_F(VortexRingTest, Tangent_lean) {
+  VortexRing v;
+  v.PushNode(Vector3d(0, 0, 0))   // 0
+   .PushNode(Vector3d(1, 0, 0.5))   // 1
+   .PushNode(Vector3d(1, 1, 0.5))   // 2
+   .PushNode(Vector3d(0, 1, 0));  // 3
+  const double SQRT_5 = sqrt(5);
+  EXPECT_VECTOR3D_EQ(2./SQRT_5, 0, 1./SQRT_5, v.Tangent());
 }
 
 TEST_F(VortexRingTest, Tangent2) {
