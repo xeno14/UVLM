@@ -1,6 +1,7 @@
 /**
  * @file linear.h
- * @brief Add description here
+ * @brief Functions to solve simultaneous equations obtained from the boundary
+ * condition
  */
 #pragma once
 

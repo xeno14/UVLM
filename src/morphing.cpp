@@ -1,6 +1,6 @@
 /**
  * @file morphing.cpp
- * @brief Add description here
+ * @brief Implemention of morphing.h
  */
 
 #include "morphing.h"
