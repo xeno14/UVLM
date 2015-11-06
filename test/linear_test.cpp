@@ -58,6 +58,28 @@ class CalcSolveLinearTest : public ::testing::Test {
   std::vector<VortexRing> vortices;
 };
 
+TEST_F(CalcSolveLinearTest, no_wake) {
+  // alpha = pi/6
+  // no wake
+  const double alpha = M_PI/6;
+  Morphing m;
+  const double U = 2;
+  Eigen::Vector3d freestream (U, 0, 0);
+  std::vector<VortexRing> vs, dummy;
+  VortexRing v;
+  const double a = 0.1;
+  v.PushNode(0, 0, 0)
+      .PushNode(a*cos(alpha), 0, -a*sin(alpha))
+      .PushNode(a*cos(alpha), a, -a*sin(alpha))
+      .PushNode(0, a, 0);
+  v.SaveReferenceNode();
+  vs.push_back(v);
+  auto result = UVLM::SolveLinearProblem(vs.begin(), vs.end(), dummy.begin(),
+                                         dummy.end(), freestream, m, 0);
+  double expected = M_SQRT2 * M_PI * a *U * sin(alpha) / 4;
+  EXPECT_NEAR(expected, result(0), EPS);
+}
+
 TEST_F(CalcSolveLinearTest, no_wake_no_morphing) {
   std::vector<VortexRing> dummy;
   Morphing m;
