@@ -32,14 +32,20 @@ class BiotSavartLawTest : public ::testing::Test {
 };
 
 TEST_F(BiotSavartLawTest, infinite_length) {
-  // When the line segment is sufficiently long, strength equals to 1/4pi
-  a << 0, 0, -100000;
-  b << 0, 0,  100000;
+  // Sufficiently long line segment induces velocity of G /2 pi r
+  a << 0, 0, -1e10;
+  b << 0, 0,  1e10;
   c << 1, 0, 0;
   UVLM::BiotSavartLaw(&result, a, b, c);
-  EXPECT_NEAR(0, result.x(), EPS);
-  EXPECT_NEAR(1./2./M_PI, result.y(), EPS);
-  EXPECT_NEAR(0, result.z(), EPS);
+  EXPECT_VECTOR3D_NEAR(0, 1./2./M_PI, 0, result, EPS);
+
+  c << 2, 0, 0;
+  UVLM::BiotSavartLaw(&result, a, b, c);
+  EXPECT_VECTOR3D_NEAR(0, 1./4./M_PI, 0, result, EPS);
+
+  c << 8, 0, 0;
+  UVLM::BiotSavartLaw(&result, a, b, c);
+  EXPECT_VECTOR3D_NEAR(0, 1./16./M_PI, 0, result, EPS);
 }
 
 TEST_F(BiotSavartLawTest, finite_length) {
