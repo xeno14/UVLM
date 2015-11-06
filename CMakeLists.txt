@@ -130,6 +130,10 @@ add_executable(dump_circulation src/tools/dump_circulation_main.cpp)
 enable_gflags(dump_circulation)
 target_link_libraries(dump_circulation uvlm protobuf glog yaml-cpp)
 
+add_executable(dump_centroid src/tools/dump_centroid_main.cpp)
+enable_gflags(dump_centroid)
+target_link_libraries(dump_centroid uvlm protobuf glog yaml-cpp)
+
 ###########################################################
 # install
 ###########################################################
