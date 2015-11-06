@@ -23,8 +23,8 @@ YAML::Node config;
 auto InitWing(double x0, double y0, double c) {
   const double ar = 6;
   UVLM::proto::Wing wing;
-  int rows = 10;
-  int cols = 6;
+  int rows = 6;
+  int cols = 10;
   UVLM::wing::NACA4digitGenerator(83, c, c * ar / 2, rows, cols)
       .Generate(&wing);
   UVLM::wing::SetOrigin(&wing, {x0, y0, 0});
