@@ -230,6 +230,12 @@ void Start(const std::size_t steps, const double dt) {
     const double t = dt * step;
     const std::size_t wake_offset = internal::WakeOffset();
 
+    // Save circulations of bound vortices at the previous step
+    LOG(INFO) << "copy";
+    containers_prev.resize(containers.size());
+    CopyContainers(containers.begin(), containers.end(),
+                   containers_prev.begin());
+
     LOG(INFO) << "Kinematics";
     internal::MorphingProcess(t);
 
@@ -237,23 +243,15 @@ void Start(const std::size_t steps, const double dt) {
     internal::SolveLinearProblem(t);
 
     internal::OutputSnapshot2(step, t);
-    // if (output_load_path.size()) {
-    //   LOG(INFO) << "Calc loads";
-    //   internal::CalcLoadProcess(t, dt);
-    // }
+    if (output_load_path.size()) {
+      LOG(INFO) << "Calc loads";
+      internal::CalcLoadProcess(t, dt);
+    }
     if (step == steps) break;
 
-    // Save circulations of bound vortices at the previous step
-    // LOG(INFO) << "copy";
-    // containers_prev.resize(containers.size());
-    // CopyContainers(containers.begin(), containers.end(),
-    //                containers_prev.begin());
-    
     if (!FLAGS_disable_wake) {
       LOG(INFO) << "Wake Rollup";
       // TODO multiple wings
-      const std::size_t shed_size =
-          std::distance(containers[0].edge_begin(), containers[0].edge_end());
       std::vector<UVLM::VortexRing> wake_next(containers[0].edge_begin(),
           containers[0].edge_end());
       wake_next.insert(wake_next.end(),
