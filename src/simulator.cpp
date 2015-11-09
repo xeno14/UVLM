@@ -203,58 +203,46 @@ void Start(const std::size_t steps, const double dt) {
   internal::CheckReady();
   internal::CreateContainers();
 
-  internal::MorphingProcess(0);
-
   // Main loop
-  for (std::size_t step = 1; step <= steps; ++step) {
+  // See Katz and Plotkin p.408 Fig. 13.25
+  // or Bueso2011 Fig 3.10
+  for (std::size_t step = 0; step <= steps; ++step) {
     LOG(INFO) << FLAGS_run_name << " "
               << "step: " << step;
     const double t = dt * step;
     const std::size_t wake_offset = internal::WakeOffset();
 
-    // Save circulations of bound vortices at the previous step
-    LOG(INFO) << "copy";
-    containers_prev.resize(containers.size());
-    CopyContainers(containers.begin(), containers.end(),
-                   containers_prev.begin());
+    LOG(INFO) << "Kinematics";
+    internal::MorphingProcess(t);
 
-    // 連立方程式を解いて翼の上の循環を求める
-    LOG(INFO) << "linear";
+    LOG(INFO) << "Shed";
+    // TODO shed
+
+    LOG(INFO) << "Boundary Cond";
     internal::SolveLinearProblem(t);
 
     internal::OutputSnapshot2(step, t);
     if (output_load_path.size()) {
-      LOG(INFO) << "calc load";
+      LOG(INFO) << "Calc loads";
       internal::CalcLoadProcess(t, dt);
     }
     if (step == steps) break;
 
+    // Save circulations of bound vortices at the previous step
+    // LOG(INFO) << "copy";
+    // containers_prev.resize(containers.size());
+    // CopyContainers(containers.begin(), containers.end(),
+    //                containers_prev.begin());
+    
     if (!FLAGS_disable_wake) {
-      LOG(INFO) << "shed and advect";
-      // advection
-      std::vector<std::vector<UVLM::VortexRing>> shed(containers.size());
-      for (std::size_t i=0; i<containers.size(); i++) {
-        shed[i].insert(shed[i].end(), containers[i].edge_begin(), 
-            containers[i].edge_end());
-        UVLM::Advect(vortices->cbegin(), vortices->cend(), shed[i].begin(),
-                     shed[i].end(), inlet, dt);
-      }
+      LOG(INFO) << "Wake Rollup";
       std::vector<UVLM::VortexRing> wake_next;
-      wake_next.insert(wake_next.end(), vortices->cbegin() + wake_offset,
-                       vortices->cend());
+
+      // TODO multiple containers
+      wake_next.insert(wake_next.end(),
+                       vortices->cbegin() + wake_offset, vortices->cend());
       UVLM::AdvectParallel(vortices->cbegin(), vortices->cend(),
                            wake_next.begin(), wake_next.end(), inlet, dt);
-
-      // morphing
-      internal::MorphingProcess(t);
-
-      // attatch
-      for (std::size_t i = 0; i < containers.size(); i++) {
-        UVLM::ConnectTrailingEdge(containers[i].edge_begin(),
-                                  containers[i].edge_end(), shed[i].begin());
-        wake_next.insert(wake_next.end(), shed[i].cbegin(), shed[i].cend());
-      }
-
       // update
       vortices->resize(wake_offset + wake_next.size());
       std::copy(wake_next.cbegin(), wake_next.cend(),
