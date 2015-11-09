@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
   const std::size_t steps = 50;
 
   UVLM::Morphing m;
-  m.set_flap([&](double t) { return PHI * cos(OMEGA * (t - 5*dt)); });
+  m.set_flap([&](double t) { return PHI * cos(OMEGA * (t - 0*dt)); });
   m.set_alpha(alpha);
   UVLM::simulator::AddWing(InitWing(0, 0, PARAM_chord), m);
   UVLM::simulator::SetInlet(PARAM_U, 0, 0);
