@@ -76,6 +76,26 @@ void CreateContainers() {
               << "]: " << containers[i].rows() << " x " << containers[i].cols();
 }
 
+/**
+ * @brief Connect trailing edge and newly shed wake
+ */
+void ConnectProcess() {
+  // TODO multiple wings
+  const std::size_t shed_size =
+      std::distance(containers[0].edge_begin(), containers[0].edge_end());
+  auto shed_first = vortices->begin() + WakeOffset();
+  auto shed_last = shed_first + shed_size;
+  auto edge = containers[0].edge_begin();
+
+  if (shed_last > vortices->end()) return;
+
+  for (auto it = shed_first; it != shed_last; ++it, ++edge) {
+    it->nodes().resize(4);
+    it->nodes()[0] = edge->nodes()[1];
+    it->nodes()[3] = edge->nodes()[2];
+  }
+}
+
 void MorphingProcess(const double t) {
   for (std::size_t i = 0; i < containers.size(); i++) {
     for (auto& vortex : containers[i]) {
@@ -84,6 +104,7 @@ void MorphingProcess(const double t) {
       }
     }
   }
+  ConnectProcess();
 }
 
 void SolveLinearProblem(double t) {
@@ -161,9 +182,6 @@ void CalcLoadProcess(const double t, const double dt) {
     } else {
       load = UVLM::calc_load::CalcLoadKatzPlotkin(c, c_prev, m, rings, inlet,
                                                   rho, t, dt);
-      // auto load2  = UVLM::calc_load::CalcLoadJoukowski(c, c_prev, rings, m, inlet, rho,
-      //                                           t, dt);
-      // load.F.x() = load2.F.x();
     }
     const double U = inlet.norm();
     auto coeff = load.F / (0.5 * rho * U * U * S);
@@ -215,17 +233,14 @@ void Start(const std::size_t steps, const double dt) {
     LOG(INFO) << "Kinematics";
     internal::MorphingProcess(t);
 
-    LOG(INFO) << "Shed";
-    // TODO shed
-
     LOG(INFO) << "Boundary Cond";
     internal::SolveLinearProblem(t);
 
     internal::OutputSnapshot2(step, t);
-    if (output_load_path.size()) {
-      LOG(INFO) << "Calc loads";
-      internal::CalcLoadProcess(t, dt);
-    }
+    // if (output_load_path.size()) {
+    //   LOG(INFO) << "Calc loads";
+    //   internal::CalcLoadProcess(t, dt);
+    // }
     if (step == steps) break;
 
     // Save circulations of bound vortices at the previous step
@@ -236,17 +251,21 @@ void Start(const std::size_t steps, const double dt) {
     
     if (!FLAGS_disable_wake) {
       LOG(INFO) << "Wake Rollup";
-      std::vector<UVLM::VortexRing> wake_next;
-
-      // TODO multiple containers
+      // TODO multiple wings
+      const std::size_t shed_size =
+          std::distance(containers[0].edge_begin(), containers[0].edge_end());
+      std::vector<UVLM::VortexRing> wake_next(containers[0].edge_begin(),
+          containers[0].edge_end());
       wake_next.insert(wake_next.end(),
                        vortices->cbegin() + wake_offset, vortices->cend());
       UVLM::AdvectParallel(vortices->cbegin(), vortices->cend(),
-                           wake_next.begin(), wake_next.end(), inlet, dt);
+                           wake_next.begin(), wake_next.end(),
+                           inlet, dt);
       // update
       vortices->resize(wake_offset + wake_next.size());
       std::copy(wake_next.cbegin(), wake_next.cend(),
                 vortices->begin() + wake_offset);
+      // LOG(INFO) << vortices.size();
     }
   }
 }
