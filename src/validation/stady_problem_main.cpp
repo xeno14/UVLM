@@ -7,10 +7,10 @@
 
 namespace {
 
+const double AR = 4;
 const std::size_t ROWS = 4;
-const std::size_t COLS = 26;
+const std::size_t COLS = AR * 4;
 const double CHORD = 1;
-const double AR = 6; 
 const double SPAN = CHORD * AR;
 const double dx = CHORD / ROWS;
 const double dy = SPAN / COLS;
