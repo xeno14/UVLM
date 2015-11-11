@@ -66,37 +66,35 @@ TEST_F(MorphingPerfomeTest, plug_origin) {
 }
 
 TEST_F(MorphingPerfomeTest, flap) {
-  morphing.set_flap([](double t) { return M_PI_4 * sin(t);});
+  morphing.set_flap([](double t) { return M_PI_4 * cos(t);});
   morphing.set_origin( {0,0,0});
 
-  // y(t) = r0*sin(phi0 + π/4 * sin(t));
   Eigen::Vector3d x;
   morphing.Perfome(&x, {0, 1, 0}, 0);
   EXPECT_NEAR(0, x.x(), EPS);
-  EXPECT_NEAR(1, x.y(), EPS);
-  EXPECT_NEAR(0, x.z(), EPS);
+  EXPECT_NEAR(M_SQRT1_2, x.y(), EPS);
+  EXPECT_NEAR(M_SQRT1_2, x.z(), EPS);
 
   morphing.Perfome(&x, {0, 1, 0}, M_PI_2);
   EXPECT_NEAR(0, x.x(), EPS);
-  EXPECT_NEAR(M_SQRT1_2, x.y(), EPS);
-  EXPECT_NEAR(-M_SQRT1_2, x.z(), EPS);
+  EXPECT_NEAR(1, x.y(), EPS);
+  EXPECT_NEAR(0, x.z(), EPS);
 }
 
 TEST_F(MorphingPerfomeTest, flap_origin) {
-  morphing.set_flap([](double t) { return M_PI_4 * sin(t);});
+  morphing.set_flap([](double t) { return M_PI_4 * cos(t);});
   morphing.set_origin({0,1,0});
 
-  // y(t) = y0 + r0*sin(phi0 + π/4 * sin(t));
   Eigen::Vector3d x;
   morphing.Perfome(&x, {0, 2, 0}, 0);
   EXPECT_NEAR(0, x.x(), EPS);
-  EXPECT_NEAR(2, x.y(), EPS);
-  EXPECT_NEAR(0, x.z(), EPS);
+  EXPECT_NEAR(1 + M_SQRT1_2, x.y(), EPS);
+  EXPECT_NEAR(M_SQRT1_2, x.z(), EPS);
 
   morphing.Perfome(&x, {0, 2, 0}, M_PI_2);
   EXPECT_NEAR(0, x.x(), EPS);
-  EXPECT_NEAR(1 + M_SQRT1_2, x.y(), EPS);
-  EXPECT_NEAR(-M_SQRT1_2, x.z(), EPS);
+  EXPECT_NEAR(1 + 1, x.y(), EPS);
+  EXPECT_NEAR(0, x.z(), EPS);
 }
 
 
