@@ -42,8 +42,8 @@ TEST_F(CalcMorphingVelocityTest, flap) {
   auto it = UVLM::internal::CalcMorphingVelocityOnWing(
       panels.cbegin(), panels.cend(), m, 0, result.begin());
   EXPECT_EQ(result.end(), it);
-  EXPECT_NEAR(-1, result[0], EPS);
-  EXPECT_NEAR(-2, result[1], EPS);
+  EXPECT_NEAR(1, result[0], EPS);
+  EXPECT_NEAR(2, result[1], EPS);
 
   // TODO test twist
 }
