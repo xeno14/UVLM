@@ -52,9 +52,10 @@ void InitPosition() {
   // bound
   for (std::size_t i = 0; i < ROWS + 1; i++) {
     for (std::size_t j = 0; j < COLS + 1; j++) {
-      double x = i * dx * cos(-alpha);
-      double y = j * dy;
-      double z = x * sin(-alpha);
+      double x0 = i * dx;
+      double x = x0 * cos(-alpha);
+      double y = -SPAN/2 + j * dy;
+      double z = x0 * sin(-alpha);
       get_pos(pos, i, j) = Eigen::Vector3d(x, y, z);
     }
   }
@@ -206,6 +207,7 @@ void SimulatorBody() {
   for (auto p : cpos) std::cout << p.transpose() << std::endl;
   std::cout << std::endl << std::endl;
   // 2
+  std::cout << "normal";
   for (std::size_t i=0;i<ROWS*COLS;i++) {
     std::cout << cpos[i].transpose() << "\t" << normal[i].transpose() << std::endl;
   }
@@ -239,6 +241,23 @@ void SimulatorBody() {
       auto cp = get_panel(cpos, i, j);
       auto u = VORING(cp, i, j, 1);
       std::cout << cp.transpose() << "\t" << u.transpose() << std::endl;
+    }
+  }
+  std::cout << std::endl << std::endl;
+  // 7
+  // wake velocity
+  for (std::size_t i=0; i<=13; ++i) {
+    for (std::size_t j=0; j<=13; ++j) {
+      double x = 1.5;
+      double ymin = -SPAN/2 - 1.;
+      double ymax =  SPAN/2 + 1.;
+      double zmin = -1.5;
+      double zmax = 1.5;
+      double y = ymin + (ymax-ymin) / 13 * i;
+      double z = zmin + (zmax-zmin) / 13 * j;
+      Eigen::Vector3d p(x, y, z);
+      Eigen::Vector3d u = Velocity(p) - U;
+      std::cout << p.transpose() << "\t" << u.transpose() << std::endl;
     }
   }
   std::cout << std::endl << std::endl;
