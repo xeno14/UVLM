@@ -14,6 +14,7 @@
 DEFINE_double(AR, 4, "aspect ratio");
 DEFINE_double(Q, 1, "freestream velocity");
 DEFINE_double(alpha, 5, "angle of attack [deg]");
+DEFINE_bool(use_lift2, false, "calc lift in Simpson's way");
 
 namespace {
 
@@ -207,6 +208,48 @@ double CalcLift() {
   return res;
 }
 
+struct VortexLine {
+  Eigen::Vector3d p0, p1;
+  double g;
+};
+
+std::vector<VortexLine> GetLines() {
+  std::vector<VortexLine> res;
+  for (std::size_t i=0; i<ROWS;i++) {
+    for (std::size_t j=0; j<COLS;j++) {
+
+      std::vector<Eigen::Vector3d> corner = {
+          get_pos(pos, i, j), get_pos(pos, i, j + 1),
+          get_pos(pos, i + 1, j + 1), get_pos(pos, i + 1, j)};
+      for (std::size_t k=0; k<corner.size(); k++) {
+        if (i==ROWS-1 && k==2) continue;  // skip T.E
+        res.push_back(VortexLine{corner[k], corner[(k + 1) % corner.size()],
+                                 get_panel(gamma, i, j)});
+      }
+    }
+  }
+  // add line in wake
+  // std::size_t i = ROWS-1;
+  // for (std::size_t j = 0; j < COLS; j++) {
+  //   res.push_back(VortexLine{get_pos(pos, i + 1, j), get_pos(pos, i + 1, j + 1),
+  //                            get_panel(gamma, i, j)});
+  // }
+  return res;
+}
+
+// Simpson's method
+Eigen::Vector3d CalcLift2() {
+  Eigen::Vector3d res = Eigen::Vector3d::Zero();
+  auto lines = GetLines();
+  for (auto line : lines) {
+    Eigen::Vector3d mp = (line.p0 + line.p1) / 2;
+    Eigen::Vector3d u = Velocity(mp);
+    Eigen::Vector3d df = u.cross(line.p1 - line.p0) * line.g;
+    res += df;
+  }
+  return res;
+}
+
 void SimulatorBody() { 
   InitPosition();
   const auto cpos = CollocationPoints();
@@ -288,8 +331,23 @@ void SimulatorBody() {
   }
   ofs << std::endl << std::endl;
 
+  // 8 vortex lines
+  auto lines = GetLines();
+  for (auto line : lines) {
+    ofs << line.p0.transpose() << std::endl;
+  }
+
+  // 9 mid point
+  for (auto line : lines) {
+    Eigen::Vector3d mp = (line.p0 + line.p1) / 2;
+    Eigen::Vector3d u = Velocity(mp);
+    ofs << mp.transpose() << "\t" << u.transpose() << std::endl;
+  }
+
   // std::cout << "Lift=" << CalcLift() << std::endl;
   std::cout << CalcLift() / (0.5 * Q * Q * CHORD * SPAN) << std::endl;
+  auto C = CalcLift2() / (0.5 * Q * Q * CHORD * SPAN);
+  LOG(INFO) << C.x() << " " << C.z();
   //
   // double CL_ans = 2. * M_PI * sin(alpha);
   // std::cout << "CL(2D)=" << CL_ans << std::endl;
