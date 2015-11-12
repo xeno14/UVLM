@@ -1,9 +1,13 @@
 /**
  * @file stady_problem_main.cpp
  * @brief Add description here
+ *
+ * output:
+ *   stdout: C_L
  */
 
 #include "../uvlm.h"
+#include <fstream>
 
 namespace {
 
@@ -24,8 +28,7 @@ std::vector<double> gamma(ROWS* COLS);
 
 template <class T>
 auto& get_pos(T& v, std::size_t i, std::size_t j) {
-  CHECK(v.size() == (COLS+1)*(ROWS+2));
-  return v[j + i * (COLS + 1)];
+  CHECK(v.size() == (COLS+1)*(ROWS+2)); return v[j + i * (COLS + 1)];
 }
 template <class T>
 const auto& get_pos(const T& v, std::size_t i, std::size_t j) {
@@ -199,51 +202,52 @@ void SimulatorBody() {
   for (const auto& cp : cpos) 
     v.emplace_back(Velocity(cp));
 
+  std::ofstream ofs("steady_problem.dat");
   // dump
   // 0
-  for (auto p : pos) std::cout << p.transpose() << std::endl;
-  std::cout << std::endl << std::endl;
+  for (auto p : pos) ofs << p.transpose() << std::endl;
+  ofs << std::endl << std::endl;
   // 1
-  for (auto p : cpos) std::cout << p.transpose() << std::endl;
-  std::cout << std::endl << std::endl;
+  for (auto p : cpos) ofs << p.transpose() << std::endl;
+  ofs << std::endl << std::endl;
   // 2
-  std::cout << "normal";
+  ofs << "normal";
   for (std::size_t i=0;i<ROWS*COLS;i++) {
-    std::cout << cpos[i].transpose() << "\t" << normal[i].transpose() << std::endl;
+    ofs << cpos[i].transpose() << "\t" << normal[i].transpose() << std::endl;
   }
-  std::cout << std::endl << std::endl;
+  ofs << std::endl << std::endl;
   // 3 velocity at collocation points
-  std::cout << "velocity\n";
+  ofs << "velocity\n";
   for (std::size_t i=0;i<ROWS*COLS;i++) {
-    std::cout << cpos[i].transpose() << "\t" << v[i].transpose() << std::endl;
+    ofs << cpos[i].transpose() << "\t" << v[i].transpose() << std::endl;
   }
-  std::cout << std::endl << std::endl;
+  ofs << std::endl << std::endl;
   // 4 gamma
-  std::cout << "gamma\n";
+  ofs << "gamma\n";
   for (std::size_t i=0; i<ROWS; ++i) {
     for (std::size_t j=0; j<COLS; ++j) {
       auto data = get_panel(cpos, i, j);
       data.z() = get_panel(gamma, i, j);
-      std::cout << data.transpose() << std::endl;
+      ofs << data.transpose() << std::endl;
     }
-    std::cout << std::endl;
+    ofs << std::endl;
   }
-  std::cout << std::endl << std::endl;
+  ofs << std::endl << std::endl;
   // 5 rhs
   for (std::size_t i=0;i<ROWS*COLS;i++) {
-    std::cout << cpos[i].transpose() << "\t" << rhs[i] << std::endl;
+    ofs << cpos[i].transpose() << "\t" << rhs[i] << std::endl;
   }
-  std::cout << std::endl << std::endl;
+  ofs << std::endl << std::endl;
   // 6
   // self vorint gamma=1
   for (std::size_t i=0; i<ROWS; ++i) {
     for (std::size_t j=0; j<COLS; ++j) {
       auto cp = get_panel(cpos, i, j);
       auto u = VORING(cp, i, j, 1);
-      std::cout << cp.transpose() << "\t" << u.transpose() << std::endl;
+      ofs << cp.transpose() << "\t" << u.transpose() << std::endl;
     }
   }
-  std::cout << std::endl << std::endl;
+  ofs << std::endl << std::endl;
   // 7
   // wake velocity
   for (std::size_t i=0; i<=13; ++i) {
@@ -257,16 +261,16 @@ void SimulatorBody() {
       double z = zmin + (zmax-zmin) / 13 * j;
       Eigen::Vector3d p(x, y, z);
       Eigen::Vector3d u = Velocity(p) - U;
-      std::cout << p.transpose() << "\t" << u.transpose() << std::endl;
+      ofs << p.transpose() << "\t" << u.transpose() << std::endl;
     }
   }
-  std::cout << std::endl << std::endl;
+  ofs << std::endl << std::endl;
 
-  std::cerr << "Lift=" << CalcLift() << std::endl;
-  std::cerr << "CL=" << CalcLift() / (0.5 * Q * Q * CHORD * SPAN) << std::endl;
-
-  double CL_ans = 2. * M_PI * sin(alpha);
-  std::cerr << "CL(2D)=" << CL_ans << std::endl;
+  // std::cout << "Lift=" << CalcLift() << std::endl;
+  std::cout << CalcLift() / (0.5 * Q * Q * CHORD * SPAN) << std::endl;
+  //
+  // double CL_ans = 2. * M_PI * sin(alpha);
+  // std::cout << "CL(2D)=" << CL_ans << std::endl;
 }
 
 
