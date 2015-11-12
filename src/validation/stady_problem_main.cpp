@@ -8,23 +8,44 @@
 
 #include "../uvlm.h"
 #include <fstream>
+#include <gflags/gflags.h>
+#include <glog/logging.h>
+
+DEFINE_double(AR, 4, "aspect ratio");
+DEFINE_double(Q, 1, "freestream velocity");
+DEFINE_double(alpha, 5, "angle of attack [deg]");
 
 namespace {
 
-const double AR = 4;
-const std::size_t ROWS = 4;
-const std::size_t COLS = AR * 4;
-const double CHORD = 1;
-const double SPAN = CHORD * AR;
-const double dx = CHORD / ROWS;
-const double dy = SPAN / COLS;
-const double INF = 1e20;
-const double alpha = 5. / 180. * M_PI;
-const double Q = 1;
-const Eigen::Vector3d U(Q, 0, 0);
+double AR;
+std::size_t ROWS;
+std::size_t COLS;
+double CHORD;
+double SPAN;
+double dx;
+double dy;
+double INF;
+double alpha;
+double Q;
+Eigen::Vector3d U;
 
 std::vector<Eigen::Vector3d> pos;
-std::vector<double> gamma(ROWS* COLS);
+std::vector<double> gamma;
+
+void InitParam() {
+  AR = FLAGS_AR;
+  ROWS = 4;
+  COLS = AR * 4;
+  CHORD = 1;
+  SPAN = CHORD * AR;
+  dx = CHORD / ROWS;
+  dy = SPAN / COLS;
+  INF = 1e20;
+  alpha = FLAGS_alpha / 180. * M_PI;
+  Q = FLAGS_Q;
+  U = Eigen::Vector3d(Q, 0, 0);
+  gamma.resize(ROWS*COLS);
+}
 
 template <class T>
 auto& get_pos(T& v, std::size_t i, std::size_t j) {
@@ -203,6 +224,7 @@ void SimulatorBody() {
     v.emplace_back(Velocity(cp));
 
   std::ofstream ofs("steady_problem.dat");
+  CHECK(ofs) << "unable to open";
   // dump
   // 0
   for (auto p : pos) ofs << p.transpose() << std::endl;
@@ -277,6 +299,11 @@ void SimulatorBody() {
 }  // anonymous namespace
 
 int main(int argc, char* argv[]) {
+  google::InitGoogleLogging(argv[0]);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  google::InstallFailureSignalHandler();
+  FLAGS_logtostderr = true;
+  InitParam();
   SimulatorBody();
   return 0;
 }
