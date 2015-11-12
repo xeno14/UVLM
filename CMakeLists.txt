@@ -121,6 +121,9 @@ target_link_libraries(steady uvlm wing protobuf glog yaml-cpp)
 add_executable(steady2 src/validation/stady_problem2_main.cpp)
 target_link_libraries(steady2 uvlm wing protobuf glog yaml-cpp)
 
+add_executable(unsteady_plate src/validation/unsteady_plate.cpp)
+target_link_libraries(unsteady_plate uvlm wing protobuf glog yaml-cpp)
+
 add_executable(2d_velocity src/tools/2d_velocity_main.cpp)
 target_link_libraries(2d_velocity uvlm protobuf glog)
 
