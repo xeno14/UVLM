@@ -31,11 +31,12 @@ std::vector<Eigen::Vector3d> wing_pos;
 std::vector<Eigen::Vector3d> wake_pos;
 std::vector<double> wing_gamma;
 std::vector<double> wake_gamma;
+std::vector<Eigen::Vector3d> cpos, normal, tangent;
 
 void InitParam() {
   AR = FLAGS_AR;
-  ROWS = 4;
-  COLS = AR * 4;
+  ROWS = 6;
+  COLS = AR * 3;
   CHORD = 1;
   SPAN = CHORD * AR;
   dx = CHORD / ROWS;
@@ -114,6 +115,20 @@ auto Normals(const std::vector<Eigen::Vector3d>& pos) {
   return res;
 }
 
+auto Tangents(const std::vector<Eigen::Vector3d>& pos) {
+  std::vector<Eigen::Vector3d> res(ROWS * COLS);
+  for (std::size_t i = 0; i < ROWS; ++i) {
+    for (std::size_t j = 0; j < COLS; ++j) {
+      Eigen::Vector3d t =(
+          (get_pos(pos, i + 1, j + 1) - get_pos(pos, i, j)) + 
+          (get_pos(pos, i + 1, j) - get_pos(pos, i, j+1)))/2;
+      t.normalize();
+      get_panel(res, i, j) = t;
+    }
+  }
+  return res;
+}
+
 auto VORTEX(const Eigen::Vector3d& x, const Eigen::Vector3d& x1,
     const Eigen::Vector3d& x2, double gamma) {
   // (10.16)
@@ -148,6 +163,7 @@ Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) {
 }
 
 Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
+  if (wake_gamma.size()==0) return Eigen::Vector3d::Zero();
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   std::size_t rows = wake_gamma.size() / COLS;
   for (std::size_t i=0; i<rows-1; ++i) {
@@ -192,10 +208,25 @@ auto CalcRhs(const std::vector<Eigen::Vector3d>& cpos,
 }
 
 Eigen::Vector3d Velocity(const Eigen::Vector3d& x) {
-  // return U;
   return U + BoundVelocity(x) + WakeVelocity(x);
 }
 
+Eigen::Vector3d CalcLift() {
+  // TODO time derivation
+  Eigen::Vector3d res = Eigen::Vector3d::Zero();
+  for (std::size_t i=0; i<ROWS;i++) {
+    for (std::size_t j=0; j<COLS;j++) {
+      const auto cp = get_panel(cpos, i, j);
+      Eigen::Vector3d Um = WakeVelocity(cp) + U;
+      double g = get_panel(wing_gamma, i, j);
+      double g_1 = i==0 ? 0 : get_panel(wing_gamma, i-1, j);
+      double dy = fabs(get_pos(wing_pos, i, j).y() -get_pos(wing_pos, i, j+1).y());
+      double dL = Um.dot(get_panel(tangent, i, j)) * (g -g_1) * dy;
+      res += get_panel(normal, i, j) * dL;
+    }
+  }
+  return res;
+}
 
 void MainLoop(std::size_t step, double dt) {
   // TODO morphing
@@ -206,8 +237,10 @@ void MainLoop(std::size_t step, double dt) {
   for (std::size_t j=0; j<=COLS; j++) {
     new_wake_pos.push_back(get_pos(wing_pos, ROWS, j) + U * dt);
   }
-  for (std::size_t j=0; j<COLS; j++) {
-    new_wake_gamma.push_back(get_panel(wing_gamma, ROWS - 1, j));
+  if (step>1) {
+    for (std::size_t j=0; j<COLS; j++) {
+      new_wake_gamma.push_back(get_panel(wing_gamma, ROWS - 1, j));
+    }
   }
   new_wake_pos.insert(new_wake_pos.end(), wake_pos.begin(), wake_pos.end());
   new_wake_gamma.insert(new_wake_gamma.end(), wake_gamma.begin(), 
@@ -215,8 +248,9 @@ void MainLoop(std::size_t step, double dt) {
   wake_pos.swap(new_wake_pos);
   wake_gamma.swap(new_wake_gamma);
 
-  const auto cpos = CollocationPoints(wing_pos);
-  const auto normal = Normals(wing_pos);
+  cpos = CollocationPoints(wing_pos);
+  normal = Normals(wing_pos);
+  tangent = Tangents(wing_pos);
 
   // solve linear
   auto A = CalcMatrix(cpos, normal);
@@ -224,6 +258,12 @@ void MainLoop(std::size_t step, double dt) {
   Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
   Eigen::VectorXd gamma_v = solver.solve(rhs);
   for (std::size_t K = 0; K < ROWS * COLS; ++K) wing_gamma[K] = gamma_v(K);
+
+  // calc load
+  const auto L = CalcLift();
+  std::cout << L.z() / (0.5 * Q * Q * CHORD * SPAN) << std::endl;
+
+  // output
 
   // advection
   std::vector<Eigen::Vector3d> wake_vel(wake_pos.size());
@@ -303,11 +343,18 @@ void MainLoop(std::size_t step, double dt) {
     ofs << p.transpose() << std::endl;
   }
   ofs << std::endl << std::endl;
+
+  // 9 tangent
+  ofs << "#normal";
+  for (std::size_t i=0;i<ROWS*COLS;i++) {
+    ofs << cpos[i].transpose() << "\t" << tangent[i].transpose() << std::endl;
+  }
+  ofs << std::endl << std::endl;
 }
 
 void SimulatorBody() { 
   InitPosition(wing_pos);
-  double dt = 0.1;
+  double dt = 1./16.;
   for (std::size_t i=1; i<=50; i++) {
     LOG(INFO) << "step=" << i;
     MainLoop(i, dt);
