@@ -153,11 +153,33 @@ Eigen::Vector3d VORING(const Eigen::Vector3d& x,
   return u;
 }
 
+// chordwise vortex only
+Eigen::Vector3d CVORING(const Eigen::Vector3d& x,
+    const std::vector<Eigen::Vector3d>& pos,
+    const std::vector<double>& gammas,
+    std::size_t i, std::size_t j) {
+  Eigen::Vector3d u = Eigen::Vector3d::Zero();
+  double gamma = get_panel(gammas, i, j);
+  u += VORTEX(x, get_pos(pos, i, j + 1), get_pos(pos, i + 1, j + 1), gamma);
+  u += VORTEX(x, get_pos(pos, i + 1, j), get_pos(pos, i, j), gamma);
+  return u;
+}
+
 Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   for (std::size_t i=0; i<ROWS; ++i) {
     for (std::size_t j=0; j<COLS; ++j) {
       res += VORING(x, wing_pos, wing_gamma, i, j);
+    }
+  }
+  return res;
+}
+
+Eigen::Vector3d ChordwiseBoundVelocity(const Eigen::Vector3d& x) {
+  Eigen::Vector3d res = Eigen::Vector3d::Zero();
+  for (std::size_t i=0; i<ROWS; ++i) {
+    for (std::size_t j=0; j<COLS; ++j) {
+      res += CVORING(x, wing_pos, wing_gamma, i, j);
     }
   }
   return res;
@@ -212,18 +234,46 @@ Eigen::Vector3d Velocity(const Eigen::Vector3d& x) {
   return U + BoundVelocity(x) + WakeVelocity(x);
 }
 
-Eigen::Vector3d CalcLift() {
+Eigen::Vector3d CalcLift(double dt) {
   // TODO time derivation
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   for (std::size_t i=0; i<ROWS;i++) {
     for (std::size_t j=0; j<COLS;j++) {
       const auto cp = get_panel(cpos, i, j);
-      Eigen::Vector3d Um = WakeVelocity(cp) + U;
-      double g = get_panel(wing_gamma, i, j);
-      double g_1 = i==0 ? 0 : get_panel(wing_gamma, i-1, j);
-      double dy = fabs(get_pos(wing_pos, i, j).y() -get_pos(wing_pos, i, j+1).y());
-      double dL = Um.dot(get_panel(tangent, i, j)) * (g -g_1) * dy;
-      res += get_panel(normal, i, j) * dL;
+      const Eigen::Vector3d Um = U;
+      const Eigen::Vector3d Uw = WakeVelocity(cp);
+      const double g = get_panel(wing_gamma, i, j);
+      const double g_1 = i==0 ? 0 : get_panel(wing_gamma, i-1, j);
+      const double dx =
+          fabs((get_pos(wing_pos, i + 1, j) - get_pos(wing_pos, i, j)).norm());
+      const double dy =
+          fabs((get_pos(wing_pos, i, j + 1) - get_pos(wing_pos, i, j)).norm());
+
+      // time derivation
+      const double g_p = get_panel(wing_gamma_prev, i, j);
+      const double g_1_p = i == 0 ? 0 : get_panel(wing_gamma_prev, i - 1, j);
+      const double dg_dt = 0.5 * ((g + g_1) - (g_p + g_1_p)) / dt;
+
+      auto P = UVLM::calc_load::internal::CalcProjectionOperator(Um);
+      const auto n = get_panel(normal, i, j);
+      const auto tau = get_panel(tangent, i, j);
+      const double a = atan2(Um.dot(n), Um.dot(tau));
+      LOG(INFO) << "a="<< a *180 /M_PI;
+
+      // lift
+      // const double dL =
+      //     ((Um + Uw).dot(tau) * (g - g_1) / dx + dg_dt) *
+      //     dx * dy * cos(a);
+      const double dL = dy * ((Um+Uw).dot(tau) * (g-g_1) + dg_dt)*cos(alpha);
+
+      // drag
+      // const auto Ubc = ChordwiseBoundVelocity(cp);
+      // const double dD = -(Ubc + Uw).dot(P * n) * (g - g_1) * dy +
+      //                   dg_dt * dx * dy * sin(a);
+      // const auto Um_ = Um / Um.norm();
+
+      // res += Um_ * dD + P * n * dL;
+      res += Eigen::Vector3d::UnitZ() * dL;
     }
   }
   return res;
@@ -259,6 +309,7 @@ Eigen::Vector3d CalcLift2() {
   for (const auto& line : lines) {
     Eigen::Vector3d mp = (line.p0 + line.p1) / 2;
     Eigen::Vector3d u = Velocity(mp);
+    // Eigen::Vector3d u = U;
     Eigen::Vector3d df = u.cross(line.p1 - line.p0) * line.g;
     res += df;
   }
@@ -270,9 +321,9 @@ Eigen::Vector3d CalcLift2_unst(double dt) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   for (std::size_t i=0; i<ROWS;i++) {
     for (std::size_t j=0; j<COLS;j++) {
-      const double b =
-          (get_panel(wing_pos, i, j) - get_panel(wing_pos, i + 1, j)).norm();
       const double c =
+          (get_panel(wing_pos, i, j) - get_panel(wing_pos, i + 1, j)).norm();
+      const double b =
           (get_panel(wing_pos, i, j) - get_panel(wing_pos, i, j + 1)).norm();
       const double A = b*c;
       const double dg_dt =
@@ -318,13 +369,11 @@ void MainLoop(std::size_t step, double dt) {
   for (std::size_t K = 0; K < ROWS * COLS; ++K) wing_gamma[K] = gamma_v(K);
 
   // calc load
-  const auto L = CalcLift();
-  LOG(INFO) << L.transpose();
-  // const auto Fst = CalcLift2();
-  // const auto Funst = CalcLift2_unst(dt);
-  // LOG(INFO) << Fst.transpose() << " " << Funst.transpose();
-  // const auto L = Fst + Funst;
-  std::cout << L.z() / (0.5 * Q * Q * CHORD * SPAN) << std::endl;
+  // const auto F = CalcLift(dt);
+  const auto F = CalcLift2();
+  LOG(INFO) << F.transpose();
+  const auto C = F / (0.5*Q*Q*CHORD*SPAN);
+  std::cout << step * dt * Q / CHORD << " " << C.x() << " " << C.z() << std::endl;
 
   // output
 
