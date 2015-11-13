@@ -196,19 +196,19 @@ Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
   return res;
 }
 
-Eigen::Vector3d WakeLoopTest() {
-  Eigen::Vector3d res = Eigen::Vector3d::Zero();
-  std::size_t rows = wake_pos.size() / (COLS+1);
-  LOG(INFO) << "rows"<<rows;
-  std::size_t count=0;
-  for (std::size_t i=0; i<rows-1; ++i) {
-    for (std::size_t j=0; j<COLS; ++j) {
-      count++;
-    }
-  }
-  LOG(INFO) << "count" << count;
-  return res;
-}
+// Eigen::Vector3d WakeLoopTest() {
+//   Eigen::Vector3d res = Eigen::Vector3d::Zero();
+//   std::size_t rows = wake_pos.size() / (COLS+1);
+//   LOG(INFO) << "rows"<<rows;
+//   std::size_t count=0;
+//   for (std::size_t i=0; i<rows-1; ++i) {
+//     for (std::size_t j=0; j<COLS; ++j) {
+//       count++;
+//     }
+//   }
+//   LOG(INFO) << "count" << count;
+//   return res;
+// }
 
 auto CalcMatrix() {
   // A_kl
@@ -349,58 +349,8 @@ Eigen::Vector3d CalcLift2_unst(double dt) {
   return res;
 }
 
-void MainLoop(std::size_t step, double dt) {
-  wing_gamma_prev = wing_gamma;
-
-  // TODO morphing
-  
-  // shed wake
-  std::vector<Eigen::Vector3d> new_wake_pos;
-  std::vector<double> new_wake_gamma;
-  for (std::size_t j=0; j<=COLS; j++) {
-    new_wake_pos.push_back(get_pos(wing_pos, ROWS, j) + U * dt);
-  }
-  if (step>1) {
-    for (std::size_t j=0; j<COLS; j++) {
-      new_wake_gamma.push_back(get_panel(wing_gamma, ROWS - 1, j));
-    }
-  }
-  new_wake_pos.insert(new_wake_pos.end(), wake_pos.begin(), wake_pos.end());
-  new_wake_gamma.insert(new_wake_gamma.end(), wake_gamma.begin(), 
-      wake_gamma.end());
-  wake_pos.swap(new_wake_pos);
-  wake_gamma.swap(new_wake_gamma);
-
-  WakeLoopTest();
-
-  cpos = CollocationPoints(wing_pos);
-  normal = Normals(wing_pos);
-  tangent = Tangents(wing_pos);
-
-  // solve linear
-  auto A = CalcMatrix();
-  auto rhs = CalcRhs();
-  Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
-  Eigen::VectorXd gamma_v = solver.solve(rhs);
-  for (std::size_t K = 0; K < ROWS * COLS; ++K) wing_gamma[K] = gamma_v(K);
-
-  // calc load
-  // const auto F = CalcLift(dt);
-  const auto F = CalcLift2();
-  LOG(INFO) << F.transpose();
-  const auto C = F / (0.5*Q*Q*CHORD*SPAN);
-  std::cout << step * dt * Q / CHORD << " " << C.x() << " " << C.z() << std::endl;
-
-  // output
-
-  // advection
-  std::vector<Eigen::Vector3d> wake_vel(wake_pos.size());
-  std::transform(wake_pos.begin(), wake_pos.end(), wake_vel.begin(),
-                 [](const auto& x) { return Velocity(x); });
-  for (std::size_t i=0; i<wake_pos.size(); i++) {
-    wake_pos[i] += wake_vel[i] * dt;
-  }
-
+void Output() {
+  // change file name at each time step (now overwritten by the latest step)
   std::ofstream ofs("unsteady_problem.dat");
   CHECK(ofs) << "unable to open";
   // dump
@@ -433,9 +383,9 @@ void MainLoop(std::size_t step, double dt) {
     ofs << std::endl;
   }
   ofs << std::endl << std::endl;
-  // 5 rhs
+  // 5 dummy
   for (std::size_t i=0;i<ROWS*COLS;i++) {
-    ofs << cpos[i].transpose() << "\t" << rhs[i] << std::endl;
+    ofs << cpos[i].transpose() << "\t" << 0 << std::endl;
   }
   ofs << std::endl << std::endl;
   // 6
@@ -485,6 +435,68 @@ void MainLoop(std::size_t step, double dt) {
     ofs << cpos[i].transpose() << "\t" << WakeVelocity(cpos[i]).transpose() << std::endl;
   }
   ofs << std::endl << std::endl;
+}
+
+void MainLoop(std::size_t step, double dt) {
+  wing_gamma_prev = wing_gamma;
+
+  // TODO morphing
+  
+  // shed wake
+  std::vector<Eigen::Vector3d> new_wake_pos;
+  std::vector<double> new_wake_gamma;
+  for (std::size_t j=0; j<=COLS; j++) {
+    new_wake_pos.push_back(get_pos(wing_pos, ROWS, j));
+  }
+  if (step>1) {
+    for (std::size_t j=0; j<COLS; j++) {
+      new_wake_gamma.push_back(get_panel(wing_gamma, ROWS - 1, j));
+    }
+  }
+  new_wake_pos.insert(new_wake_pos.end(), wake_pos.begin(), wake_pos.end());
+  new_wake_gamma.insert(new_wake_gamma.end(), wake_gamma.begin(), 
+      wake_gamma.end());
+  wake_pos.swap(new_wake_pos);
+  wake_gamma.swap(new_wake_gamma);
+
+  // WakeLoopTest();
+
+  cpos = CollocationPoints(wing_pos);
+  normal = Normals(wing_pos);
+  tangent = Tangents(wing_pos);
+
+  // solve linear
+  auto A = CalcMatrix();
+  auto rhs = CalcRhs();
+  Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
+  Eigen::VectorXd gamma_v = solver.solve(rhs);
+  for (std::size_t K = 0; K < ROWS * COLS; ++K) wing_gamma[K] = gamma_v(K);
+
+  // calc load
+  // const auto F = CalcLift(dt);
+  LOG(INFO) << "joukowski";
+  const auto F = CalcLift2();
+  LOG(INFO) << F.transpose();
+  const auto C = F / (0.5*Q*Q*CHORD*SPAN);
+  std::cout << step * dt * Q / CHORD << " " << C.x() << " " << C.z() << std::endl;
+
+  // output
+  // if (step==2) {
+    Output();
+  //   return;
+  // }
+
+  // advection
+  std::vector<Eigen::Vector3d> wake_vel(wake_pos.size());
+  std::transform(wake_pos.begin(), wake_pos.end(), wake_vel.begin(),
+                 [](const auto& x) { return Velocity(x); });
+  for (std::size_t j=0; j<=COLS; j++) {
+    wake_vel[j] = U;
+  }
+  for (std::size_t i=0; i<wake_pos.size(); i++) {
+    wake_pos[i] += wake_vel[i] * dt;
+  }
+
 }
 
 void SimulatorBody() { 
