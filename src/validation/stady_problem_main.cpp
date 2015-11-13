@@ -295,7 +295,6 @@ void SimulatorBody() {
       data.z() = get_panel(gamma, i, j);
       ofs << data.transpose() << std::endl;
     }
-    ofs << std::endl;
   }
   ofs << std::endl << std::endl;
   // 5 rhs
@@ -336,6 +335,7 @@ void SimulatorBody() {
   for (auto line : lines) {
     ofs << line.p0.transpose() << std::endl;
   }
+  ofs << std::endl << std::endl;
 
   // 9 mid point
   for (auto line : lines) {
@@ -343,6 +343,19 @@ void SimulatorBody() {
     Eigen::Vector3d u = Velocity(mp);
     ofs << mp.transpose() << "\t" << u.transpose() << std::endl;
   }
+  ofs << std::endl << std::endl;
+
+  // 10 vector due to wake
+  ofs << "velocity due to wake\n";
+  for (std::size_t i=0;i<ROWS*COLS;i++) {
+    Eigen::Vector3d u = Eigen::Vector3d::Zero();
+    const auto cp = cpos[i];
+    for (std::size_t jj=0; jj<COLS; ++jj) {
+      u += VORING(cp, ROWS, jj, get_panel(gamma, ROWS-1, jj));
+    }
+    ofs << cpos[i].transpose() << "\t" << u.transpose() << std::endl;
+  }
+  ofs << std::endl << std::endl;
 
   // std::cout << "Lift=" << CalcLift() << std::endl;
   std::cout << CalcLift() / (0.5 * Q * Q * CHORD * SPAN) << std::endl;

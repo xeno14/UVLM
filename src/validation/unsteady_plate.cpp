@@ -189,7 +189,7 @@ Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
   if (wake_gamma.size()==0) return Eigen::Vector3d::Zero();
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   std::size_t rows = wake_gamma.size() / COLS;
-  for (std::size_t i=0; i<rows-1; ++i) {
+  for (std::size_t i=0; i<rows; ++i) {
     for (std::size_t j=0; j<COLS; ++j) {
       res += VORING(x, wake_pos, wake_gamma, i, j);
     }
@@ -197,33 +197,48 @@ Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
   return res;
 }
 
-auto CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
-                const std::vector<Eigen::Vector3d>& normal) {
+Eigen::Vector3d WakeLoopTest() {
+  if (wake_gamma.size()==0) return Eigen::Vector3d::Zero();
+  Eigen::Vector3d res = Eigen::Vector3d::Zero();
+  std::size_t rows = wake_gamma.size() / COLS;
+  std::size_t count=0;
+  for (std::size_t i=0; i<rows; ++i) {
+    for (std::size_t j=0; j<COLS; ++j) {
+      count++;
+    }
+  }
+  LOG(INFO) << "count" << count;
+  return res;
+}
+
+auto CalcMatrix() {
   // A_kl
   Eigen::MatrixXd res(ROWS * COLS, ROWS * COLS);
-  std::fill(wing_gamma.begin(), wing_gamma.end(), 1);
+  std::vector<double> gamma(wing_gamma.size(), 1);
 
-  // loop for all vortices
-  for (std::size_t K=0; K<ROWS*COLS; K++) {
-    const auto cp = cpos[K];
-    const auto n = normal[K];
-    // loop for other vortices
-    for (std::size_t L=0; L<ROWS*COLS; L++) {
-      std::size_t i, j;
-      std::tie(i, j) = panel_index_inv(L);
-      auto u = VORING(cp, wing_pos, wing_gamma, i, j);
-      res(K, L) = u.dot(n);
+  // loop for all bound vortices
+  for (std::size_t i=0; i<ROWS; ++i) {
+    for (std::size_t j=0; j<COLS; ++j) {
+      const auto k = panel_index(i, j);
+      const auto cp = get_panel(cpos, i, j);
+      const auto n = get_panel(normal, i, j);
+      
+      // loop for vortex ring
+      for (std::size_t ii=0; ii<ROWS; ++ii) {
+        for (std::size_t jj=0; jj<COLS; ++jj) {
+          const auto l = panel_index(ii, jj);
+          auto u = VORING(cp, wing_pos, gamma, ii, jj);
+          res(k, l) = u.dot(n);
+        }
+      }
     }
   }
   return res;
 }
 
-auto CalcRhs(const std::vector<Eigen::Vector3d>& cpos,
-             const std::vector<Eigen::Vector3d>& normal) {
+auto CalcRhs() {
   Eigen::VectorXd res(ROWS*COLS);
-  std::size_t i, j;
   for (std::size_t K=0; K<ROWS*COLS; ++K) {
-    std::tie(i, j) = panel_index_inv(K);
     Eigen::Vector3d u = U + WakeVelocity(cpos[K]);
     res(K) = -u.dot(normal[K]);
   }
@@ -357,13 +372,15 @@ void MainLoop(std::size_t step, double dt) {
   wake_pos.swap(new_wake_pos);
   wake_gamma.swap(new_wake_gamma);
 
+  WakeLoopTest();
+
   cpos = CollocationPoints(wing_pos);
   normal = Normals(wing_pos);
   tangent = Tangents(wing_pos);
 
   // solve linear
-  auto A = CalcMatrix(cpos, normal);
-  auto rhs = CalcRhs(cpos, normal);
+  auto A = CalcMatrix();
+  auto rhs = CalcRhs();
   Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
   Eigen::VectorXd gamma_v = solver.solve(rhs);
   for (std::size_t K = 0; K < ROWS * COLS; ++K) wing_gamma[K] = gamma_v(K);
@@ -460,6 +477,13 @@ void MainLoop(std::size_t step, double dt) {
   ofs << "#normal";
   for (std::size_t i=0;i<ROWS*COLS;i++) {
     ofs << cpos[i].transpose() << "\t" << tangent[i].transpose() << std::endl;
+  }
+  ofs << std::endl << std::endl;
+
+  // 10 vel due to wake
+  ofs << "#velocity due to wake at cp\n";
+  for (std::size_t i=0;i<ROWS*COLS;i++) {
+    ofs << cpos[i].transpose() << "\t" << WakeVelocity(cpos[i]).transpose() << std::endl;
   }
   ofs << std::endl << std::endl;
 }
