@@ -186,10 +186,9 @@ Eigen::Vector3d ChordwiseBoundVelocity(const Eigen::Vector3d& x) {
 }
 
 Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
-  if (wake_gamma.size()==0) return Eigen::Vector3d::Zero();
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
-  std::size_t rows = wake_gamma.size() / COLS;
-  for (std::size_t i=0; i<rows; ++i) {
+  std::size_t rows = wake_pos.size() / (COLS+1);
+  for (std::size_t i=0; i<rows-1; ++i) {
     for (std::size_t j=0; j<COLS; ++j) {
       res += VORING(x, wake_pos, wake_gamma, i, j);
     }
@@ -198,11 +197,11 @@ Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
 }
 
 Eigen::Vector3d WakeLoopTest() {
-  if (wake_gamma.size()==0) return Eigen::Vector3d::Zero();
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
-  std::size_t rows = wake_gamma.size() / COLS;
+  std::size_t rows = wake_pos.size() / (COLS+1);
+  LOG(INFO) << "rows"<<rows;
   std::size_t count=0;
-  for (std::size_t i=0; i<rows; ++i) {
+  for (std::size_t i=0; i<rows-1; ++i) {
     for (std::size_t j=0; j<COLS; ++j) {
       count++;
     }
