@@ -30,12 +30,13 @@ Eigen::Vector3d U;
 std::vector<Eigen::Vector3d> wing_pos;
 std::vector<Eigen::Vector3d> wake_pos;
 std::vector<double> wing_gamma;
+std::vector<double> wing_gamma_prev;
 std::vector<double> wake_gamma;
 std::vector<Eigen::Vector3d> cpos, normal, tangent;
 
 void InitParam() {
   AR = FLAGS_AR;
-  ROWS = 6;
+  ROWS = 4;
   COLS = AR * 3;
   CHORD = 1;
   SPAN = CHORD * AR;
@@ -228,7 +229,64 @@ Eigen::Vector3d CalcLift() {
   return res;
 }
 
+struct VortexLine {
+  Eigen::Vector3d p0, p1;
+  double g;
+};
+
+std::vector<VortexLine> GetLines() {
+  std::vector<VortexLine> res;
+  for (std::size_t i=0; i<ROWS;i++) {
+    for (std::size_t j=0; j<COLS;j++) {
+      std::vector<Eigen::Vector3d> corner = {
+          get_pos(wing_pos, i, j), get_pos(wing_pos, i, j + 1),
+          get_pos(wing_pos, i + 1, j + 1), get_pos(wing_pos, i + 1, j)};
+      for (std::size_t k=0; k<corner.size(); k++) {
+        if (i==ROWS-1 && k==2) continue;  // skip T.E
+        res.push_back(VortexLine{corner[k], corner[(k + 1) % corner.size()],
+                                 get_panel(wing_gamma, i, j)});
+      }
+    }
+  }
+  return res;
+}
+
+// Simpson's method
+Eigen::Vector3d CalcLift2() {
+  Eigen::Vector3d res = Eigen::Vector3d::Zero();
+  // steady part
+  auto lines = GetLines();
+  for (const auto& line : lines) {
+    Eigen::Vector3d mp = (line.p0 + line.p1) / 2;
+    Eigen::Vector3d u = Velocity(mp);
+    Eigen::Vector3d df = u.cross(line.p1 - line.p0) * line.g;
+    res += df;
+  }
+  return res;
+}
+
+Eigen::Vector3d CalcLift2_unst(double dt) {
+  // unsteady part
+  Eigen::Vector3d res = Eigen::Vector3d::Zero();
+  for (std::size_t i=0; i<ROWS;i++) {
+    for (std::size_t j=0; j<COLS;j++) {
+      const double b =
+          (get_panel(wing_pos, i, j) - get_panel(wing_pos, i + 1, j)).norm();
+      const double c =
+          (get_panel(wing_pos, i, j) - get_panel(wing_pos, i, j + 1)).norm();
+      const double A = b*c;
+      const double dg_dt =
+          (get_panel(wing_gamma, i, j) - get_panel(wing_gamma_prev, i, j)) / dt;
+      LOG(INFO) << dg_dt << " " << A;
+      res += dg_dt * A * get_panel(normal, i, j); 
+    }
+  }
+  return res;
+}
+
 void MainLoop(std::size_t step, double dt) {
+  wing_gamma_prev = wing_gamma;
+
   // TODO morphing
   
   // shed wake
@@ -261,6 +319,11 @@ void MainLoop(std::size_t step, double dt) {
 
   // calc load
   const auto L = CalcLift();
+  LOG(INFO) << L.transpose();
+  // const auto Fst = CalcLift2();
+  // const auto Funst = CalcLift2_unst(dt);
+  // LOG(INFO) << Fst.transpose() << " " << Funst.transpose();
+  // const auto L = Fst + Funst;
   std::cout << L.z() / (0.5 * Q * Q * CHORD * SPAN) << std::endl;
 
   // output
@@ -289,9 +352,9 @@ void MainLoop(std::size_t step, double dt) {
   }
   ofs << std::endl << std::endl;
   // 3 velocity at collocation points
-  ofs << "#velocity\n";
+  ofs << "#velocity at cp\n";
   for (std::size_t i=0;i<ROWS*COLS;i++) {
-    ofs << cpos[i].transpose() << "\t" << Velocity(cpos[i]) << std::endl;
+    ofs << cpos[i].transpose() << "\t" << Velocity(cpos[i]).transpose() << std::endl;
   }
   ofs << std::endl << std::endl;
   // 4 gamma
