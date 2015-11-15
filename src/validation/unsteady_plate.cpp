@@ -333,17 +333,17 @@ Eigen::Vector3d CalcLift2() {
 Eigen::Vector3d CalcLift2_unst(double dt) {
   // unsteady part
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
-  for (std::size_t i=0; i<ROWS;i++) {
-    for (std::size_t j=0; j<COLS;j++) {
-      const double c =
-          (get_panel(wing_pos, i, j) - get_panel(wing_pos, i + 1, j)).norm();
-      const double b =
-          (get_panel(wing_pos, i, j) - get_panel(wing_pos, i, j + 1)).norm();
-      const double A = b*c;
+  for (std::size_t i = 0; i < ROWS; i++) {
+    for (std::size_t j = 0; j < COLS; j++) {
+      const double A =
+          ((get_pos(wing_pos, i + 1, j) - get_pos(wing_pos, i, j))
+               .cross(get_pos(wing_pos, i, j + 1) -
+                      get_pos(wing_pos, i, j)))
+              .norm();
       const double dg_dt =
           (get_panel(wing_gamma, i, j) - get_panel(wing_gamma_prev, i, j)) / dt;
       LOG(INFO) << dg_dt << " " << A;
-      res += dg_dt * A * get_panel(normal, i, j); 
+      res += get_panel(normal, i, j) * dg_dt * A;
     }
   }
   return res;
@@ -475,7 +475,7 @@ void MainLoop(std::size_t step, double dt) {
   // calc load
   // const auto F = CalcLift(dt);
   LOG(INFO) << "joukowski";
-  const auto F = CalcLift2();
+  const auto F = CalcLift2() + CalcLift2_unst(dt);
   LOG(INFO) << F.transpose();
   const auto C = F / (0.5*Q*Q*CHORD*SPAN);
   std::cout << step * dt * Q / CHORD << " " << C.x() << " " << C.z() << std::endl;
