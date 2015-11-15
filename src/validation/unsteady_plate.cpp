@@ -19,6 +19,7 @@ DEFINE_double(AR, 4, "aspect ratio");
 DEFINE_double(Q, 1, "freestream velocity");
 DEFINE_double(alpha, 5, "angle of attack [deg]");
 DEFINE_double(steps, 50, "number of steps");
+DEFINE_string(output, "", "output file (if empty, use stdout)");
 
 namespace {
 
@@ -33,6 +34,8 @@ double INF;
 double alpha;
 double Q;
 Eigen::Vector3d U;
+
+std::unique_ptr<std::ostream> load_os;
 
 std::vector<Eigen::Vector3d> wing_pos;
 std::vector<Eigen::Vector3d> wake_pos;
@@ -420,12 +423,15 @@ void MainLoop(std::size_t step, double dt) {
   for (std::size_t K = 0; K < ROWS * COLS; ++K) wing_gamma[K] = gamma_v(K);
 
   // calc load
-  // const auto F = CalcLift(dt);
   LOG(INFO) << "joukowski";
   const auto F = CalcLift2() + CalcLift2_unst(dt);
   LOG(INFO) << F.transpose();
   const auto C = F / (0.5 * Q * Q * CHORD * SPAN);
-  std::cout << step* dt* Q / CHORD << " " << C.x() << " " << C.z() << std::endl;
+  if (FLAGS_output.size()) {
+    *load_os << step* dt* Q / CHORD << " " << C.x() << " " << C.z() << std::endl;
+  } else {
+    std::cout << step* dt* Q / CHORD << " " << C.x() << " " << C.z() << std::endl;
+  }
 
   // output
   // if (step==2) {
@@ -467,6 +473,7 @@ int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InstallFailureSignalHandler();
   FLAGS_logtostderr = true;
+  load_os = std::unique_ptr<std::ostream>(new std::ofstream(FLAGS_output));
   InitParam();
   SimulatorBody();
   return 0;
