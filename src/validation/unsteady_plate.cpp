@@ -260,7 +260,6 @@ std::vector<VortexLine> GetLines() {
 
 // Simpson's method
 Eigen::Vector3d CalcLift2() {
-  Eigen::Vector3d res = Eigen::Vector3d::Zero();
   // steady part
   auto lines = GetLines();
   double Fx = 0, Fy = 0, Fz = 0;
@@ -282,7 +281,10 @@ Eigen::Vector3d CalcLift2() {
 
 Eigen::Vector3d CalcLift2_unst(double dt) {
   // unsteady part
-  Eigen::Vector3d res = Eigen::Vector3d::Zero();
+  double Fx = 0, Fy = 0, Fz = 0;
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+ : Fx, Fy, Fz)
+#endif
   for (std::size_t i = 0; i < ROWS; i++) {
     for (std::size_t j = 0; j < COLS; j++) {
       const double A =
@@ -291,10 +293,13 @@ Eigen::Vector3d CalcLift2_unst(double dt) {
               .norm();
       const double dg_dt =
           (get_panel(wing_gamma, i, j) - get_panel(wing_gamma_prev, i, j)) / dt;
-      res += get_panel(normal, i, j) * dg_dt * A;
+      Eigen::Vector3d df = get_panel(normal, i, j) * dg_dt * A;
+      Fx += df.x();
+      Fy += df.y();
+      Fz += df.z();
     }
   }
-  return res;
+  return Eigen::Vector3d(Fx, Fy, Fz);
 }
 
 void Output() {
@@ -463,7 +468,7 @@ void MainLoop(std::size_t step, double dt) {
 void SimulatorBody() {
   InitPosition(wing_pos);
   double dt = 1. / 16.;
-  for (std::size_t i = 1; i <= 50; i++) {
+  for (std::size_t i = 1; i <= FLAGS_steps; i++) {
     LOG(INFO) << "step=" << i;
     MainLoop(i, dt);
   }
