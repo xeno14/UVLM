@@ -8,6 +8,13 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#if defined(__GNUC__) && defined(_OPENMP)
+  #define GNU_PARALLEL
+#endif
+#ifdef GNU_PARALLEL
+  #include <parallel/algorithm>
+#endif
+
 DEFINE_double(AR, 4, "aspect ratio");
 DEFINE_double(Q, 1, "freestream velocity");
 DEFINE_double(alpha, 5, "angle of attack [deg]");
@@ -193,20 +200,6 @@ Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
   return res;
 }
 
-// Eigen::Vector3d WakeLoopTest() {
-//   Eigen::Vector3d res = Eigen::Vector3d::Zero();
-//   std::size_t rows = wake_pos.size() / (COLS+1);
-//   LOG(INFO) << "rows"<<rows;
-//   std::size_t count=0;
-//   for (std::size_t i=0; i<rows-1; ++i) {
-//     for (std::size_t j=0; j<COLS; ++j) {
-//       count++;
-//     }
-//   }
-//   LOG(INFO) << "count" << count;
-//   return res;
-// }
-
 auto CalcMatrix() {
   // A_kl
   Eigen::MatrixXd res(ROWS * COLS, ROWS * COLS);
@@ -245,51 +238,6 @@ Eigen::Vector3d Velocity(const Eigen::Vector3d& x) {
   return U + BoundVelocity(x) + WakeVelocity(x);
 }
 
-Eigen::Vector3d CalcLift(double dt) {
-  // TODO time derivation
-  Eigen::Vector3d res = Eigen::Vector3d::Zero();
-  for (std::size_t i = 0; i < ROWS; i++) {
-    for (std::size_t j = 0; j < COLS; j++) {
-      const auto cp = get_panel(cpos, i, j);
-      const Eigen::Vector3d Um = U;
-      const Eigen::Vector3d Uw = WakeVelocity(cp);
-      const double g = get_panel(wing_gamma, i, j);
-      const double g_1 = i == 0 ? 0 : get_panel(wing_gamma, i - 1, j);
-      const double dx =
-          fabs((get_pos(wing_pos, i + 1, j) - get_pos(wing_pos, i, j)).norm());
-      const double dy =
-          fabs((get_pos(wing_pos, i, j + 1) - get_pos(wing_pos, i, j)).norm());
-
-      // time derivation
-      const double g_p = get_panel(wing_gamma_prev, i, j);
-      const double g_1_p = i == 0 ? 0 : get_panel(wing_gamma_prev, i - 1, j);
-      const double dg_dt = 0.5 * ((g + g_1) - (g_p + g_1_p)) / dt;
-
-      auto P = UVLM::calc_load::internal::CalcProjectionOperator(Um);
-      const auto n = get_panel(normal, i, j);
-      const auto tau = get_panel(tangent, i, j);
-      const double a = atan2(Um.dot(n), Um.dot(tau));
-      LOG(INFO) << "a=" << a * 180 / M_PI;
-
-      // lift
-      // const double dL =
-      //     ((Um + Uw).dot(tau) * (g - g_1) / dx + dg_dt) *
-      //     dx * dy * cos(a);
-      const double dL =
-          dy * ((Um + Uw).dot(tau) * (g - g_1) + dg_dt) * cos(alpha);
-
-      // drag
-      // const auto Ubc = ChordwiseBoundVelocity(cp);
-      // const double dD = -(Ubc + Uw).dot(P * n) * (g - g_1) * dy +
-      //                   dg_dt * dx * dy * sin(a);
-      // const auto Um_ = Um / Um.norm();
-
-      // res += Um_ * dD + P * n * dL;
-      res += Eigen::Vector3d::UnitZ() * dL;
-    }
-  }
-  return res;
-}
 
 struct VortexLine {
   Eigen::Vector3d p0, p1;
@@ -339,7 +287,6 @@ Eigen::Vector3d CalcLift2_unst(double dt) {
               .norm();
       const double dg_dt =
           (get_panel(wing_gamma, i, j) - get_panel(wing_gamma_prev, i, j)) / dt;
-      LOG(INFO) << dg_dt << " " << A;
       res += get_panel(normal, i, j) * dg_dt * A;
     }
   }
@@ -487,8 +434,14 @@ void MainLoop(std::size_t step, double dt) {
 
   // advection
   std::vector<Eigen::Vector3d> wake_vel(wake_pos.size());
+
+#ifdef GNU_PARALLEL
+  __gnu_parallel::transform(wake_pos.begin(), wake_pos.end(), wake_vel.begin(),
+                            [](const auto& x) { return Velocity(x); });
+#else
   std::transform(wake_pos.begin(), wake_pos.end(), wake_vel.begin(),
                  [](const auto& x) { return Velocity(x); });
+#endif // GNU_PARALLEL
   for (std::size_t j = 0; j <= COLS; j++) {
     wake_vel[j] = U;
   }
