@@ -8,13 +8,6 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#if defined(__GNUC__) && defined(_OPENMP)
-  #define GNU_PARALLEL
-#endif
-#ifdef GNU_PARALLEL
-  #include <parallel/algorithm>
-#endif
-
 DEFINE_double(AR, 4, "aspect ratio");
 DEFINE_double(Q, 1, "freestream velocity");
 DEFINE_double(alpha, 5, "angle of attack [deg]");
@@ -442,13 +435,11 @@ void MainLoop(std::size_t step, double dt) {
   // advection
   std::vector<Eigen::Vector3d> wake_vel(wake_pos.size());
 
-#ifdef GNU_PARALLEL
-  __gnu_parallel::transform(wake_pos.begin(), wake_pos.end(), wake_vel.begin(),
-                            [](const auto& x) { return Velocity(x); });
-#else
-  std::transform(wake_pos.begin(), wake_pos.end(), wake_vel.begin(),
-                 [](const auto& x) { return Velocity(x); });
-#endif // GNU_PARALLEL
+#pragma omp parallel for
+  for (std::size_t i=0; i<wake_pos.size(); i++) {
+    wake_vel[i] = Velocity(wake_pos[i]);
+  }
+
   for (std::size_t j = 0; j <= COLS; j++) {
     wake_vel[j] = U;
   }
