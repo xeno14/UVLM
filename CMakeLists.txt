@@ -115,6 +115,15 @@ target_link_libraries(plunging_validation uvlm wing protobuf glog yaml-cpp)
 add_executable(fixed_plate src/validation/fixed_plate.cpp)
 target_link_libraries(fixed_plate uvlm wing protobuf glog yaml-cpp)
 
+add_executable(steady src/validation/stady_problem_main.cpp)
+target_link_libraries(steady uvlm wing protobuf glog yaml-cpp)
+
+add_executable(steady2 src/validation/stady_problem2_main.cpp)
+target_link_libraries(steady2 uvlm wing protobuf glog yaml-cpp)
+
+add_executable(unsteady_plate src/validation/unsteady_plate.cpp)
+target_link_libraries(unsteady_plate uvlm wing protobuf glog yaml-cpp)
+
 add_executable(2d_velocity src/tools/2d_velocity_main.cpp)
 target_link_libraries(2d_velocity uvlm protobuf glog)
 
@@ -137,6 +146,7 @@ target_link_libraries(dump_circulation uvlm protobuf glog yaml-cpp)
 add_executable(dump_centroid src/tools/dump_centroid_main.cpp)
 enable_gflags(dump_centroid)
 target_link_libraries(dump_centroid uvlm protobuf glog yaml-cpp)
+
 
 ###########################################################
 # install
