@@ -14,6 +14,8 @@ DEFINE_double(k, 0.1, "reduced frequency");
 DEFINE_double(steps, 50, "number of steps");
 DEFINE_string(output, "", "output load file (if empty, use stdout)");
 DEFINE_bool(disable_output, false, "disable output of velocities, circulations, etc.");
+DEFINE_int32(rows, 6, "rows");
+DEFINE_int32(cols, 20, "cols");
 
 namespace {
 
@@ -45,8 +47,8 @@ UVLM::Morphing m;
 
 void InitParam() {
   AR = 6;
-  ROWS = 6;
-  COLS = 20;
+  ROWS = FLAGS_rows;
+  COLS = FLAGS_cols;
   CHORD = 1;
   SPAN = CHORD * AR;
   dx = CHORD / ROWS;
