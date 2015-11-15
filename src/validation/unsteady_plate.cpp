@@ -18,6 +18,7 @@
 DEFINE_double(AR, 4, "aspect ratio");
 DEFINE_double(Q, 1, "freestream velocity");
 DEFINE_double(alpha, 5, "angle of attack [deg]");
+DEFINE_double(steps, 50, "number of steps");
 
 namespace {
 
