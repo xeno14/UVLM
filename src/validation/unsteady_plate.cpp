@@ -263,14 +263,21 @@ Eigen::Vector3d CalcLift2() {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   // steady part
   auto lines = GetLines();
-  for (const auto& line : lines) {
+  double Fx = 0, Fy = 0, Fz = 0;
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+ : Fx, Fy, Fz)
+#endif
+  for (std::size_t i = 0; i < lines.size(); i++) {
+    const auto& line = lines[i];
     Eigen::Vector3d mp = (line.p0 + line.p1) / 2;
     Eigen::Vector3d u = Velocity(mp);
     // Eigen::Vector3d u = U;
     Eigen::Vector3d df = u.cross(line.p1 - line.p0) * line.g;
-    res += df;
+    Fx += df.x();
+    Fy += df.y();
+    Fz += df.z();
   }
-  return res;
+  return Eigen::Vector3d(Fx, Fy, Fz);
 }
 
 Eigen::Vector3d CalcLift2_unst(double dt) {
@@ -386,6 +393,7 @@ void MainLoop(std::size_t step, double dt) {
   // TODO morphing
 
   // shed wake
+  LOG(INFO) << "Shed";
   std::vector<Eigen::Vector3d> new_wake_pos;
   std::vector<double> new_wake_gamma;
   for (std::size_t j = 0; j <= COLS; j++) {
@@ -409,6 +417,7 @@ void MainLoop(std::size_t step, double dt) {
   tangent = Tangents(wing_pos);
 
   // solve linear
+  LOG(INFO) << "Linear";
   auto A = CalcMatrix();
   auto rhs = CalcRhs();
   Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
@@ -416,7 +425,7 @@ void MainLoop(std::size_t step, double dt) {
   for (std::size_t K = 0; K < ROWS * COLS; ++K) wing_gamma[K] = gamma_v(K);
 
   // calc load
-  LOG(INFO) << "joukowski";
+  LOG(INFO) << "Load: joukowski";
   const auto F = CalcLift2() + CalcLift2_unst(dt);
   LOG(INFO) << F.transpose();
   const auto C = F / (0.5 * Q * Q * CHORD * SPAN);
@@ -433,9 +442,12 @@ void MainLoop(std::size_t step, double dt) {
   // }
 
   // advection
+  LOG(INFO) << "Advect";
   std::vector<Eigen::Vector3d> wake_vel(wake_pos.size());
 
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
   for (std::size_t i=0; i<wake_pos.size(); i++) {
     wake_vel[i] = Velocity(wake_pos[i]);
   }
