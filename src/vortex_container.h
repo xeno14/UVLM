@@ -125,6 +125,9 @@ class VortexContainer {
   auto cbegin() const { return vortices_->cbegin() + Index(0); }
   auto cend() const { return vortices_->cbegin() + Index(rows_ * cols_); }
 
+  std::vector<Eigen::Vector3d> DumpPos() const;
+  void LoadPos(const std::vector<Eigen::Vector3d>& pos);
+
  private:
   vortices_ptr_t vortices_;
   std::size_t rows_, cols_, id_;

@@ -85,6 +85,7 @@ add_library(uvlm
             ${PROTO_DIR}/uvlm.pb.cc
             src/shed.cpp
             src/vortex.cpp
+            src/vortex_container.cpp
             src/uvlm_vortex_ring.cpp
             src/wing_builder.cpp
             src/calc_load/katz_plotkin.cpp
