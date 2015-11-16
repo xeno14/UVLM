@@ -45,6 +45,8 @@ std::vector<double> wake_gamma;
 std::vector<Eigen::Vector3d> cpos, normal, tangent;
 UVLM::Morphing m;
 
+std::ofstream ofs_morphing("morphing.dat");
+
 void InitParam() {
   AR = 6;
   ROWS = 6;
@@ -325,6 +327,12 @@ void Output(std::size_t step) {
   std::ofstream ofs(filename);
   CHECK(ofs);
   snapshot.SerializeToOstream(&ofs);
+
+  for (std::size_t K=0; K<wing_pos.size(); ++K) {
+    auto u = MorphingVelocity(wing_pos_init[K], step * DT);
+    ofs_morphing << wing_pos[K].transpose() << " " << u.transpose() << std::endl;
+  }
+  ofs_morphing << std::endl << std::endl;
 }
 
 void MainLoop(std::size_t step) {
