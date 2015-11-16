@@ -73,7 +73,7 @@ void InitParam() {
   m.set_twist([o, beta, span](const Eigen::Vector3d& x0, double t) {
     return beta * fabs(x0.y()) / span * sin(o * t);
   });
-  // m.set_alpha(alpha);
+  m.set_alpha(alpha);
 }
 
 template <class T>
