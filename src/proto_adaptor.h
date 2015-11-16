@@ -52,6 +52,14 @@ inline UVLM::VortexRing ProtoToVortexRing(const proto::VortexRing& v) {
   return res;
 }
 
+template <class Range>
+inline std::vector<Eigen::Vector3d> PointsToVector(const Range& points) {
+  std::vector<Eigen::Vector3d> res;
+  std::transform(points.begin(), points.end(), std::back_inserter(res),
+                 [](const auto& p) { return UVLM::PointToVector3d(p); });
+  return res;
+}
+
 inline void UVLMVortexRingToBird(proto::FlyingWing* bird,
                                  const UVLMVortexRing& rings) {
   bird->Clear();
