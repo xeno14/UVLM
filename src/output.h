@@ -1,0 +1,51 @@
+
+/**
+ * @file output.h
+ * @brief Add description here
+ */
+#pragma once
+
+#include "../proto/uvlm.pb.h"
+#include "proto_adaptor.h"
+
+#include <fstream>
+#include <iterator>
+#include <type_traits>
+
+namespace UVLM {
+
+/**
+ * @brief output single simple Snapshot2 built from array
+ */
+template <class InputIteraotr1, class InputIteraotr2>
+void SimpleOutput(const std::string& filename, InputIteraotr1 pos_first,
+                  InputIteraotr1 pos_last, InputIteraotr2 gamma_first,
+                  InputIteraotr2 gamma_last, const std::size_t cols) {
+  // static_assert(typename std::iterator_traits<InputIteraotr1>::value_type
+  // TODO size check
+  const std::size_t pos_size = std::distance(pos_first, pos_last);
+  const std::size_t gamma_size = std::distance(gamma_first, gamma_last);
+  CHECK(pos_size == (cols + 1) * (gamma_size / cols + 1));
+
+  UVLM::proto::Snapshot2 snapshot;
+
+  LOG(INFO) << std::distance(gamma_first, gamma_last);
+  for (std::size_t K = 0; K < gamma_size; ++K) {
+    auto gamma = gamma_first + K;
+    std::size_t i = K / cols;
+    std::size_t j = K % cols;
+    auto pos = pos_first + j + i * (cols + 1);
+    UVLM::VortexRing v;
+    v.PushNode(*(pos))
+     .PushNode(*(pos + 1))
+     .PushNode(*(pos + 1 + cols + 1))
+     .PushNode(*(pos + cols + 1));
+    v.set_gamma(*gamma);
+    snapshot.add_vortices()->CopyFrom(::UVLM::VortexRingToProto(v));
+  }
+  std::ofstream ofs(filename);
+  CHECK(ofs) << "unable to open!";
+  snapshot.SerializeToOstream(&ofs);
+}
+
+}  // namespace UVLM

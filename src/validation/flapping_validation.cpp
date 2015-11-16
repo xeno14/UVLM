@@ -4,6 +4,7 @@
  */
 
 #include "../uvlm.h"
+#include "../output.h"
 #include <fstream>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
@@ -14,6 +15,7 @@ DEFINE_double(k, 0.1, "reduced frequency");
 DEFINE_double(steps, 50, "number of steps");
 DEFINE_string(output, "", "output load file (if empty, use stdout)");
 DEFINE_bool(disable_output, false, "disable output of velocities, circulations, etc.");
+DEFINE_string(output_path, "", "directory to save Snapshot2");
 
 namespace {
 
@@ -57,7 +59,7 @@ void InitParam() {
   U = Eigen::Vector3d(Q, 0, 0);
   Kg = FLAGS_k;
   OMEGA = 2 * Q * Kg / CHORD;
-  wing_gamma.resize((ROWS + 1) * (COLS + 1), 0);
+  wing_gamma.resize(ROWS * COLS, 0);
 
   const double o = OMEGA;
   const double phi = 15. / 180. * M_PI;
@@ -307,94 +309,12 @@ Eigen::Vector3d CalcLift2_unst() {
   return Eigen::Vector3d(Fx, Fy, Fz);
 }
 
-void Output() {
-  // change file name at each time step (now overwritten by the latest step)
-  std::ofstream ofs("unsteady_problem.dat");
-  CHECK(ofs) << "unable to open";
-  // dump
-  // 0
-  for (auto p : wing_pos) ofs << p.transpose() << std::endl;
-  ofs << std::endl << std::endl;
-  // 1
-  for (auto p : cpos) ofs << p.transpose() << std::endl;
-  ofs << std::endl << std::endl;
-  // 2
-  ofs << "#normal";
-  for (std::size_t i = 0; i < ROWS * COLS; i++) {
-    ofs << cpos[i].transpose() << "\t" << normal[i].transpose() << std::endl;
-  }
-  ofs << std::endl << std::endl;
-  // 3 velocity at collocation points
-  ofs << "#velocity at cp\n";
-  for (std::size_t i = 0; i < ROWS * COLS; i++) {
-    ofs << cpos[i].transpose() << "\t" << Velocity(cpos[i]).transpose()
-        << std::endl;
-  }
-  ofs << std::endl << std::endl;
-  // 4 gamma
-  ofs << "#gamma\n";
-  for (std::size_t i = 0; i < ROWS; ++i) {
-    for (std::size_t j = 0; j < COLS; ++j) {
-      auto data = get_panel(cpos, i, j);
-      data.z() = get_panel(wing_gamma, i, j);
-      ofs << data.transpose() << std::endl;
-    }
-    ofs << std::endl;
-  }
-  ofs << std::endl << std::endl;
-  // 5 dummy
-  for (std::size_t i = 0; i < ROWS * COLS; i++) {
-    ofs << cpos[i].transpose() << "\t" << 0 << std::endl;
-  }
-  ofs << std::endl << std::endl;
-  // 6
-  // self vorint gamma=1
-  for (std::size_t i = 0; i < ROWS; ++i) {
-    for (std::size_t j = 0; j < COLS; ++j) {
-      auto cp = get_panel(cpos, i, j);
-      auto u = Eigen::Vector3d::Zero();
-      ofs << cp.transpose() << "\t" << u.transpose() << std::endl;
-    }
-  }
-  ofs << std::endl << std::endl;
-  // 7
-  // wake velocity
-  for (std::size_t i = 0; i <= 13; ++i) {
-    for (std::size_t j = 0; j <= 13; ++j) {
-      double x = 1.5;
-      double ymin = -SPAN / 2 - 1.;
-      double ymax = SPAN / 2 + 1.;
-      double zmin = -1.5;
-      double zmax = 1.5;
-      double y = ymin + (ymax - ymin) / 13 * i;
-      double z = zmin + (zmax - zmin) / 13 * j;
-      Eigen::Vector3d p(x, y, z);
-      Eigen::Vector3d u = Velocity(p) - U;
-      ofs << p.transpose() << "\t" << u.transpose() << std::endl;
-    }
-  }
-  ofs << std::endl << std::endl;
-
-  // 8 wake pos
-  for (auto p : wake_pos) {
-    ofs << p.transpose() << std::endl;
-  }
-  ofs << std::endl << std::endl;
-
-  // 9 tangent
-  ofs << "#normal";
-  for (std::size_t i = 0; i < ROWS * COLS; i++) {
-    ofs << cpos[i].transpose() << "\t" << tangent[i].transpose() << std::endl;
-  }
-  ofs << std::endl << std::endl;
-
-  // 10 vel due to wake
-  ofs << "#velocity due to wake at cp\n";
-  for (std::size_t i = 0; i < ROWS * COLS; i++) {
-    ofs << cpos[i].transpose() << "\t" << WakeVelocity(cpos[i]).transpose()
-        << std::endl;
-  }
-  ofs << std::endl << std::endl;
+void Output(std::size_t step) {
+  char filename[256];
+  sprintf(filename, "%s/%08lu", FLAGS_output_path.c_str(), step);
+  LOG(INFO) << ROWS << " " << COLS << " " << wing_gamma.size();
+  UVLM::SimpleOutput(filename, wing_pos.cbegin(), wing_pos.cend(),
+                     wing_gamma.cbegin(), wing_gamma.cend(), COLS);
 }
 
 void MainLoop(std::size_t step) {
@@ -454,7 +374,7 @@ void MainLoop(std::size_t step) {
   }
 
   // output
-  if (!FLAGS_disable_output) Output();
+  if (!FLAGS_disable_output) Output(step);
 
   if (step==FLAGS_steps) return;
 
