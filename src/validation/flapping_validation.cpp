@@ -42,7 +42,7 @@ std::vector<Eigen::Vector3d> wake_pos;
 std::vector<double> wing_gamma;
 std::vector<double> wing_gamma_prev;
 std::vector<double> wake_gamma;
-std::vector<Eigen::Vector3d> cpos, normal, tangent;
+std::vector<Eigen::Vector3d> cpos, cpos_init, normal, tangent;
 UVLM::Morphing m;
 
 std::ofstream ofs_morphing("morphing.dat");
@@ -71,7 +71,7 @@ void InitParam() {
   m.set_twist([o, beta, span](const Eigen::Vector3d& x0, double t) {
     return beta * fabs(x0.y()) / span * sin(o * t);
   });
-  m.set_alpha(alpha);
+  // m.set_alpha(alpha);
 }
 
 template <class T>
@@ -223,10 +223,11 @@ Eigen::Vector3d MorphingVelocity(const Eigen::Vector3d& x0, double t) {
 }
 
 auto CalcRhs(double t) {
-  Eigen::VectorXd res(ROWS * COLS);
-  for (std::size_t K = 0; K < ROWS * COLS; ++K) {
+  const std::size_t sz = cpos.size();
+  Eigen::VectorXd res(sz);
+  for (std::size_t K = 0; K < sz; ++K) {
     Eigen::Vector3d u =
-        U + WakeVelocity(cpos[K]) - MorphingVelocity(wing_pos_init[K], t);
+        U + WakeVelocity(cpos[K]) - MorphingVelocity(cpos_init[K], t);
     res(K) = -u.dot(normal[K]);
   }
   return res;
@@ -410,6 +411,7 @@ void MainLoop(std::size_t step) {
 void SimulatorBody() {
   InitPosition(wing_pos_init);
   wing_pos = wing_pos_init;
+  cpos_init = CollocationPoints(wing_pos_init);
   DT = 2 * M_PI / OMEGA / 40;
   for (std::size_t i = 1; i <= FLAGS_steps; i++) {
     LOG(INFO) << "step=" << i;
