@@ -33,30 +33,31 @@ inline void WholeWing(::UVLM::proto::Wing* wing,
   wing->set_chord(half.chord());
   wing->set_span(half.span());
 
-  std::vector<::UVLM::proto::Point> half_points(half.points().begin(),
-                                                half.points().end());
-  std::vector<::UVLM::proto::Point> whole_points;
-  std::vector<::UVLM::proto::Point> mirror;
+  std::vector<Eigen::Vector3d> half_points =
+      UVLM::PointsToVector(half.points());
+  std::vector<Eigen::Vector3d> whole_points;
+  std::vector<Eigen::Vector3d> mirror;
+
   const std::size_t COLS = half.cols() + 1;
   const std::size_t ROWS = half.points().size() / COLS;
-  for (std::size_t i=0; i<ROWS; ++i) {
-    std::vector<::UVLM::proto::Point> row_points(
+
+  for (std::size_t i = 0; i < ROWS; ++i) {
+    std::vector<Eigen::Vector3d> row_points(
         half_points.begin() + i * COLS, half_points.begin() + (i + 1) * COLS);
-    std::vector<::UVLM::proto::Point> mirror_row_points(COLS);
+    std::vector<Eigen::Vector3d> mirror_row_points(COLS);
     std::transform(row_points.begin(), row_points.end(),
-                   mirror_row_points.begin(),
-                   [](const ::UVLM::proto::Point& p) {
-                     ::UVLM::proto::Point res(p);
-                     res.set_y(p.y() * (-1));
+                   mirror_row_points.begin(), [](const Eigen::Vector3d& p) {
+                     Eigen::Vector3d res(p);
+                     res.y() *= -1;
                      return res;
                    });
     whole_points.insert(whole_points.end(), mirror_row_points.rbegin(),
                         mirror_row_points.rend());
-    whole_points.insert(whole_points.end(), row_points.begin()+1,
+    whole_points.insert(whole_points.end(), row_points.begin() + 1,
                         row_points.end());
   }
   for (const auto& p : whole_points) {
-    wing->add_points()->CopyFrom(p);
+    wing->add_points()->CopyFrom(Vector3dToPoint(p));
   }
 }
 
