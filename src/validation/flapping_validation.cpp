@@ -96,16 +96,10 @@ const auto& get_panel(const T& v, std::size_t i, std::size_t j) {
 }
 
 void InitPosition(std::vector<Eigen::Vector3d>& pos) {
-  pos.resize((ROWS + 1) * (COLS + 1));
-  // bound
-  for (std::size_t i = 0; i < ROWS + 1; i++) {
-    for (std::size_t j = 0; j < COLS + 1; j++) {
-      double x = i * dx;
-      double y = -SPAN / 2 + j * dy;
-      double z = 0;
-      get_pos(pos, i, j) = Eigen::Vector3d(x, y, z);
-    }
-  }
+  UVLM::proto::Wing wing, half;
+  UVLM::wing::RectGenerator(CHORD, SPAN/2, ROWS, COLS/2).Generate(&half);
+  UVLM::wing::WholeWing(&wing, half);
+  pos = UVLM::PointsToVector(wing.points());
 }
 
 auto CollocationPoints(const std::vector<Eigen::Vector3d>& pos) {
