@@ -50,7 +50,7 @@ UVLM::Morphing m;
 std::ofstream ofs_morphing("morphing.dat");
 
 void InitParam() {
-  AR = 6;
+  AR = 8;
   ROWS = FLAGS_rows;
   COLS = FLAGS_cols;
   CHORD = 1;
@@ -414,7 +414,7 @@ void SimulatorBody() {
   InitPosition(wing_pos_init);
   wing_pos = wing_pos_init;
   cpos_init = CollocationPoints(wing_pos_init);
-  DT = 2 * M_PI / OMEGA / 40;
+  DT = 2 * M_PI / OMEGA / 120;
   for (std::size_t i = 1; i <= FLAGS_steps; i++) {
     LOG(INFO) << "step=" << i;
     MainLoop(i);
