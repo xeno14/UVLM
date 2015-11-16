@@ -358,8 +358,6 @@ void MainLoop(std::size_t step) {
   wake_pos.swap(new_wake_pos);
   wake_gamma.swap(new_wake_gamma);
 
-  // WakeLoopTest();
-
   cpos = CollocationPoints(wing_pos);
   normal = Normals(wing_pos);
   tangent = Tangents(wing_pos);
