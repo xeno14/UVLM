@@ -5,6 +5,8 @@
 #pragma once
 
 #include <cmath>
+#include <iterator>
+#include <type_traits>
 #include <utility>
 #include <vector>
 #include <sstream>
@@ -16,6 +18,12 @@
     std::exit(EXIT_FAILURE);                                                   \
   }
 #endif
+
+#define ITERATOR_VALUETYPE_CHECK(type, iterator)                             \
+  static_assert(                                                             \
+      std::is_same<                                                          \
+          type, typename std::iterator_traits<iterator>::value_type>::value, \
+      "value_type missmatch: give " #type)
 
 inline double DegToRad(double deg) {
   return deg / 180.0 * M_PI;

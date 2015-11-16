@@ -132,7 +132,7 @@ add_executable(multiple_flapping_wings src/multiple_flapping_wings_main.cpp)
 enable_gflags(multiple_flapping_wings)
 target_link_libraries(multiple_flapping_wings uvlm wing protobuf glog yaml-cpp)
 
-add_executable(stanford_baseline src/stanford_baseline_main.cpp)
+add_executable(stanford_baseline src/validation/stanford_baseline_main.cpp)
 enable_gflags(stanford_baseline)
 target_link_libraries(stanford_baseline uvlm wing protobuf glog yaml-cpp)
 
