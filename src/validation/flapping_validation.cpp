@@ -311,10 +311,20 @@ Eigen::Vector3d CalcLift2_unst() {
 
 void Output(std::size_t step) {
   char filename[256];
+  UVLM::proto::Snapshot2 snapshot;
+  UVLM::output::SimpleAppendSnapshot(&snapshot, wing_pos.cbegin(),
+                                     wing_pos.cend(), wing_gamma.cbegin(),
+                                     wing_gamma.cend(), COLS);
+  if (wake_gamma.size()) {
+    UVLM::output::SimpleAppendSnapshot(&snapshot, wake_pos.cbegin(),
+                                       wake_pos.cend(), wake_gamma.cbegin(),
+                                       wake_gamma.cend(), COLS);
+  }
+
   sprintf(filename, "%s/%08lu", FLAGS_output_path.c_str(), step);
-  LOG(INFO) << ROWS << " " << COLS << " " << wing_gamma.size();
-  UVLM::SimpleOutput(filename, wing_pos.cbegin(), wing_pos.cend(),
-                     wing_gamma.cbegin(), wing_gamma.cend(), COLS);
+  std::ofstream ofs(filename);
+  CHECK(ofs);
+  snapshot.SerializeToOstream(&ofs);
 }
 
 void MainLoop(std::size_t step) {
