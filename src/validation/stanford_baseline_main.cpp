@@ -1,5 +1,5 @@
 /**
- * @file flapping_validation.cpp
+ * @file stanford_baseline_main.cpp
  * @brief Add description here
  */
 
@@ -50,7 +50,7 @@ UVLM::Morphing m;
 std::ofstream ofs_morphing("morphing.dat");
 
 void InitParam() {
-  AR = 8;
+  AR = 6;
   ROWS = FLAGS_rows;
   COLS = FLAGS_cols;
   CHORD = 1;
@@ -66,13 +66,8 @@ void InitParam() {
   wing_gamma.resize(ROWS * COLS, 0);
 
   const double o = OMEGA;
-  const double phi = 15. / 180. * M_PI;
-  const double beta = 4. / 180. * M_PI;
-  const double span = SPAN;
+  const double phi = 45. / 180. * M_PI;
   m.set_flap([phi, o](double t) { return phi * cos(o * t); });
-  m.set_twist([o, beta, span](const Eigen::Vector3d& x0, double t) {
-    return beta * fabs(x0.y()) / span * sin(o * t);
-  });
   m.set_alpha(alpha);
 }
 
@@ -99,7 +94,8 @@ const auto& get_panel(const T& v, std::size_t i, std::size_t j) {
 
 void InitPosition(std::vector<Eigen::Vector3d>& pos) {
   UVLM::proto::Wing wing, half;
-  UVLM::wing::RectGenerator(CHORD, SPAN/2, ROWS, COLS/2).Generate(&half);
+  UVLM::wing::NACA4digitGenerator(83, CHORD, SPAN / 2, ROWS, COLS / 2)
+      .Generate(&half);
   UVLM::wing::WholeWing(&wing, half);
   pos = UVLM::PointsToVector(wing.points());
 }
@@ -414,7 +410,7 @@ void SimulatorBody() {
   InitPosition(wing_pos_init);
   wing_pos = wing_pos_init;
   cpos_init = CollocationPoints(wing_pos_init);
-  DT = 2 * M_PI / OMEGA / 120;
+  DT = 2 * M_PI / OMEGA / 40;
   for (std::size_t i = 1; i <= FLAGS_steps; i++) {
     LOG(INFO) << "step=" << i;
     MainLoop(i);
