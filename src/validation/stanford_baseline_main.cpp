@@ -94,7 +94,8 @@ const auto& get_panel(const T& v, std::size_t i, std::size_t j) {
 
 void InitPosition(std::vector<Eigen::Vector3d>& pos) {
   UVLM::proto::Wing wing, half;
-  UVLM::wing::RectGenerator(CHORD, SPAN/2, ROWS, COLS/2).Generate(&half);
+  UVLM::wing::NACA4digitGenerator(83, CHORD, SPAN / 2, ROWS, COLS / 2)
+      .Generate(&half);
   UVLM::wing::WholeWing(&wing, half);
   pos = UVLM::PointsToVector(wing.points());
 }
