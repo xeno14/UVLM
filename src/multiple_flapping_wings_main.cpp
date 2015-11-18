@@ -74,6 +74,10 @@ void InitParam() {
   m.set_alpha(alpha);
 }
 
+// for 1 wing
+std::size_t pos_index(std::size_t i, std::size_t j) {
+  return j + i * (COLS + 1);
+}
 template <class T>
 auto& get_pos(T& v, std::size_t n, std::size_t i, std::size_t j) {
   return v[j + i * (COLS + 1) + n * (ROWS + 1) * (COLS + 1)];
@@ -83,6 +87,8 @@ const auto& get_pos(const T& v, std::size_t n, std::size_t i, std::size_t j) {
   return v[j + i * (COLS + 1) + n * (ROWS + 1) * (COLS + 1)];
 }
 
+// for 1 wing
+std::size_t panel_index(std::size_t i, std::size_t j) { return j + i * COLS; }
 std::size_t panel_index(std::size_t n, std::size_t i, std::size_t j) {
   return j + i * COLS + n * ROWS * COLS;
 }
@@ -169,18 +175,21 @@ auto VORTEX(const Eigen::Vector3d& x, const Eigen::Vector3d& x1,
   return res;
 }
 
-Eigen::Vector3d VORING(const Eigen::Vector3d& x,
-                       const std::vector<Eigen::Vector3d>& pos,
-                       const std::vector<double>& gammas, std::size_t n,
-                       std::size_t i, std::size_t j) {
+// for 1 wing
+template <class InputIterator1, class InputIterator2>
+Eigen::Vector3d VORING(const Eigen::Vector3d& x, InputIterator1 pos_first,
+                       InputIterator2 gamma_first, std::size_t i,
+                       std::size_t j) {
   Eigen::Vector3d u = Eigen::Vector3d::Zero();
-  double gamma = get_panel(gammas, n, i, j);
-  u += VORTEX(x, get_pos(pos, n, i, j), get_pos(pos, n, i, j + 1), gamma);
-  u += VORTEX(x, get_pos(pos, n, i, j + 1), get_pos(pos, n, i + 1, j + 1),
-              gamma);
-  u += VORTEX(x, get_pos(pos, n, i + 1, j + 1), get_pos(pos, n, i + 1, j),
-              gamma);
-  u += VORTEX(x, get_pos(pos, n, i + 1, j), get_pos(pos, n, i, j), gamma);
+  double gamma = *(gamma_first + panel_index(i, j));
+  auto p0 = pos_first + pos_index(i, j);
+  auto p1 = pos_first + pos_index(i, j + 1);
+  auto p2 = pos_first + pos_index(i + 1, j + 1);
+  auto p3 = pos_first + pos_index(i + 1, j);
+  u += VORTEX(x, *p0, *p1, gamma);
+  u += VORTEX(x, *p1, *p2, gamma);
+  u += VORTEX(x, *p2, *p3, gamma);
+  u += VORTEX(x, *p3, *p0, gamma);
   return u;
 }
 
@@ -189,7 +198,9 @@ Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) {
   for (std::size_t n = 0; n < NUM; n++) {
     for (std::size_t i = 0; i < ROWS; ++i) {
       for (std::size_t j = 0; j < COLS; ++j) {
-        res += VORING(x, wing_pos, wing_gamma, n, i, j);
+        auto pos_first = wing_pos.cbegin() + n * (ROWS + 1) * (COLS + 1);
+        auto gamma_first = wing_gamma.cbegin() + n * ROWS * COLS;
+        res += VORING(x, pos_first, gamma_first, i, j);
       }
     }
   }
@@ -198,11 +209,13 @@ Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) {
 
 Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
-  std::size_t rows = wake_pos.size() / (COLS + 1);
+  std::size_t rows = wake_gamma.size() / (COLS * NUM);
   for (std::size_t n = 0; n < NUM; n++) {
-    for (std::size_t i = 0; i < rows - 1; ++i) {
+    for (std::size_t i = 0; i < rows; ++i) {
       for (std::size_t j = 0; j < COLS; ++j) {
-        res += VORING(x, wake_pos, wake_gamma, n, i, j);
+        auto pos_first = wake_pos.cbegin() + n * (rows + 1) * (COLS + 1);
+        auto gamma_first = wake_gamma.cbegin() + n * rows * COLS;
+        res += VORING(x, pos_first, gamma_first, i, j);
       }
     }
   }
@@ -227,7 +240,9 @@ auto CalcMatrix() {
           for (std::size_t ii = 0; ii < ROWS; ++ii) {
             for (std::size_t jj = 0; jj < COLS; ++jj) {
               const auto l = panel_index(nn, ii, jj);
-              auto u = VORING(cp, wing_pos, gamma, nn, ii, jj);
+              auto pos_first = wing_pos.cbegin() + nn * (ROWS + 1) * (COLS + 1);
+              auto gamma_first = gamma.cbegin() + nn * ROWS * COLS;
+              auto u = VORING(cp, pos_first, gamma_first, i, j);
               res(k, l) = u.dot(nrml);
             }
           }
