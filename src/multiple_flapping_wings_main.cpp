@@ -4,7 +4,8 @@
  */
 
 #include "uvlm.h"
-
+#include "output.h"
+#include <fstream>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
@@ -51,6 +52,7 @@ std::ofstream ofs_morphing("morphing.dat");
 
 void InitParam() {
   AR = 6;
+  NUM = 2;
   ROWS = FLAGS_rows;
   COLS = FLAGS_cols;
   CHORD = 1;
@@ -106,12 +108,19 @@ const auto& get_panel(const T& v, std::size_t n, std::size_t i, std::size_t j) {
   return v[j + i * COLS + n * ROWS * COLS];
 }
 
-void InitPosition(std::vector<Eigen::Vector3d>& pos) {
-  UVLM::proto::Wing wing, half;
-  UVLM::wing::NACA4digitGenerator(83, CHORD, SPAN / 2, ROWS, COLS / 2)
-      .Generate(&half);
-  UVLM::wing::WholeWing(&wing, half);
-  pos = UVLM::PointsToVector(wing.points());
+auto InitPosition(const std::vector<Eigen::Vector3d>& origins) {
+  CHECK(NUM == origins.size()) << "size mismatch";
+  std::vector<Eigen::Vector3d> res;
+  for (auto origin : origins) {
+    UVLM::proto::Wing wing, half;
+    UVLM::wing::NACA4digitGenerator(83, CHORD, SPAN / 2, ROWS, COLS / 2)
+        .Generate(&half);
+    UVLM::wing::WholeWing(&wing, half);
+    auto pos = UVLM::PointsToVector(wing.points());
+    std::for_each(pos.begin(), pos.end(), [origin](auto& p) { p += origin; });
+    res.insert(res.end(), pos.begin(), pos.end());
+  }
+  return res;
 }
 
 auto CollocationPoints(const std::vector<Eigen::Vector3d>& pos) {
@@ -421,8 +430,13 @@ void MainLoop(std::size_t step) {
 }
 
 void SimulatorBody() {
-  InitPosition(wing_pos_init);
+  wing_pos_init = InitPosition({{0, 0, 0}, {2*CHORD, 1.5*SPAN, 0}});
   wing_pos = wing_pos_init;
+  // debug
+  // for (auto p : wing_pos) {
+  //   std::cout << p.transpose() << std::endl;
+  // }
+  return;
   cpos_init = CollocationPoints(wing_pos_init);
   DT = 2 * M_PI / OMEGA / 40;
   for (std::size_t i = 1; i <= FLAGS_steps; i++) {

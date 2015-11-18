@@ -29,7 +29,8 @@ void SimpleAppendSnapshot(UVLM::proto::Snapshot2* snapshot,
 
   const std::size_t pos_size = std::distance(pos_first, pos_last);
   const std::size_t gamma_size = std::distance(gamma_first, gamma_last);
-  CHECK(pos_size == (cols + 1) * (gamma_size / cols + 1));
+  LOG(INFO) << pos_size << " " << gamma_size;
+  // CHECK(pos_size == (cols + 1) * (gamma_size / cols + 1));
 
   LOG(INFO) << std::distance(gamma_first, gamma_last);
   for (std::size_t K = 0; K < gamma_size; ++K) {
