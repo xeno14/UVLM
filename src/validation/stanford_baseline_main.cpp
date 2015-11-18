@@ -104,13 +104,14 @@ void InitPosition(MultipleSheet<Eigen::Vector3d>& pos) {
       .Generate(&half);
   UVLM::wing::WholeWing(&wing, half);
   auto points = UVLM::PointsToVector(wing.points());
+  pos.resize(1, ROWS + 1, COLS + 1);
   std::copy(points.begin(), points.end(), pos.begin());
 }
 
 auto CollocationPoints(const MultipleSheet<Eigen::Vector3d>& pos) {
   std::vector<Eigen::Vector3d> res;
-  for (std::size_t i = 0; i < pos.rows(); i++) {
-    for (std::size_t j = 0; j < pos.cols(); j++) {
+  for (std::size_t i = 0; i < pos.rows() - 1; i++) {
+    for (std::size_t j = 0; j < pos.cols() - 1; j++) {
       res.push_back(
           (pos.at(0, i, j) + pos.at(0, i+1, j) + pos.at(0, i+1, j+1) +
            pos.at(0, i, j+1)) / 4);
@@ -142,6 +143,24 @@ auto VORTEX(const Eigen::Vector3d& x, const Eigen::Vector3d& x1,
   return res;
 }
 
+template <class InputIterator>
+Eigen::Vector3d VORING(const Eigen::Vector3d& x, 
+    const MultipleSheet<Eigen::Vector3d>& pos,
+                       InputIterator gamma_first, std::size_t i,
+                       std::size_t j) {
+  Eigen::Vector3d u = Eigen::Vector3d::Zero();
+  double gamma = *(gamma_first + panel_index(i, j));
+  auto p0 = pos.at(0, i, j);
+  auto p1 = pos.at(0, i, j + 1);
+  auto p2 = pos.at(0, i + 1, j + 1);
+  auto p3 = pos.at(0, i + 1, j);
+  u += VORTEX(x, p0, p1, gamma);
+  u += VORTEX(x, p1, p2, gamma);
+  u += VORTEX(x, p2, p3, gamma);
+  u += VORTEX(x, p3, p0, gamma);
+  return u;
+}
+
 template <class InputIterator1, class InputIterator2>
 Eigen::Vector3d VORING(const Eigen::Vector3d& x, InputIterator1 pos_first,
                        InputIterator2 gamma_first, std::size_t i,
@@ -159,12 +178,11 @@ Eigen::Vector3d VORING(const Eigen::Vector3d& x, InputIterator1 pos_first,
   return u;
 }
 
-
 Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   for (std::size_t i = 0; i < ROWS; ++i) {
     for (std::size_t j = 0; j < COLS; ++j) {
-      res += VORING(x, wing_pos.begin(), wing_gamma.cbegin(), i, j);
+      res += VORING(x, wing_pos, wing_gamma.cbegin(), i, j);
     }
   }
   return res;
@@ -401,6 +419,8 @@ void MainLoop(std::size_t step) {
 
 void SimulatorBody() {
   InitPosition(wing_pos_init);
+  wing_pos.resize(wing_pos_init.num(), wing_pos_init.rows(),
+                  wing_pos_init.cols());
   std::copy(wing_pos_init.begin(), wing_pos_init.end(), wing_pos.begin());
   cpos_init = CollocationPoints(wing_pos_init);
   DT = 2 * M_PI / OMEGA / 40;
