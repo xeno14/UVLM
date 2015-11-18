@@ -53,7 +53,7 @@ std::ofstream ofs_morphing("morphing.dat");
 
 void InitParam() {
   AR = 6;
-  NUM = 2;
+  NUM = 1;
   ROWS = FLAGS_rows;
   COLS = FLAGS_cols;
   CHORD = 1;
@@ -347,11 +347,14 @@ void Output(std::size_t step) {
         &snapshot, pos_cbegin(wing_pos, n), pos_cend(wing_pos, n),
         panel_cbegin(wing_gamma, n), panel_cend(wing_gamma, n), COLS);
     if (wake_gamma.size()) {
+      const std::size_t wake_pos_sz = (step) * (COLS + 1);
+      const std::size_t wake_panel_sz = (step-1) * COLS;
       UVLM::output::SimpleAppendSnapshot(
-          &snapshot, wake_pos.cbegin() + n * (COLS + 1) * (step + 1),
-          wake_pos.cbegin() + (n + 1) * (COLS + 1) * (step + 1),
-          wake_gamma.cbegin() + n * COLS * step,
-          wake_gamma.cbegin() + (n + 1) * COLS * step, COLS);
+          &snapshot,
+          wake_pos.cbegin() + n * wake_pos_sz,
+          wake_pos.cbegin() + (n + 1) * wake_pos_sz,
+          wake_gamma.cbegin() + n * wake_panel_sz,
+          wake_gamma.cbegin() + (n + 1) * wake_panel_sz, COLS);
     }
   }
   sprintf(filename, "%s/%08lu", FLAGS_output_path.c_str(), step);
@@ -383,20 +386,30 @@ void MainLoop(std::size_t step) {
   std::vector<Eigen::Vector3d> new_wake_pos;
   std::vector<double> new_wake_gamma;
   for (std::size_t n = 0; n < NUM; n++) {
+    // add trailing edge
     for (std::size_t j = 0; j <= COLS; j++) {
       new_wake_pos.push_back(get_pos(wing_pos, n, ROWS, j));
     }
+    const std::size_t wake_sz = (step - 1) * (COLS+1);  // wake size per wing
+    if (wake_sz==0) continue;
+    const std::size_t offset = n * wake_sz;
+    new_wake_pos.insert(new_wake_pos.end(),
+        wake_pos.cbegin()+offset, wake_pos.cbegin()+offset + wake_sz);
+
     if (step > 1) {
       for (std::size_t j = 0; j < COLS; j++) {
-        new_wake_gamma.push_back(get_panel(wing_gamma, n, ROWS - 1, j));
+        // new_wake_gamma.push_back(get_panel(wing_gamma, n, ROWS - 1, j));
+        new_wake_gamma.push_back(1);
       }
     }
   }
-  new_wake_pos.insert(new_wake_pos.end(), wake_pos.begin(), wake_pos.end());
-  new_wake_gamma.insert(new_wake_gamma.end(), wake_gamma.begin(),
-                        wake_gamma.end());
+  LOG(INFO) << "wake_pos size" << wake_pos.size();
   wake_pos.swap(new_wake_pos);
   wake_gamma.swap(new_wake_gamma);
+
+  for (auto p : wake_pos) std::cout << p.transpose() << std::endl;
+  std::cout << std::endl <<std::endl;
+
   //
   // cpos = CollocationPoints(wing_pos);
   // normal = Normals(wing_pos);
@@ -431,27 +444,26 @@ void MainLoop(std::size_t step) {
   LOG(INFO) << "Advect";
   std::vector<Eigen::Vector3d> wake_vel(wake_pos.size());
 
-// #ifdef _OPENMP
-// #pragma omp parallel for
-// #endif
-//   for (std::size_t i = 0; i < wake_pos.size(); i++) {
-//     wake_vel[i] = Velocity(wake_pos[i]);
-//   }
-//
-//   for (std::size_t j = 0; j <= COLS; j++) {
-//     wake_vel[j] = U;
-//   }
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
   for (std::size_t i = 0; i < wake_pos.size(); i++) {
-    // wake_pos[i] += wake_vel[i] * DT;
-    wake_pos[i] += U * DT;
+    // wake_vel[i] = Velocity(wake_pos[i]);
+    wake_vel[i] = U;
+  }
+
+  for (std::size_t j = 0; j <= COLS; j++) {
+    wake_vel[j] = U;
+  }
+  for (std::size_t i = 0; i < wake_pos.size(); i++) {
+    wake_pos[i] += wake_vel[i] * DT;
   }
 }
 
 void SimulatorBody() {
-  wing_pos_init = InitPosition({{0, 0, 0}, {2 * CHORD, 1.5 * SPAN, 0}});
+  // wing_pos_init = InitPosition({{0, 0, 0}, {2 * CHORD, 1.5 * SPAN, 0}});
+  wing_pos_init = InitPosition({{0, 0, 0}});
   wing_pos = wing_pos_init;
-  // cpos_init = CollocationPoints(wing_pos_init);
-  // normal = Normals(wing_pos_init);
   DT = 2 * M_PI / OMEGA / 40;
   for (std::size_t i = 1; i <= FLAGS_steps; i++) {
     LOG(INFO) << "step=" << i;
