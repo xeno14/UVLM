@@ -224,7 +224,7 @@ Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
 
 auto CalcMatrix() {
   // A_kl
-  Eigen::MatrixXd res(ROWS * COLS, ROWS * COLS);
+  Eigen::MatrixXd res(NUM * ROWS * COLS, NUM * ROWS * COLS);
   const std::vector<double> gamma(wing_gamma.size(), 1);
 
   // loop for all bound vortices
@@ -436,8 +436,8 @@ void MainLoop(std::size_t step) {
   for (auto p : wake_pos) std::cout << p.transpose() << std::endl;
   std::cout << std::endl <<std::endl;
 
-  // cpos = CollocationPoints(wing_pos);
-  // normal = Normals(wing_pos);
+  cpos = CollocationPoints(wing_pos);
+  normal = Normals(wing_pos);
 
   // solve linear
   // LOG(INFO) << "Linear";
@@ -473,12 +473,14 @@ void MainLoop(std::size_t step) {
 #pragma omp parallel for
 #endif
   for (std::size_t i = 0; i < wake_pos.size(); i++) {
-    // wake_vel[i] = Velocity(wake_pos[i]);
-    wake_vel[i] = U;
+    wake_vel[i] = Velocity(wake_pos[i]);
   }
 
-  for (std::size_t j = 0; j <= COLS; j++) {
-    wake_vel[j] = U;
+  for (std::size_t n = 0; n < NUM; n++) {
+    for (std::size_t j = 0; j <= COLS; j++) {
+      const std::size_t offset = n * step * (COLS + 1);
+      wake_vel[offset + j] = U;
+    }
   }
   for (std::size_t i = 0; i < wake_pos.size(); i++) {
     wake_pos[i] += wake_vel[i] * DT;
@@ -488,6 +490,7 @@ void MainLoop(std::size_t step) {
 void SimulatorBody() {
   wing_pos_init = InitPosition({{0, 0, 0}, {2 * CHORD, 1.5 * SPAN, 0}});
   wing_pos = wing_pos_init;
+  cpos_init = CollocationPoints(wing_pos_init);
   DT = 2 * M_PI / OMEGA / 40;
   for (std::size_t i = 1; i <= FLAGS_steps; i++) {
     LOG(INFO) << "step=" << i;
