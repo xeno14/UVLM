@@ -14,7 +14,8 @@ DEFINE_double(alpha, 5, "angle of attack [deg]");
 DEFINE_double(k, 0.1, "reduced frequency");
 DEFINE_double(steps, 50, "number of steps");
 DEFINE_string(output, "", "output load file (if empty, use stdout)");
-DEFINE_bool(disable_output, false, "disable output of velocities, circulations, etc.");
+DEFINE_bool(disable_output, false,
+            "disable output of velocities, circulations, etc.");
 DEFINE_int32(rows, 6, "rows");
 DEFINE_int32(cols, 20, "cols");
 DEFINE_string(output_path, "", "directory to save Snapshot2");
@@ -24,7 +25,7 @@ namespace {
 double AR;
 std::size_t ROWS;
 std::size_t COLS;
-std::size_t NUM;    // number of wings
+std::size_t NUM;  // number of wings
 double CHORD;
 double SPAN;
 double dx;
@@ -142,12 +143,14 @@ auto InitPosition(const std::vector<Eigen::Vector3d>& origins) {
 
 auto CollocationPoints(const std::vector<Eigen::Vector3d>& pos) {
   std::vector<Eigen::Vector3d> res(ROWS * COLS);
-  for (std::size_t i = 0; i < ROWS; i++) {
-    for (std::size_t j = 0; j < COLS; j++) {
-      auto& p = get_panel(res, i, j);
-      p = (get_pos(pos, i, j) + get_pos(pos, i + 1, j) +
-           get_pos(pos, i + 1, j + 1) + get_pos(pos, i, j + 1)) /
-          4;
+  for (std::size_t n = 0; n < NUM; n++) {
+    for (std::size_t i = 0; i < ROWS; i++) {
+      for (std::size_t j = 0; j < COLS; j++) {
+        auto& p = get_panel(res, i, j);
+        p = (get_pos(pos, n, i, j) + get_pos(pos, n, i + 1, j) +
+             get_pos(pos, n, i + 1, j + 1) + get_pos(pos, n, i, j + 1)) /
+            4;
+      }
     }
   }
   return res;
@@ -155,27 +158,15 @@ auto CollocationPoints(const std::vector<Eigen::Vector3d>& pos) {
 
 auto Normals(const std::vector<Eigen::Vector3d>& pos) {
   std::vector<Eigen::Vector3d> res(ROWS * COLS);
-  for (std::size_t i = 0; i < ROWS; ++i) {
-    for (std::size_t j = 0; j < COLS; ++j) {
-      Eigen::Vector3d n =
-          (get_pos(pos, i + 1, j + 1) - get_pos(pos, i, j))
-              .cross(get_pos(pos, i, j + 1) - get_pos(pos, i + 1, j));
-      n.normalize();
-      get_panel(res, i, j) = n;
-    }
-  }
-  return res;
-}
-
-auto Tangents(const std::vector<Eigen::Vector3d>& pos) {
-  std::vector<Eigen::Vector3d> res(ROWS * COLS);
-  for (std::size_t i = 0; i < ROWS; ++i) {
-    for (std::size_t j = 0; j < COLS; ++j) {
-      Eigen::Vector3d t = ((get_pos(pos, i + 1, j + 1) - get_pos(pos, i, j)) +
-                           (get_pos(pos, i + 1, j) - get_pos(pos, i, j + 1))) /
-                          2;
-      t.normalize();
-      get_panel(res, i, j) = t;
+  for (std::size_t n = 0; n < NUM; n++) {
+    for (std::size_t i = 0; i < ROWS; ++i) {
+      for (std::size_t j = 0; j < COLS; ++j) {
+        Eigen::Vector3d nrml =
+            (get_pos(pos, n, i + 1, j + 1) - get_pos(pos, n, i, j))
+                .cross(get_pos(pos, n, i, j + 1) - get_pos(pos, n, i + 1, j));
+        nrml.normalize();
+        get_panel(res, i, j) = nrml;
+      }
     }
   }
   return res;
@@ -347,11 +338,10 @@ Eigen::Vector3d CalcLift2_unst() {
 void Output(std::size_t step) {
   char filename[256];
   UVLM::proto::Snapshot2 snapshot;
-  for (std::size_t n=0; n<NUM; n++) {
-    UVLM::output::SimpleAppendSnapshot(&snapshot,
-        pos_cbegin(wing_pos, n), pos_cend(wing_pos, n),
-        panel_cbegin(wing_gamma, n), panel_cend(wing_gamma, n),
-        COLS);
+  for (std::size_t n = 0; n < NUM; n++) {
+    UVLM::output::SimpleAppendSnapshot(
+        &snapshot, pos_cbegin(wing_pos, n), pos_cend(wing_pos, n),
+        panel_cbegin(wing_gamma, n), panel_cend(wing_gamma, n), COLS);
   }
   if (wake_gamma.size()) {
     UVLM::output::SimpleAppendSnapshot(&snapshot, wake_pos.cbegin(),
@@ -364,9 +354,10 @@ void Output(std::size_t step) {
   CHECK(ofs);
   snapshot.SerializeToOstream(&ofs);
 
-  for (std::size_t K=0; K<wing_pos.size(); ++K) {
+  for (std::size_t K = 0; K < wing_pos.size(); ++K) {
     auto u = MorphingVelocity(wing_pos_init[K], step * DT);
-    ofs_morphing << wing_pos[K].transpose() << " " << u.transpose() << std::endl;
+    ofs_morphing << wing_pos[K].transpose() << " " << u.transpose()
+                 << std::endl;
   }
   ofs_morphing << std::endl << std::endl;
 }
@@ -402,7 +393,6 @@ void MainLoop(std::size_t step) {
 
   cpos = CollocationPoints(wing_pos);
   normal = Normals(wing_pos);
-  tangent = Tangents(wing_pos);
 
   // solve linear
   LOG(INFO) << "Linear";
@@ -428,7 +418,7 @@ void MainLoop(std::size_t step) {
   // output
   if (!FLAGS_disable_output) Output(step);
 
-  if (step==FLAGS_steps) return;
+  if (step == FLAGS_steps) return;
 
   // advection
   LOG(INFO) << "Advect";
@@ -450,8 +440,16 @@ void MainLoop(std::size_t step) {
 }
 
 void SimulatorBody() {
-  wing_pos_init = InitPosition({{0, 0, 0}, {2*CHORD, 1.5*SPAN, 0}});
+  wing_pos_init = InitPosition({{0, 0, 0}, {2 * CHORD, 1.5 * SPAN, 0}});
   wing_pos = wing_pos_init;
+  for (std::size_t n = 0; n < NUM; n++) {
+    auto first = pos_cbegin(wing_pos, n);
+    auto last = pos_cend(wing_pos, n);
+    for (auto it = first; it != last; ++it) {
+      std::cout << it->transpose() << std::endl;
+    }
+  }
+  return;
   cpos_init = CollocationPoints(wing_pos_init);
   DT = 2 * M_PI / OMEGA / 40;
   for (std::size_t i = 1; i <= FLAGS_steps; i++) {
