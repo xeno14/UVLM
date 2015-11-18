@@ -116,6 +116,14 @@ template <class T>
 auto pos_cend(const T& v, std::size_t n) {
   return v.cbegin() + (n + 1) * (ROWS + 1) * (COLS + 1);
 }
+template <class T>
+auto panel_cbegin(const T& v, std::size_t n) {
+  return v.cbegin() + n * ROWS * COLS;
+}
+template <class T>
+auto panel_cend(const T& v, std::size_t n) {
+  return v.cbegin() + (n + 1) * ROWS * COLS;
+}
 
 auto InitPosition(const std::vector<Eigen::Vector3d>& origins) {
   CHECK(NUM == origins.size()) << "size mismatch";
@@ -339,9 +347,12 @@ Eigen::Vector3d CalcLift2_unst() {
 void Output(std::size_t step) {
   char filename[256];
   UVLM::proto::Snapshot2 snapshot;
-  UVLM::output::SimpleAppendSnapshot(&snapshot, wing_pos.cbegin(),
-                                     wing_pos.cend(), wing_gamma.cbegin(),
-                                     wing_gamma.cend(), COLS);
+  for (std::size_t n=0; n<NUM; n++) {
+    UVLM::output::SimpleAppendSnapshot(&snapshot,
+        pos_cbegin(wing_pos, n), pos_cend(wing_pos, n),
+        panel_cbegin(wing_gamma, n), panel_cend(wing_gamma, n),
+        COLS);
+  }
   if (wake_gamma.size()) {
     UVLM::output::SimpleAppendSnapshot(&snapshot, wake_pos.cbegin(),
                                        wake_pos.cend(), wake_gamma.cbegin(),
@@ -441,14 +452,6 @@ void MainLoop(std::size_t step) {
 void SimulatorBody() {
   wing_pos_init = InitPosition({{0, 0, 0}, {2*CHORD, 1.5*SPAN, 0}});
   wing_pos = wing_pos_init;
-  for (std::size_t n=0; n<NUM; n++) {
-    auto first = pos_cbegin(wing_pos, n);
-    auto last = pos_cend(wing_pos, n);
-    for (auto it = first; it!=last; ++it) {
-      std::cout << it->transpose() << std::endl;
-    }
-  }
-  return;
   cpos_init = CollocationPoints(wing_pos_init);
   DT = 2 * M_PI / OMEGA / 40;
   for (std::size_t i = 1; i <= FLAGS_steps; i++) {
