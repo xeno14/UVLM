@@ -53,7 +53,7 @@ std::ofstream ofs_morphing("morphing.dat");
 
 void InitParam() {
   AR = 6;
-  NUM = 1;
+  NUM = 2;
   ROWS = FLAGS_rows;
   COLS = FLAGS_cols;
   CHORD = 1;
@@ -461,8 +461,7 @@ void MainLoop(std::size_t step) {
 }
 
 void SimulatorBody() {
-  // wing_pos_init = InitPosition({{0, 0, 0}, {2 * CHORD, 1.5 * SPAN, 0}});
-  wing_pos_init = InitPosition({{0, 0, 0}});
+  wing_pos_init = InitPosition({{0, 0, 0}, {2 * CHORD, 1.5 * SPAN, 0}});
   wing_pos = wing_pos_init;
   DT = 2 * M_PI / OMEGA / 40;
   for (std::size_t i = 1; i <= FLAGS_steps; i++) {
