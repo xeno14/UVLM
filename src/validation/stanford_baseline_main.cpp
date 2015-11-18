@@ -5,6 +5,7 @@
 
 #include "../uvlm.h"
 #include "../output.h"
+#include "../multiple_sheet/multiple_sheet.h"
 #include <fstream>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
@@ -18,6 +19,8 @@ DEFINE_bool(disable_output, false, "disable output of velocities, circulations, 
 DEFINE_int32(rows, 6, "rows");
 DEFINE_int32(cols, 20, "cols");
 DEFINE_string(output_path, "", "directory to save Snapshot2");
+
+using multiple_sheet::MultipleSheet;
 
 namespace {
 
@@ -38,8 +41,8 @@ Eigen::Vector3d U;
 
 std::unique_ptr<std::ostream> load_os;
 
-std::vector<Eigen::Vector3d> wing_pos;
-std::vector<Eigen::Vector3d> wing_pos_init;
+MultipleSheet<Eigen::Vector3d> wing_pos;
+MultipleSheet<Eigen::Vector3d> wing_pos_init;
 std::vector<Eigen::Vector3d> wake_pos;
 std::vector<double> wing_gamma;
 std::vector<double> wing_gamma_prev;
@@ -95,50 +98,35 @@ const auto& get_panel(const T& v, std::size_t i, std::size_t j) {
   return v[j + i * COLS];
 }
 
-void InitPosition(std::vector<Eigen::Vector3d>& pos) {
+void InitPosition(MultipleSheet<Eigen::Vector3d>& pos) {
   UVLM::proto::Wing wing, half;
   UVLM::wing::NACA4digitGenerator(83, CHORD, SPAN / 2, ROWS, COLS / 2)
       .Generate(&half);
   UVLM::wing::WholeWing(&wing, half);
-  pos = UVLM::PointsToVector(wing.points());
+  auto points = UVLM::PointsToVector(wing.points());
+  std::copy(points.begin(), points.end(), pos.begin());
 }
 
-auto CollocationPoints(const std::vector<Eigen::Vector3d>& pos) {
-  std::vector<Eigen::Vector3d> res(ROWS * COLS);
-  for (std::size_t i = 0; i < ROWS; i++) {
-    for (std::size_t j = 0; j < COLS; j++) {
-      auto& p = get_panel(res, i, j);
-      p = (get_pos(pos, i, j) + get_pos(pos, i + 1, j) +
-           get_pos(pos, i + 1, j + 1) + get_pos(pos, i, j + 1)) /
-          4;
+auto CollocationPoints(const MultipleSheet<Eigen::Vector3d>& pos) {
+  std::vector<Eigen::Vector3d> res;
+  for (std::size_t i = 0; i < pos.rows(); i++) {
+    for (std::size_t j = 0; j < pos.cols(); j++) {
+      res.push_back(
+          (pos.at(0, i, j) + pos.at(0, i+1, j) + pos.at(0, i+1, j+1) +
+           pos.at(0, i, j+1)) / 4);
     }
   }
   return res;
 }
 
-auto Normals(const std::vector<Eigen::Vector3d>& pos) {
-  std::vector<Eigen::Vector3d> res(ROWS * COLS);
+auto Normals(const MultipleSheet<Eigen::Vector3d>& pos) {
+  std::vector<Eigen::Vector3d> res;
   for (std::size_t i = 0; i < ROWS; ++i) {
     for (std::size_t j = 0; j < COLS; ++j) {
-      Eigen::Vector3d n =
-          (get_pos(pos, i + 1, j + 1) - get_pos(pos, i, j))
-              .cross(get_pos(pos, i, j + 1) - get_pos(pos, i + 1, j));
+      Eigen::Vector3d n = (pos.at(0, i + 1, j + 1) - pos.at(0, i, j))
+                              .cross(pos.at(0, i, j + 1) - pos.at(0, i + 1, j));
       n.normalize();
-      get_panel(res, i, j) = n;
-    }
-  }
-  return res;
-}
-
-auto Tangents(const std::vector<Eigen::Vector3d>& pos) {
-  std::vector<Eigen::Vector3d> res(ROWS * COLS);
-  for (std::size_t i = 0; i < ROWS; ++i) {
-    for (std::size_t j = 0; j < COLS; ++j) {
-      Eigen::Vector3d t = ((get_pos(pos, i + 1, j + 1) - get_pos(pos, i, j)) +
-                           (get_pos(pos, i + 1, j) - get_pos(pos, i, j + 1))) /
-                          2;
-      t.normalize();
-      get_panel(res, i, j) = t;
+      res.emplace_back(n);
     }
   }
   return res;
@@ -176,7 +164,7 @@ Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   for (std::size_t i = 0; i < ROWS; ++i) {
     for (std::size_t j = 0; j < COLS; ++j) {
-      res += VORING(x, wing_pos.cbegin(), wing_gamma.cbegin(), i, j);
+      res += VORING(x, wing_pos.begin(), wing_gamma.cbegin(), i, j);
     }
   }
   return res;
@@ -209,7 +197,7 @@ auto CalcMatrix() {
       for (std::size_t ii = 0; ii < ROWS; ++ii) {
         for (std::size_t jj = 0; jj < COLS; ++jj) {
           const auto l = panel_index(ii, jj);
-          auto u = VORING(cp, wing_pos.cbegin(), gamma.cbegin(), ii, jj);
+          auto u = VORING(cp, wing_pos.begin(), gamma.cbegin(), ii, jj);
           res(k, l) = u.dot(n);
         }
       }
@@ -250,12 +238,11 @@ std::vector<VortexLine> GetLines() {
   for (std::size_t i = 0; i < ROWS; i++) {
     for (std::size_t j = 0; j < COLS; j++) {
       std::vector<Eigen::Vector3d> corner = {
-          get_pos(wing_pos, i, j), get_pos(wing_pos, i, j + 1),
-          get_pos(wing_pos, i + 1, j + 1), get_pos(wing_pos, i + 1, j)};
+          wing_pos.at(0, i, j), wing_pos.at(0, i, j + 1),
+          wing_pos.at(0, i + 1, j + 1), wing_pos.at(0, i + 1, j)};
       std::vector<Eigen::Vector3d> corner_init = {
-          get_pos(wing_pos_init, i, j), get_pos(wing_pos_init, i, j + 1),
-          get_pos(wing_pos_init, i + 1, j + 1),
-          get_pos(wing_pos_init, i + 1, j)};
+          wing_pos_init.at(0, i, j), wing_pos_init.at(0, i, j + 1),
+          wing_pos_init.at(0, i + 1, j + 1), wing_pos_init.at(0, i + 1, j)};
       for (std::size_t k = 0; k < corner.size(); k++) {
         if (i == ROWS - 1 && k == 2) continue;  // skip T.E
         res.push_back(VortexLine{corner[k], corner[(k + 1) % corner.size()],
@@ -298,9 +285,8 @@ Eigen::Vector3d CalcLift2_unst() {
   for (std::size_t i = 0; i < ROWS; i++) {
     for (std::size_t j = 0; j < COLS; j++) {
       const double A =
-          ((get_pos(wing_pos, i + 1, j) - get_pos(wing_pos, i, j))
-               .cross(get_pos(wing_pos, i, j + 1) - get_pos(wing_pos, i, j)))
-              .norm();
+          ((wing_pos.at(0, i+1, j) - wing_pos.at(0, i,j)).cross(
+            wing_pos.at(0, i,j+1) - wing_pos.at(0, i, j))).norm();
       const double dg_dt =
           (get_panel(wing_gamma, i, j) - get_panel(wing_gamma_prev, i, j)) / DT;
       Eigen::Vector3d df = get_panel(normal, i, j) * dg_dt * A;
@@ -315,8 +301,8 @@ Eigen::Vector3d CalcLift2_unst() {
 void Output(std::size_t step) {
   char filename[256];
   UVLM::proto::Snapshot2 snapshot;
-  UVLM::output::SimpleAppendSnapshot(&snapshot, wing_pos.cbegin(),
-                                     wing_pos.cend(), wing_gamma.cbegin(),
+  UVLM::output::SimpleAppendSnapshot(&snapshot, wing_pos.begin(),
+                                     wing_pos.end(), wing_gamma.cbegin(),
                                      wing_gamma.cend(), COLS);
   if (wake_gamma.size()) {
     UVLM::output::SimpleAppendSnapshot(&snapshot, wake_pos.cbegin(),
@@ -352,7 +338,7 @@ void MainLoop(std::size_t step) {
   std::vector<Eigen::Vector3d> new_wake_pos;
   std::vector<double> new_wake_gamma;
   for (std::size_t j = 0; j <= COLS; j++) {
-    new_wake_pos.push_back(get_pos(wing_pos, ROWS, j));
+    new_wake_pos.push_back(wing_pos.at(0 , ROWS, j));
   }
   if (step > 1) {
     for (std::size_t j = 0; j < COLS; j++) {
@@ -367,7 +353,6 @@ void MainLoop(std::size_t step) {
 
   cpos = CollocationPoints(wing_pos);
   normal = Normals(wing_pos);
-  tangent = Tangents(wing_pos);
 
   // solve linear
   LOG(INFO) << "Linear";
@@ -416,7 +401,7 @@ void MainLoop(std::size_t step) {
 
 void SimulatorBody() {
   InitPosition(wing_pos_init);
-  wing_pos = wing_pos_init;
+  std::copy(wing_pos_init.begin(), wing_pos_init.end(), wing_pos.begin());
   cpos_init = CollocationPoints(wing_pos_init);
   DT = 2 * M_PI / OMEGA / 40;
   for (std::size_t i = 1; i <= FLAGS_steps; i++) {
