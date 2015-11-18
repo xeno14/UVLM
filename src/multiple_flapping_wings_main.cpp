@@ -381,6 +381,9 @@ void MainLoop(std::size_t step) {
     m.Perfome(&wing_pos[i], wing_pos_init[i], t);
   }
 
+  // TODO remove me
+  std::fill(wing_gamma.begin(), wing_gamma.end(), step*0.1);
+
   // shed wake
   LOG(INFO) << "Shed";
   std::vector<Eigen::Vector3d> new_wake_pos;
@@ -390,18 +393,26 @@ void MainLoop(std::size_t step) {
     for (std::size_t j = 0; j <= COLS; j++) {
       new_wake_pos.push_back(get_pos(wing_pos, n, ROWS, j));
     }
+    // add old panels
     const std::size_t wake_sz = (step - 1) * (COLS+1);  // wake size per wing
     if (wake_sz==0) continue;
     const std::size_t offset = n * wake_sz;
     new_wake_pos.insert(new_wake_pos.end(),
         wake_pos.cbegin()+offset, wake_pos.cbegin()+offset + wake_sz);
-
-    if (step > 1) {
-      for (std::size_t j = 0; j < COLS; j++) {
-        // new_wake_gamma.push_back(get_panel(wing_gamma, n, ROWS - 1, j));
-        new_wake_gamma.push_back(1);
-      }
+  }
+  LOG(INFO) << "shed gamma";
+  for (std::size_t n = 0; n < NUM; n++) {
+    if (step <= 1) break;
+    // add trailing edge
+    for (std::size_t j = 0; j < COLS; j++) {
+      new_wake_gamma.push_back(get_panel(wing_gamma, n, ROWS - 1, j));
     }
+    // add old panels
+    const std::size_t wake_sz = (step - 2) * COLS;
+    if (wake_sz == 0) continue;
+    const std::size_t offset = n * wake_sz;
+    new_wake_gamma.insert(new_wake_gamma.end(), wake_gamma.cbegin() + offset,
+                          wake_gamma.cbegin() + offset + wake_sz);
   }
   LOG(INFO) << "wake_pos size" << wake_pos.size();
   wake_pos.swap(new_wake_pos);
@@ -410,7 +421,6 @@ void MainLoop(std::size_t step) {
   for (auto p : wake_pos) std::cout << p.transpose() << std::endl;
   std::cout << std::endl <<std::endl;
 
-  //
   // cpos = CollocationPoints(wing_pos);
   // normal = Normals(wing_pos);
 
