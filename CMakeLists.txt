@@ -89,7 +89,7 @@ add_library(uvlm
             src/uvlm_vortex_ring.cpp
             src/wing_builder.cpp
             src/calc_load/katz_plotkin.cpp
-            src/simulator.cpp)
+            src/simulator/simulator.cpp)
 target_link_libraries(uvlm morphing protobuf glog)
 
 

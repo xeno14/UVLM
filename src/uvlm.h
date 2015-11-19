@@ -14,7 +14,7 @@
 #include "parameter.h"
 #include "proto_adaptor.h"
 #include "shed.h"
-#include "simulator.h"
+#include "simulator/simulator.h"
 #include "util.h"
 #include "uvlm_vortex_ring.h"
 #include "vortex.h"

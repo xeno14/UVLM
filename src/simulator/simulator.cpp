@@ -5,16 +5,16 @@
 
 #include "simulator.h"
 
-#include "../proto/uvlm.pb.h"
-#include "calc_load/calc_load.h"
-#include "uvlm_vortex_ring.h"
-#include "morphing.h"
-#include "linear.h"
-#include "shed.h"
-#include "proto_adaptor.h"
-#include "util.h"
-#include "vortex_container.h"
-#include "wing_builder.h"
+#include "../../proto/uvlm.pb.h"
+#include "../calc_load/calc_load.h"
+#include "../uvlm_vortex_ring.h"
+#include "../morphing.h"
+#include "../linear.h"
+#include "../shed.h"
+#include "../proto_adaptor.h"
+#include "../util.h"
+#include "../vortex_container.h"
+#include "../wing_builder.h"
 
 #include <fstream>
 #include <gflags/gflags.h>
