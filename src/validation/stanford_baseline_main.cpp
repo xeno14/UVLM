@@ -191,21 +191,18 @@ auto CalcRhs(double t) {
 }
 
 // Simpson's method
-Eigen::Vector3d CalcLift2(const MultipleSheet<Eigen::Vector3d>& pos,
-                          const MultipleSheet<Eigen::Vector3d>& pos_init,
-                          const MultipleSheet<double>& gamma, std::size_t n,
+Eigen::Vector3d CalcLift2(const std::vector<UVLM::calc_load::VortexLine>& lines_,
+    const std::vector<Eigen::Vector3d>& U,
                           double t) {
   // steady part
-  auto lines = UVLM::calc_load::GetLines(pos, pos_init, gamma, n);
+  auto lines = lines_; // なぜか動く・・・
   double Fx = 0, Fy = 0, Fz = 0;
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+ : Fx, Fy, Fz)
 #endif
   for (std::size_t i = 0; i < lines.size(); i++) {
     const auto& line = lines[i];
-    Eigen::Vector3d mp = (line.p0 + line.p1) / 2;
-    Eigen::Vector3d mp_init = (line.p0_init + line.p1_init) / 2;
-    Eigen::Vector3d u = Velocity(mp) - MorphingVelocity(mp_init, t);
+    const auto& u = U[i];
     Eigen::Vector3d df = u.cross(line.p1 - line.p0) * line.gamma;
     Fx += df.x();
     Fy += df.y();
@@ -298,7 +295,20 @@ void MainLoop(std::size_t step) {
 
   // calc load
   LOG(INFO) << "Load: joukowski";
-  const auto F = CalcLift2(wing_pos, wing_pos_init, wing_gamma, 0, t) +
+  const auto lines =
+      UVLM::calc_load::GetLines(wing_pos, wing_pos_init, wing_gamma, 0);
+  std::vector<Eigen::Vector3d> U(lines.size());
+
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (std::size_t i=0;i<lines.size();i++) {
+    const auto& line = lines[i];
+    Eigen::Vector3d mp = (line.p0 + line.p1) / 2;
+    Eigen::Vector3d mp_init = (line.p0_init + line.p1_init) / 2;
+    U[i] = Velocity(mp) - MorphingVelocity(mp_init, t);
+  }
+  const auto F = CalcLift2(lines, U, t) +
                  CalcLift2_unst(wing_pos, wing_gamma, wing_gamma_prev, 0, DT);
   LOG(INFO) << F.transpose();
   const auto C = F / (0.5 * Q * Q * CHORD * SPAN);
