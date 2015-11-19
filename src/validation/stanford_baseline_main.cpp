@@ -38,7 +38,8 @@ double Q;
 double Kg;  // reduced frequency
 double OMEGA;
 double DT;
-Eigen::Vector3d U;
+Eigen::Vector3d forward_flight;
+Eigen::Vector3d freestream;
 
 std::unique_ptr<std::ostream> load_os;
 
@@ -64,7 +65,8 @@ void InitParam() {
   INF = 1e20;
   alpha = FLAGS_alpha / 180. * M_PI;
   Q = FLAGS_Q;
-  U = Eigen::Vector3d(Q, 0, 0);
+  forward_flight = Eigen::Vector3d(-Q, 0, 0);
+  freestream = Eigen::Vector3d::Zero();
   Kg = FLAGS_k;
   OMEGA = 2 * Q * Kg / CHORD;
   wing_gamma.resize(1, ROWS, COLS);
@@ -194,7 +196,7 @@ auto CalcMatrix() {
 }
 
 Eigen::Vector3d Velocity(const Eigen::Vector3d& x) {
-  return U + BoundVelocity(x) + WakeVelocity(x);
+  return -forward_flight + BoundVelocity(x) + WakeVelocity(x);
 }
 
 Eigen::Vector3d MorphingVelocity(const Eigen::Vector3d& x0, double t) {
@@ -208,7 +210,7 @@ auto CalcRhs(double t) {
   Eigen::VectorXd res(sz);
   for (std::size_t K = 0; K < sz; ++K) {
     Eigen::Vector3d u =
-        U + WakeVelocity(cpos[K]) - MorphingVelocity(cpos_init[K], t);
+        -forward_flight + WakeVelocity(cpos[K]) - MorphingVelocity(cpos_init[K], t);
     res(K) = -u.dot(normal[K]);
   }
   return res;
@@ -381,7 +383,7 @@ void MainLoop(std::size_t step) {
   }
 
   for (std::size_t j = 0; j < wake_pos.rows(); j++) {
-    wake_vel[j] = U;
+    wake_vel[j] = -forward_flight;
   }
   for (std::size_t i = 0; i < wake_pos.size(); i++) {
     wake_pos[i] += wake_vel[i] * DT;
