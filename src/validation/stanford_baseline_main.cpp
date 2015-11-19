@@ -215,22 +215,24 @@ struct VortexLine {
   double g;
 };
 
-std::vector<VortexLine> GetLines() {
+std::vector<VortexLine> GetLines(const MultipleSheet<Eigen::Vector3d>& pos,
+                                 const MultipleSheet<Eigen::Vector3d>& pos_init,
+                                 const MultipleSheet<double>& gamma,
+                                 std::size_t n) {
   std::vector<VortexLine> res;
-  for (std::size_t i = 0; i < ROWS; i++) {
-    for (std::size_t j = 0; j < COLS; j++) {
+  for (std::size_t i = 0; i < gamma.rows(); i++) {
+    for (std::size_t j = 0; j < gamma.cols(); j++) {
       std::vector<Eigen::Vector3d> corner = {
-          wing_pos.at(0, i, j), wing_pos.at(0, i, j + 1),
-          wing_pos.at(0, i + 1, j + 1), wing_pos.at(0, i + 1, j)};
+          pos.at(n, i, j), pos.at(n, i, j + 1), pos.at(n, i + 1, j + 1),
+          pos.at(n, i + 1, j)};
       std::vector<Eigen::Vector3d> corner_init = {
-          wing_pos_init.at(0, i, j), wing_pos_init.at(0, i, j + 1),
-          wing_pos_init.at(0, i + 1, j + 1), wing_pos_init.at(0, i + 1, j)};
+          pos_init.at(n, i, j), pos_init.at(n, i, j + 1),
+          pos_init.at(n, i + 1, j + 1), pos_init.at(n, i + 1, j)};
       for (std::size_t k = 0; k < corner.size(); k++) {
-        if (i == ROWS - 1 && k == 2) continue;  // skip T.E
-        res.push_back(VortexLine{corner[k], corner[(k + 1) % corner.size()],
-                                 corner_init[k],
-                                 corner_init[(k + 1) % corner_init.size()],
-                                 wing_gamma.at(0, i, j)});
+        if (i == pos.rows() - 1 - 1 && k == 2) continue;  // skip T.E
+        res.push_back(VortexLine{
+            corner[k], corner[(k + 1) % corner.size()], corner_init[k],
+            corner_init[(k + 1) % corner_init.size()], gamma.at(n, i, j)});
       }
     }
   }
@@ -238,9 +240,12 @@ std::vector<VortexLine> GetLines() {
 }
 
 // Simpson's method
-Eigen::Vector3d CalcLift2(double t) {
+Eigen::Vector3d CalcLift2(const MultipleSheet<Eigen::Vector3d>& pos,
+                          const MultipleSheet<Eigen::Vector3d>& pos_init,
+                          const MultipleSheet<double>& gamma, std::size_t n,
+                          double t) {
   // steady part
-  auto lines = GetLines();
+  auto lines = GetLines(pos, pos_init, gamma, n);
   double Fx = 0, Fy = 0, Fz = 0;
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+ : Fx, Fy, Fz)
@@ -258,22 +263,25 @@ Eigen::Vector3d CalcLift2(double t) {
   return Eigen::Vector3d(Fx, Fy, Fz);
 }
 
-Eigen::Vector3d CalcLift2_unst() {
+Eigen::Vector3d CalcLift2_unst(const MultipleSheet<Eigen::Vector3d>& pos,
+    const MultipleSheet<double>& gamma, const MultipleSheet<double>& gamma_prev,
+    const std::size_t n,
+    const double dt) {
   // unsteady part
   double Fx = 0, Fy = 0, Fz = 0;
-  const auto indices = wing_gamma.list_index();
+  const auto indices = gamma.list_index(n);
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+ : Fx, Fy, Fz)
 #endif
   for (std::size_t l = 0; l < indices.size(); l++) {
-    std::size_t K, n, i, j;
-    std::tie(K, n, i, j) = indices[l];
+    std::size_t K, i, j;
+    std::tie(K, std::ignore, i, j) = indices[l];
     const double A =
-        ((wing_pos.at(n, i + 1, j) - wing_pos.at(n, i, j))
-             .cross(wing_pos.at(n, i, j + 1) - wing_pos.at(n, i, j)))
+        ((pos.at(n, i + 1, j) - pos.at(n, i, j))
+             .cross(pos.at(n, i, j + 1) - pos.at(n, i, j)))
             .norm();
     const double dg_dt =
-        (wing_gamma.at(n, i, j) - wing_gamma_prev.at(n, i, j)) / DT;
+        (gamma.at(n, i, j) - gamma_prev.at(n, i, j)) / dt;
     Eigen::Vector3d df = normal[K] * dg_dt * A;
     Fx += df.x();
     Fy += df.y();
@@ -339,7 +347,9 @@ void MainLoop(std::size_t step) {
 
   // calc load
   LOG(INFO) << "Load: joukowski";
-  const auto F = CalcLift2(t) + CalcLift2_unst();
+  const auto F =
+      CalcLift2(wing_pos, wing_pos_init, wing_gamma, 0, t) + 
+      CalcLift2_unst(wing_pos, wing_gamma, wing_gamma_prev, 0, DT);
   LOG(INFO) << F.transpose();
   const auto C = F / (0.5 * Q * Q * CHORD * SPAN);
   if (FLAGS_output.size()) {
