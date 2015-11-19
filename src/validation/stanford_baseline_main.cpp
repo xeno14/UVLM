@@ -172,7 +172,8 @@ Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
   return res;
 }
 
-auto CalcMatrix() {
+auto CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
+    const std::vector<Eigen::Vector3d>& normal) {
   // A_kl
   Eigen::MatrixXd res(wing_gamma.size(), wing_gamma.size());
   MultipleSheet<double> gamma(wing_gamma);
@@ -209,8 +210,8 @@ auto CalcRhs(double t) {
   const std::size_t sz = cpos.size();
   Eigen::VectorXd res(sz);
   for (std::size_t K = 0; K < sz; ++K) {
-    Eigen::Vector3d u =
-        -forward_flight + WakeVelocity(cpos[K]) - MorphingVelocity(cpos_init[K], t);
+    Eigen::Vector3d u = -forward_flight + WakeVelocity(cpos[K]) -
+                        MorphingVelocity(cpos_init[K], t);
     res(K) = -u.dot(normal[K]);
   }
   return res;
@@ -345,7 +346,7 @@ void MainLoop(std::size_t step) {
 
   // solve linear
   LOG(INFO) << "Linear";
-  auto A = CalcMatrix();
+  auto A = CalcMatrix(cpos, normal);
   auto rhs = CalcRhs(t);
   Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
   Eigen::VectorXd gamma_v = solver.solve(rhs);

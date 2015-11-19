@@ -47,6 +47,13 @@ class Morphing {
                 const Eigen::Vector3d& x0, const double t,
                 const double dt = 1e-6) const;
 
+  Eigen::Vector3d Velocity(const Eigen::Vector3d& x0, const double t,
+                           const double dt = 1e-6) const {
+    Eigen::Vector3d res;
+    Velocity(&res, x0, t, dt);
+    return res;
+  }
+
   /** @brief 回転行列を用意する
    *  
    *  Ghommem (2012) Eq. (15)
