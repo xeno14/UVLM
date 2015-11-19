@@ -43,10 +43,10 @@ std::unique_ptr<std::ostream> load_os;
 
 MultipleSheet<Eigen::Vector3d> wing_pos;
 MultipleSheet<Eigen::Vector3d> wing_pos_init;
-std::vector<Eigen::Vector3d> wake_pos;
+MultipleSheet<Eigen::Vector3d> wake_pos;
 MultipleSheet<double> wing_gamma;
 MultipleSheet<double> wing_gamma_prev;
-std::vector<double> wake_gamma;
+MultipleSheet<double> wake_gamma;
 std::vector<Eigen::Vector3d> cpos, cpos_init, normal, tangent;
 UVLM::Morphing m;
 
@@ -68,6 +68,8 @@ void InitParam() {
   OMEGA = 2 * Q * Kg / CHORD;
   wing_gamma.resize(1, ROWS, COLS);
   wing_gamma_prev.resize(1, ROWS, COLS);
+  wake_pos.resize(1, 0, COLS + 1);
+  wake_gamma.resize(1, 0, COLS);
 
   const double o = OMEGA;
   const double phi = 45. / 180. * M_PI;
@@ -191,10 +193,9 @@ Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) {
 
 Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
-  std::size_t rows = wake_pos.size() / (COLS + 1);
-  for (std::size_t i = 0; i < rows - 1; ++i) {
-    for (std::size_t j = 0; j < COLS; ++j) {
-      res += VORING(x, wake_pos.cbegin(), wake_gamma.cbegin(), i, j);
+  for (std::size_t i = 0; i < wake_gamma.rows(); i++) {
+    for (std::size_t j = 0; j < wake_gamma.cols(); j++) {
+      res += VORING(x, wake_pos.begin(), wake_gamma.begin(), i, j);
     }
   }
   return res;
@@ -324,9 +325,9 @@ void Output(std::size_t step) {
                                      wing_pos.end(), wing_gamma.begin(),
                                      wing_gamma.end(), COLS);
   if (wake_gamma.size()) {
-    UVLM::output::SimpleAppendSnapshot(&snapshot, wake_pos.cbegin(),
-                                       wake_pos.cend(), wake_gamma.cbegin(),
-                                       wake_gamma.cend(), COLS);
+    UVLM::output::SimpleAppendSnapshot(&snapshot, wake_pos.begin(),
+                                       wake_pos.end(), wake_gamma.begin(),
+                                       wake_gamma.end(), COLS);
   }
 
   sprintf(filename, "%s/%08lu", FLAGS_output_path.c_str(), step);
@@ -354,21 +355,12 @@ void MainLoop(std::size_t step) {
 
   // shed wake
   LOG(INFO) << "Shed";
-  std::vector<Eigen::Vector3d> new_wake_pos;
-  std::vector<double> new_wake_gamma;
-  for (std::size_t j = 0; j <= COLS; j++) {
-    new_wake_pos.push_back(wing_pos.at(0 , ROWS, j));
-  }
+  wake_pos.prepend_row(wing_pos.iterator_at(0, wing_pos.rows() - 1, 0),
+                       wing_pos.iterator_at(1, 0, 0));
   if (step > 1) {
-    for (std::size_t j = 0; j < COLS; j++) {
-      new_wake_gamma.push_back(wing_gamma.at(0, ROWS - 1, j));
-    }
+    wake_gamma.prepend_row(wing_gamma.iterator_at(0, wing_gamma.rows() - 1, 0),
+                           wing_gamma.iterator_at(1, 0, 0));
   }
-  new_wake_pos.insert(new_wake_pos.end(), wake_pos.begin(), wake_pos.end());
-  new_wake_gamma.insert(new_wake_gamma.end(), wake_gamma.begin(),
-                        wake_gamma.end());
-  wake_pos.swap(new_wake_pos);
-  wake_gamma.swap(new_wake_gamma);
 
   cpos = CollocationPoints(wing_pos);
   normal = Normals(wing_pos);
