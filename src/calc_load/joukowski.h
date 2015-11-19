@@ -6,11 +6,14 @@
 #pragma once
 
 #include "../../proto/uvlm.pb.h"
+#include "../multiple_sheet/multiple_sheet.h"
 #include "../vortex_container.h"
 #include "../shed.h"
 #include "../util.h"
 #include "../morphing.h"
 #include "functions.h"
+
+using multiple_sheet::MultipleSheet;
 
 namespace UVLM {
 namespace calc_load {
@@ -67,7 +70,6 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
   auto dim = DoubleLoop(vb.rows(), vb.cols());
   double Fx=0, Fy=0, Fz=0, Pin=0, Pout=0;
 
-  LOG(INFO) << "JOU\n";
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:Fx, Fy, Fz, Pin)
 #endif
@@ -102,6 +104,17 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
   Pout = Fx * freestream.norm() * (-1);    // assume foward flight
   return AerodynamicLoad{F, Pin, Pout};
 }
+
+struct VortexLine {
+  Eigen::Vector3d p0, p1;
+  Eigen::Vector3d p0_init, p1_init;
+  double gamma;
+};
+
+std::vector<VortexLine> GetLines(const MultipleSheet<Eigen::Vector3d>& pos,
+                                 const MultipleSheet<Eigen::Vector3d>& pos_init,
+                                 const MultipleSheet<double>& gamma,
+                                 std::size_t n);
 
 }  // namespace calc_load
 }  // namespace UVLM
