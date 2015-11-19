@@ -125,39 +125,12 @@ auto Normals(const MultipleSheet<Eigen::Vector3d>& pos) {
   return res;
 }
 
-auto VORTEX(const Eigen::Vector3d& x, const Eigen::Vector3d& x1,
-            const Eigen::Vector3d& x2, double gamma) {
-  // (10.16)
-  // impl p. 584
-  Eigen::Vector3d res;
-  UVLM::BiotSavartLaw(&res, x1, x2, x);
-  res *= gamma;
-  return res;
-}
-
-Eigen::Vector3d VORING(const Eigen::Vector3d& x,
-                       const MultipleSheet<Eigen::Vector3d>& pos,
-                       const MultipleSheet<double>& gamma, std::size_t n,
-                       std::size_t i, std::size_t j) {
-  Eigen::Vector3d u = Eigen::Vector3d::Zero();
-  double g = gamma.at(n, i, j);
-  const auto& p0 = pos.at(n, i, j);
-  const auto& p1 = pos.at(n, i, j + 1);
-  const auto& p2 = pos.at(n, i + 1, j + 1);
-  const auto& p3 = pos.at(n, i + 1, j);
-  u += VORTEX(x, p0, p1, g);
-  u += VORTEX(x, p1, p2, g);
-  u += VORTEX(x, p2, p3, g);
-  u += VORTEX(x, p3, p0, g);
-  return u;
-}
-
 Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   for (auto index : wing_gamma.list_index()) {
     std::size_t n, i, j;
     std::tie(std::ignore, n, i, j) = index;
-    res += VORING(x, wing_pos, wing_gamma, n, i, j);
+    res += UVLM::VORING(x, wing_pos, wing_gamma, n, i, j);
   }
   return res;
 }
@@ -167,13 +140,13 @@ Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
   for (auto index : wake_gamma.list_index()) {
     std::size_t n, i, j;
     std::tie(std::ignore, n, i, j) = index;
-    res += VORING(x, wake_pos, wake_gamma, n, i, j);
+    res += UVLM::VORING(x, wake_pos, wake_gamma, n, i, j);
   }
   return res;
 }
 
 auto CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
-    const std::vector<Eigen::Vector3d>& normal) {
+                const std::vector<Eigen::Vector3d>& normal) {
   // A_kl
   Eigen::MatrixXd res(wing_gamma.size(), wing_gamma.size());
   MultipleSheet<double> gamma(wing_gamma);
@@ -189,7 +162,7 @@ auto CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
     for (auto index_L : wing_gamma.list_index()) {
       std::size_t L, nn, ii, jj;
       std::tie(L, nn, ii, jj) = index_L;
-      auto u = VORING(cp, wing_pos, gamma, nn, ii, jj);
+      auto u = UVLM::VORING(cp, wing_pos, gamma, nn, ii, jj);
       res(K, L) = u.dot(nl);
     }
   }
@@ -216,7 +189,6 @@ auto CalcRhs(double t) {
   }
   return res;
 }
-
 
 // Simpson's method
 Eigen::Vector3d CalcLift2(const MultipleSheet<Eigen::Vector3d>& pos,
