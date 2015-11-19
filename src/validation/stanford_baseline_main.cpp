@@ -44,8 +44,8 @@ std::unique_ptr<std::ostream> load_os;
 MultipleSheet<Eigen::Vector3d> wing_pos;
 MultipleSheet<Eigen::Vector3d> wing_pos_init;
 std::vector<Eigen::Vector3d> wake_pos;
-std::vector<double> wing_gamma;
-std::vector<double> wing_gamma_prev;
+MultipleSheet<double> wing_gamma;
+MultipleSheet<double> wing_gamma_prev;
 std::vector<double> wake_gamma;
 std::vector<Eigen::Vector3d> cpos, cpos_init, normal, tangent;
 UVLM::Morphing m;
@@ -66,7 +66,8 @@ void InitParam() {
   U = Eigen::Vector3d(Q, 0, 0);
   Kg = FLAGS_k;
   OMEGA = 2 * Q * Kg / CHORD;
-  wing_gamma.resize(ROWS * COLS, 0);
+  wing_gamma.resize(1, ROWS, COLS);
+  wing_gamma_prev.resize(1, ROWS, COLS);
 
   const double o = OMEGA;
   const double phi = 45. / 180. * M_PI;
@@ -182,7 +183,7 @@ Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   for (std::size_t i = 0; i < ROWS; ++i) {
     for (std::size_t j = 0; j < COLS; ++j) {
-      res += VORING(x, wing_pos, wing_gamma.cbegin(), i, j);
+      res += VORING(x, wing_pos, wing_gamma.begin(), i, j);
     }
   }
   return res;
@@ -266,7 +267,7 @@ std::vector<VortexLine> GetLines() {
         res.push_back(VortexLine{corner[k], corner[(k + 1) % corner.size()],
                                  corner_init[k],
                                  corner_init[(k + 1) % corner_init.size()],
-                                 get_panel(wing_gamma, i, j)});
+                                 wing_gamma.at(0, i, j)});
       }
     }
   }
@@ -306,7 +307,7 @@ Eigen::Vector3d CalcLift2_unst() {
           ((wing_pos.at(0, i+1, j) - wing_pos.at(0, i,j)).cross(
             wing_pos.at(0, i,j+1) - wing_pos.at(0, i, j))).norm();
       const double dg_dt =
-          (get_panel(wing_gamma, i, j) - get_panel(wing_gamma_prev, i, j)) / DT;
+          (wing_gamma.at(0, i, j) - wing_gamma_prev.at(0, i, j)) / DT;
       Eigen::Vector3d df = get_panel(normal, i, j) * dg_dt * A;
       Fx += df.x();
       Fy += df.y();
@@ -320,8 +321,8 @@ void Output(std::size_t step) {
   char filename[256];
   UVLM::proto::Snapshot2 snapshot;
   UVLM::output::SimpleAppendSnapshot(&snapshot, wing_pos.begin(),
-                                     wing_pos.end(), wing_gamma.cbegin(),
-                                     wing_gamma.cend(), COLS);
+                                     wing_pos.end(), wing_gamma.begin(),
+                                     wing_gamma.end(), COLS);
   if (wake_gamma.size()) {
     UVLM::output::SimpleAppendSnapshot(&snapshot, wake_pos.cbegin(),
                                        wake_pos.cend(), wake_gamma.cbegin(),
@@ -343,7 +344,7 @@ void Output(std::size_t step) {
 void MainLoop(std::size_t step) {
   const double t = step * DT;
 
-  wing_gamma_prev = wing_gamma;
+  std::copy(wing_gamma.begin(), wing_gamma.end(), wing_gamma_prev.begin());
 
   // TODO morphing
   CHECK(wing_pos.size() == wing_pos_init.size());
@@ -360,7 +361,7 @@ void MainLoop(std::size_t step) {
   }
   if (step > 1) {
     for (std::size_t j = 0; j < COLS; j++) {
-      new_wake_gamma.push_back(get_panel(wing_gamma, ROWS - 1, j));
+      new_wake_gamma.push_back(wing_gamma.at(0, ROWS - 1, j));
     }
   }
   new_wake_pos.insert(new_wake_pos.end(), wake_pos.begin(), wake_pos.end());
