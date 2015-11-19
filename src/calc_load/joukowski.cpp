@@ -16,10 +16,10 @@ std::vector<VortexLine> GetLines(const MultipleSheet<Eigen::Vector3d>& pos,
   std::vector<VortexLine> res;
   for (std::size_t i = 0; i < gamma.rows(); i++) {
     for (std::size_t j = 0; j < gamma.cols(); j++) {
-      std::vector<Eigen::Vector3d> corner = {
+      const std::vector<Eigen::Vector3d> corner = {
           pos.at(n, i, j), pos.at(n, i, j + 1), pos.at(n, i + 1, j + 1),
           pos.at(n, i + 1, j)};
-      std::vector<Eigen::Vector3d> corner_init = {
+      const std::vector<Eigen::Vector3d> corner_init = {
           pos_init.at(n, i, j), pos_init.at(n, i, j + 1),
           pos_init.at(n, i + 1, j + 1), pos_init.at(n, i + 1, j)};
       for (std::size_t k = 0; k < corner.size(); k++) {
