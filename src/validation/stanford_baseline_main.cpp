@@ -146,38 +146,20 @@ auto VORTEX(const Eigen::Vector3d& x, const Eigen::Vector3d& x1,
   return res;
 }
 
-template <class InputIterator>
-Eigen::Vector3d VORING(const Eigen::Vector3d& x, 
-    const MultipleSheet<Eigen::Vector3d>& pos,
-                       InputIterator gamma_first, std::size_t i,
+Eigen::Vector3d VORING(const Eigen::Vector3d& x,
+                       const MultipleSheet<Eigen::Vector3d>& pos,
+                       const MultipleSheet<double>& gamma, std::size_t i,
                        std::size_t j) {
   Eigen::Vector3d u = Eigen::Vector3d::Zero();
-  double gamma = *(gamma_first + panel_index(i, j));
-  auto p0 = pos.at(0, i, j);
-  auto p1 = pos.at(0, i, j + 1);
-  auto p2 = pos.at(0, i + 1, j + 1);
-  auto p3 = pos.at(0, i + 1, j);
-  u += VORTEX(x, p0, p1, gamma);
-  u += VORTEX(x, p1, p2, gamma);
-  u += VORTEX(x, p2, p3, gamma);
-  u += VORTEX(x, p3, p0, gamma);
-  return u;
-}
-
-template <class InputIterator1, class InputIterator2>
-Eigen::Vector3d VORING(const Eigen::Vector3d& x, InputIterator1 pos_first,
-                       InputIterator2 gamma_first, std::size_t i,
-                       std::size_t j) {
-  Eigen::Vector3d u = Eigen::Vector3d::Zero();
-  double gamma = *(gamma_first + panel_index(i, j));
-  auto p0 = pos_first + pos_index(i, j);
-  auto p1 = pos_first + pos_index(i, j + 1);
-  auto p2 = pos_first + pos_index(i + 1, j + 1);
-  auto p3 = pos_first + pos_index(i + 1, j);
-  u += VORTEX(x, *p0, *p1, gamma);
-  u += VORTEX(x, *p1, *p2, gamma);
-  u += VORTEX(x, *p2, *p3, gamma);
-  u += VORTEX(x, *p3, *p0, gamma);
+  double g = gamma.at(0, i, j);
+  const auto& p0 = pos.at(0, i, j);
+  const auto& p1 = pos.at(0, i, j + 1);
+  const auto& p2 = pos.at(0, i + 1, j + 1);
+  const auto& p3 = pos.at(0, i + 1, j);
+  u += VORTEX(x, p0, p1, g);
+  u += VORTEX(x, p1, p2, g);
+  u += VORTEX(x, p2, p3, g);
+  u += VORTEX(x, p3, p0, g);
   return u;
 }
 
@@ -185,7 +167,7 @@ Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   for (std::size_t i = 0; i < ROWS; ++i) {
     for (std::size_t j = 0; j < COLS; ++j) {
-      res += VORING(x, wing_pos, wing_gamma.begin(), i, j);
+      res += VORING(x, wing_pos, wing_gamma, i, j);
     }
   }
   return res;
@@ -195,7 +177,7 @@ Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   for (std::size_t i = 0; i < wake_gamma.rows(); i++) {
     for (std::size_t j = 0; j < wake_gamma.cols(); j++) {
-      res += VORING(x, wake_pos.begin(), wake_gamma.begin(), i, j);
+      res += VORING(x, wake_pos, wake_gamma, i, j);
     }
   }
   return res;
@@ -203,8 +185,9 @@ Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) {
 
 auto CalcMatrix() {
   // A_kl
-  Eigen::MatrixXd res(ROWS * COLS, ROWS * COLS);
-  std::vector<double> gamma(wing_gamma.size(), 1);
+  Eigen::MatrixXd res(wing_gamma.size(), wing_gamma.size());
+  MultipleSheet<double> gamma(wing_gamma);
+  std::fill(gamma.begin(), gamma.end(), 1);
 
   // loop for all bound vortices
   for (std::size_t i = 0; i < ROWS; ++i) {
@@ -217,7 +200,7 @@ auto CalcMatrix() {
       for (std::size_t ii = 0; ii < ROWS; ++ii) {
         for (std::size_t jj = 0; jj < COLS; ++jj) {
           const auto l = panel_index(ii, jj);
-          auto u = VORING(cp, wing_pos.begin(), gamma.cbegin(), ii, jj);
+          auto u = VORING(cp, wing_pos, gamma, ii, jj);
           res(k, l) = u.dot(n);
         }
       }
