@@ -78,14 +78,19 @@ void InitParam() {
   m.set_alpha(alpha);
 }
 
-void InitPosition(MultipleSheet<Eigen::Vector3d>& pos) {
+void InitPosition(MultipleSheet<Eigen::Vector3d>* pos, std::size_t rows,
+                  std::size_t cols,
+                  const std::vector<Eigen::Vector3d>& origins) {
   UVLM::proto::Wing wing, half;
   UVLM::wing::NACA4digitGenerator(83, CHORD, SPAN / 2, ROWS, COLS / 2)
       .Generate(&half);
   UVLM::wing::WholeWing(&wing, half);
-  auto points = UVLM::PointsToVector(wing.points());
-  pos.resize(1, ROWS + 1, COLS + 1);
-  std::copy(points.begin(), points.end(), pos.begin());
+  pos->resize(origins.size(), rows + 1, cols + 1);
+  for (std::size_t n = 0; n < origins.size(); n++) {
+    wing.mutable_origin()->CopyFrom(UVLM::Vector3dToPoint(origins[n]));
+    auto points = UVLM::PointsToVector(wing.points());
+    std::copy(points.begin(), points.end(), pos->iterator_at(n, 0, 0));
+  }
 }
 
 auto CollocationPoints(const MultipleSheet<Eigen::Vector3d>& pos) {
@@ -342,7 +347,8 @@ void MainLoop(std::size_t step) {
   auto rhs = CalcRhs(t);
   Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
   Eigen::VectorXd gamma_v = solver.solve(rhs);
-  for (std::size_t K = 0; K < ROWS * COLS; ++K) wing_gamma[K] = gamma_v(K);
+  for (std::size_t K = 0; K < wing_gamma.size(); ++K)
+    wing_gamma[K] = gamma_v(K);
 
   // calc load
   LOG(INFO) << "Load: joukowski";
@@ -374,7 +380,7 @@ void MainLoop(std::size_t step) {
     wake_vel[i] = Velocity(wake_pos[i]);
   }
 
-  for (std::size_t j = 0; j <= COLS; j++) {
+  for (std::size_t j = 0; j < wake_pos.rows(); j++) {
     wake_vel[j] = U;
   }
   for (std::size_t i = 0; i < wake_pos.size(); i++) {
@@ -383,7 +389,7 @@ void MainLoop(std::size_t step) {
 }
 
 void SimulatorBody() {
-  InitPosition(wing_pos_init);
+  InitPosition(&wing_pos_init, ROWS, COLS, {{0, 0, 0}});
   wing_pos.resize(wing_pos_init.num(), wing_pos_init.rows(),
                   wing_pos_init.cols());
   std::copy(wing_pos_init.begin(), wing_pos_init.end(), wing_pos.begin());
