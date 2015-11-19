@@ -15,7 +15,8 @@ DEFINE_double(alpha, 5, "angle of attack [deg]");
 DEFINE_double(k, 0.1, "reduced frequency");
 DEFINE_double(steps, 50, "number of steps");
 DEFINE_string(output, "", "output load file (if empty, use stdout)");
-DEFINE_bool(disable_output, false, "disable output of velocities, circulations, etc.");
+DEFINE_bool(disable_output, false,
+            "disable output of velocities, circulations, etc.");
 DEFINE_int32(rows, 6, "rows");
 DEFINE_int32(cols, 20, "cols");
 DEFINE_string(output_path, "", "directory to save Snapshot2");
@@ -130,8 +131,7 @@ auto VORTEX(const Eigen::Vector3d& x, const Eigen::Vector3d& x1,
 Eigen::Vector3d VORING(const Eigen::Vector3d& x,
                        const MultipleSheet<Eigen::Vector3d>& pos,
                        const MultipleSheet<double>& gamma, std::size_t n,
-                       std::size_t i,
-                       std::size_t j) {
+                       std::size_t i, std::size_t j) {
   Eigen::Vector3d u = Eigen::Vector3d::Zero();
   double g = gamma.at(n, i, j);
   const auto& p0 = pos.at(n, i, j);
@@ -264,9 +264,9 @@ Eigen::Vector3d CalcLift2(const MultipleSheet<Eigen::Vector3d>& pos,
 }
 
 Eigen::Vector3d CalcLift2_unst(const MultipleSheet<Eigen::Vector3d>& pos,
-    const MultipleSheet<double>& gamma, const MultipleSheet<double>& gamma_prev,
-    const std::size_t n,
-    const double dt) {
+                               const MultipleSheet<double>& gamma,
+                               const MultipleSheet<double>& gamma_prev,
+                               const std::size_t n, const double dt) {
   // unsteady part
   double Fx = 0, Fy = 0, Fz = 0;
   const auto indices = gamma.list_index(n);
@@ -276,12 +276,10 @@ Eigen::Vector3d CalcLift2_unst(const MultipleSheet<Eigen::Vector3d>& pos,
   for (std::size_t l = 0; l < indices.size(); l++) {
     std::size_t K, i, j;
     std::tie(K, std::ignore, i, j) = indices[l];
-    const double A =
-        ((pos.at(n, i + 1, j) - pos.at(n, i, j))
-             .cross(pos.at(n, i, j + 1) - pos.at(n, i, j)))
-            .norm();
-    const double dg_dt =
-        (gamma.at(n, i, j) - gamma_prev.at(n, i, j)) / dt;
+    const double A = ((pos.at(n, i + 1, j) - pos.at(n, i, j))
+                          .cross(pos.at(n, i, j + 1) - pos.at(n, i, j)))
+                         .norm();
+    const double dg_dt = (gamma.at(n, i, j) - gamma_prev.at(n, i, j)) / dt;
     Eigen::Vector3d df = normal[K] * dg_dt * A;
     Fx += df.x();
     Fy += df.y();
@@ -307,9 +305,10 @@ void Output(std::size_t step) {
   CHECK(ofs);
   snapshot.SerializeToOstream(&ofs);
 
-  for (std::size_t K=0; K<wing_pos.size(); ++K) {
+  for (std::size_t K = 0; K < wing_pos.size(); ++K) {
     auto u = MorphingVelocity(wing_pos_init[K], step * DT);
-    ofs_morphing << wing_pos[K].transpose() << " " << u.transpose() << std::endl;
+    ofs_morphing << wing_pos[K].transpose() << " " << u.transpose()
+                 << std::endl;
   }
   ofs_morphing << std::endl << std::endl;
 }
@@ -347,9 +346,8 @@ void MainLoop(std::size_t step) {
 
   // calc load
   LOG(INFO) << "Load: joukowski";
-  const auto F =
-      CalcLift2(wing_pos, wing_pos_init, wing_gamma, 0, t) + 
-      CalcLift2_unst(wing_pos, wing_gamma, wing_gamma_prev, 0, DT);
+  const auto F = CalcLift2(wing_pos, wing_pos_init, wing_gamma, 0, t) +
+                 CalcLift2_unst(wing_pos, wing_gamma, wing_gamma_prev, 0, DT);
   LOG(INFO) << F.transpose();
   const auto C = F / (0.5 * Q * Q * CHORD * SPAN);
   if (FLAGS_output.size()) {
@@ -363,7 +361,7 @@ void MainLoop(std::size_t step) {
   // output
   if (!FLAGS_disable_output) Output(step);
 
-  if (step==FLAGS_steps) return;
+  if (step == FLAGS_steps) return;
 
   // advection
   LOG(INFO) << "Advect";
