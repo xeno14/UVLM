@@ -52,5 +52,19 @@ Eigen::Vector3d JoukowskiSteady(
   return Eigen::Vector3d(Fx, Fy, Fz);
 }
 
+std::vector<double> CalcPanelArea(const MultipleSheet<Eigen::Vector3d>& pos,
+                                  const std::size_t n) {
+  std::vector<double> res;
+  for (std::size_t i = 0; i < pos.rows() - 1; i++) {
+    for (std::size_t j = 0; j < pos.cols() - 1; j++) {
+      const double A = ((pos.at(n, i + 1, j) - pos.at(n, i, j))
+                            .cross(pos.at(n, i, j + 1) - pos.at(n, i, j)))
+                           .norm();
+      res.emplace_back(A);
+    }
+  }
+  return res;
+}
+
 }  // namespace calc_load
 }  // namespace UVLM

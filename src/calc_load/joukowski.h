@@ -120,5 +120,8 @@ Eigen::Vector3d JoukowskiSteady(
     const std::vector<UVLM::calc_load::VortexLine>& lines,
     const std::vector<Eigen::Vector3d>& U, double t);
 
+std::vector<double> CalcPanelArea(const MultipleSheet<Eigen::Vector3d>& pos,
+                                  const std::size_t n);
+
 }  // namespace calc_load
 }  // namespace UVLM
