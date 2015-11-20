@@ -228,11 +228,20 @@ void MainLoop(std::size_t step) {
 
   // shed wake
   LOG(INFO) << "Shed";
-  wake_pos.prepend_row(wing_pos.iterator_at(0, wing_pos.rows() - 1, 0),
-                       wing_pos.iterator_at(1, 0, 0));
+  std::vector<Eigen::Vector3d> te_pos;
+  std::vector<double> te_gamma;
+  for (std::size_t n = 0; n < wing_pos.num(); n++) {
+    te_pos.insert(te_pos.end(), wing_pos.iterator_at(n, wing_pos.rows() - 1, 0),
+                  wing_pos.iterator_at(n + 1, 0, 0));
+  }
+  wake_pos.prepend_row(te_pos.begin(), te_pos.end());
   if (step > 1) {
-    wake_gamma.prepend_row(wing_gamma.iterator_at(0, wing_gamma.rows() - 1, 0),
-                           wing_gamma.iterator_at(1, 0, 0));
+    for (std::size_t n = 0; n < wing_gamma.num(); n++) {
+      te_gamma.insert(te_gamma.end(),
+                      wing_gamma.iterator_at(n, wing_gamma.rows() - 1, 0),
+                      wing_gamma.iterator_at(n + 1, 0, 0));
+    }
+    wake_gamma.prepend_row(te_gamma.begin(), te_gamma.end());
   }
 
   cpos = CollocationPoints(wing_pos);
