@@ -265,11 +265,11 @@ void MainLoop(std::size_t step) {
   const auto area = UVLM::calc_load::CalcPanelArea(wing_pos, 0);
   const auto F_st = UVLM::calc_load::JoukowskiSteady(lines, U, t);
   const auto F_unst = UVLM::calc_load::JoukowskiUnsteady(
-      wing_gamma, wing_gamma_prev,
-      boost::make_iterator_range(area.begin(), area.end()),
-      boost::make_iterator_range(normal.begin(), normal.end()), DT);
+      wing_gamma, wing_gamma_prev, area,
+      boost::make_iterator_range(normal.begin() + wing_gamma.index(0, 0, 0),
+                                 normal.begin() + wing_gamma.index(1, 0, 0)),
+      DT);
   const auto F = F_st + F_unst;
-  LOG(INFO) << F.transpose();
   const auto C = F / (0.5 * Q * Q * CHORD * SPAN);
   if (FLAGS_output.size()) {
     *load_os << step* DT* Q / CHORD << " " << C.x() << " " << C.z()
