@@ -256,16 +256,19 @@ void MainLoop(std::size_t step) {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (std::size_t i=0;i<lines.size();i++) {
+  for (std::size_t i = 0; i < lines.size(); i++) {
     const auto& line = lines[i];
     Eigen::Vector3d mp = (line.p0 + line.p1) / 2;
     Eigen::Vector3d mp_init = (line.p0_init + line.p1_init) / 2;
     U[i] = Velocity(mp) - MorphingVelocity(mp_init, t);
   }
   const auto area = UVLM::calc_load::CalcPanelArea(wing_pos, 0);
-  const auto F = UVLM::calc_load::JoukowskiSteady(lines, U, t) +
-                 UVLM::calc_load::JoukowskiUnsteady(wing_gamma, wing_gamma_prev,
-                                                    area, normal, 0, DT);
+  const auto F_st = UVLM::calc_load::JoukowskiSteady(lines, U, t);
+  const auto F_unst = UVLM::calc_load::JoukowskiUnsteady(
+      wing_gamma, wing_gamma_prev,
+      boost::make_iterator_range(area.begin(), area.end()),
+      boost::make_iterator_range(normal.begin(), normal.end()), DT);
+  const auto F = F_st + F_unst;
   LOG(INFO) << F.transpose();
   const auto C = F / (0.5 * Q * Q * CHORD * SPAN);
   if (FLAGS_output.size()) {

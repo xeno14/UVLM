@@ -129,5 +129,24 @@ Eigen::Vector3d JoukowskiUnsteady(const MultipleSheet<double>& gamma,
                                   const std::vector<double>& area,
                                   const std::vector<Eigen::Vector3d>& normal,
                                   std::size_t n, const double dt);
+
+template <class Range1, class Range2, class Range3, class Range4>
+Eigen::Vector3d JoukowskiUnsteady(const Range1& gamma, const Range2& gamma_prev,
+                                  const Range3& area, const Range4& normal,
+                                  const double dt) {
+  double Fx = 0, Fy = 0, Fz = 0;
+  for (const auto tup : UVLM::util::zip(gamma, gamma_prev, area, normal)) {
+    double g, g_prev, A;
+    Eigen::Vector3d n;
+    boost::tie(g, g_prev, A, n) = tup;
+    const double dg_dt = (g - g_prev) / dt;
+    Eigen::Vector3d df = n * dg_dt * A;
+    Fx += df.x();
+    Fy += df.y();
+    Fz += df.z();
+  }
+  return Eigen::Vector3d(Fx, Fy, Fz);
+}
+
 }  // namespace calc_load
 }  // namespace UVLM

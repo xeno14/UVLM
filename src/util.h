@@ -4,6 +4,9 @@
  */
 #pragma once
 
+
+#include <boost/range/iterator_range.hpp>
+#include <boost/iterator/zip_iterator.hpp>
 #include <cmath>
 #include <iterator>
 #include <type_traits>
@@ -63,6 +66,15 @@ std::string join(const std::string& sep, InputIterator first,
   std::string res(ss.str());
   res.resize(res.size() - sep.size());
   return res;
+}
+
+template <class... T>
+auto zip(const T&... containers) {
+  auto zip_begin =
+      boost::make_zip_iterator(boost::make_tuple(std::begin(containers)...));
+  auto zip_end =
+      boost::make_zip_iterator(boost::make_tuple(std::end(containers)...));
+  return boost::make_iterator_range(zip_begin, zip_end);
 }
 
 }  // namespace util
