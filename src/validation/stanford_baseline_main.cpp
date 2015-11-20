@@ -190,30 +190,6 @@ auto CalcRhs(double t) {
   return res;
 }
 
-Eigen::Vector3d CalcLift2_unst(
-                               const MultipleSheet<double>& gamma,
-                               const MultipleSheet<double>& gamma_prev,
-                               const std::vector<double>& area,
-                               const std::size_t n, const double dt) {
-  // unsteady part
-  double Fx = 0, Fy = 0, Fz = 0;
-  const auto indices = gamma.list_index(n);
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+ : Fx, Fy, Fz)
-#endif
-  for (std::size_t l = 0; l < indices.size(); l++) {
-    std::size_t K, i, j;
-    std::tie(K, std::ignore, i, j) = indices[l];
-    const double A = area[K];
-    const double dg_dt = (gamma.at(n, i, j) - gamma_prev.at(n, i, j)) / dt;
-    Eigen::Vector3d df = normal[K] * dg_dt * A;
-    Fx += df.x();
-    Fy += df.y();
-    Fz += df.z();
-  }
-  return Eigen::Vector3d(Fx, Fy, Fz);
-}
-
 void Output(std::size_t step) {
   char filename[256];
   UVLM::proto::Snapshot2 snapshot;
@@ -288,7 +264,8 @@ void MainLoop(std::size_t step) {
   }
   const auto area = UVLM::calc_load::CalcPanelArea(wing_pos, 0);
   const auto F = UVLM::calc_load::JoukowskiSteady(lines, U, t) +
-                 CalcLift2_unst(wing_gamma, wing_gamma_prev, area, 0, DT);
+                 UVLM::calc_load::JoukowskiUnsteady(wing_gamma, wing_gamma_prev,
+                                                    area, normal, 0, DT);
   LOG(INFO) << F.transpose();
   const auto C = F / (0.5 * Q * Q * CHORD * SPAN);
   if (FLAGS_output.size()) {

@@ -66,5 +66,30 @@ std::vector<double> CalcPanelArea(const MultipleSheet<Eigen::Vector3d>& pos,
   return res;
 }
 
+// TODO iteratorを渡す
+Eigen::Vector3d JoukowskiUnsteady(const MultipleSheet<double>& gamma,
+                                  const MultipleSheet<double>& gamma_prev,
+                                  const std::vector<double>& area,
+                                  const std::vector<Eigen::Vector3d>& normal,
+                                  const std::size_t n, const double dt) {
+  // unsteady part
+  double Fx = 0, Fy = 0, Fz = 0;
+  const auto indices = gamma.list_index(n);
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+ : Fx, Fy, Fz)
+#endif
+  for (std::size_t l = 0; l < indices.size(); l++) {
+    std::size_t K, i, j;
+    std::tie(K, std::ignore, i, j) = indices[l];
+    const double A = area[K];
+    const double dg_dt = (gamma.at(n, i, j) - gamma_prev.at(n, i, j)) / dt;
+    Eigen::Vector3d df = normal[K] * dg_dt * A;
+    Fx += df.x();
+    Fy += df.y();
+    Fz += df.z();
+  }
+  return Eigen::Vector3d(Fx, Fy, Fz);
+}
+
 }  // namespace calc_load
 }  // namespace UVLM

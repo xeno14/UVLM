@@ -123,5 +123,11 @@ Eigen::Vector3d JoukowskiSteady(
 std::vector<double> CalcPanelArea(const MultipleSheet<Eigen::Vector3d>& pos,
                                   const std::size_t n);
 
+
+Eigen::Vector3d JoukowskiUnsteady(const MultipleSheet<double>& gamma,
+                                  const MultipleSheet<double>& gamma_prev,
+                                  const std::vector<double>& area,
+                                  const std::vector<Eigen::Vector3d>& normal,
+                                  std::size_t n, const double dt);
 }  // namespace calc_load
 }  // namespace UVLM
