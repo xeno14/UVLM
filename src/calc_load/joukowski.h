@@ -116,5 +116,9 @@ std::vector<VortexLine> GetLines(const MultipleSheet<Eigen::Vector3d>& pos,
                                  const MultipleSheet<double>& gamma,
                                  std::size_t n);
 
+Eigen::Vector3d JoukowskiSteady(
+    const std::vector<UVLM::calc_load::VortexLine>& lines,
+    const std::vector<Eigen::Vector3d>& U, double t);
+
 }  // namespace calc_load
 }  // namespace UVLM

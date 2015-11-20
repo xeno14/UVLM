@@ -33,5 +33,24 @@ std::vector<VortexLine> GetLines(const MultipleSheet<Eigen::Vector3d>& pos,
   return res;
 }
 
+Eigen::Vector3d JoukowskiSteady(
+    const std::vector<UVLM::calc_load::VortexLine>& lines,
+    const std::vector<Eigen::Vector3d>& U, double t) {
+  // steady part
+  double Fx = 0, Fy = 0, Fz = 0;
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+ : Fx, Fy, Fz)
+#endif
+  for (std::size_t i = 0; i < lines.size(); i++) {
+    const auto& line = lines[i];
+    const auto& u = U[i];
+    Eigen::Vector3d df = u.cross(line.p1 - line.p0) * line.gamma;
+    Fx += df.x();
+    Fy += df.y();
+    Fz += df.z();
+  }
+  return Eigen::Vector3d(Fx, Fy, Fz);
+}
+
 }  // namespace calc_load
 }  // namespace UVLM

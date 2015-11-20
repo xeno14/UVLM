@@ -190,27 +190,6 @@ auto CalcRhs(double t) {
   return res;
 }
 
-// Simpson's method
-Eigen::Vector3d CalcLift2(const std::vector<UVLM::calc_load::VortexLine>& lines_,
-    const std::vector<Eigen::Vector3d>& U,
-                          double t) {
-  // steady part
-  auto lines = lines_; // なぜか動く・・・
-  double Fx = 0, Fy = 0, Fz = 0;
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+ : Fx, Fy, Fz)
-#endif
-  for (std::size_t i = 0; i < lines.size(); i++) {
-    const auto& line = lines[i];
-    const auto& u = U[i];
-    Eigen::Vector3d df = u.cross(line.p1 - line.p0) * line.gamma;
-    Fx += df.x();
-    Fy += df.y();
-    Fz += df.z();
-  }
-  return Eigen::Vector3d(Fx, Fy, Fz);
-}
-
 Eigen::Vector3d CalcLift2_unst(const MultipleSheet<Eigen::Vector3d>& pos,
                                const MultipleSheet<double>& gamma,
                                const MultipleSheet<double>& gamma_prev,
@@ -308,7 +287,7 @@ void MainLoop(std::size_t step) {
     Eigen::Vector3d mp_init = (line.p0_init + line.p1_init) / 2;
     U[i] = Velocity(mp) - MorphingVelocity(mp_init, t);
   }
-  const auto F = CalcLift2(lines, U, t) +
+  const auto F = UVLM::calc_load::JoukowskiSteady(lines, U, t) +
                  CalcLift2_unst(wing_pos, wing_gamma, wing_gamma_prev, 0, DT);
   LOG(INFO) << F.transpose();
   const auto C = F / (0.5 * Q * Q * CHORD * SPAN);
