@@ -45,8 +45,8 @@ void AddWing(SimpleSimulator* simulator) {
     m.set_flap(
         [omega, dphi](double t) { return M_PI_4 * cos(omega * t + dphi); });
     m.set_alpha(ALPHA);
-    simulator->AddWing(m, CHORD, SPAN, 6, 20, {xrel, yrel, 0});
-    simulator->AddWing(m, CHORD, SPAN, 6, 20, {xrel, -yrel, 0});
+    simulator->AddWing(m, CHORD, SPAN, FLAGS_rows, FLAGS_cols, {xrel, yrel, 0});
+    simulator->AddWing(m, CHORD, SPAN, FLAGS_rows, FLAGS_cols, {xrel, -yrel, 0});
   }
 }
 
