@@ -1,6 +1,6 @@
 /**
  * @file result_to_paraview.cpp
- * @brief Add description here
+ * @brief Convert snaphot to vtk file
  */
 
 

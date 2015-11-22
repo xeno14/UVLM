@@ -84,6 +84,17 @@ class VortexContainer {
     }
   }
 
+  double DeltaGamma(std::size_t i, std::size_t j) const {
+    const double g = this->at(i, j).gamma();
+    const double g_i = i == 0 ? 0 : this->at(i - 1, j).gamma(); // leading edge
+    return g - g_i;
+  }
+
+  Eigen::Vector3d Grad(std::size_t i, std::size_t j) const {
+    const auto& v = this->at(i, j);
+    return v.Tangent() * DeltaGamma(i,j) / v.CalcC();
+  }
+
   const vortices_ptr_t& vortices() const { return vortices_; }
   std::size_t cols() const { return cols_; }
   std::size_t rows() const { return rows_; }
@@ -104,11 +115,18 @@ class VortexContainer {
   std::size_t size() const { return cols_ * rows_; }
 
   auto begin() { return vortices_->begin() + Index(0); }
+  auto begin() const { return vortices_->begin() + Index(0); }
   auto end() { return vortices_->begin() + Index(rows_ * cols_); }
+  auto end() const { return vortices_->begin() + Index(rows_ * cols_); }
   auto edge_begin() { return vortices_->begin() + Index(rows_ - 1, 0); }
   auto edge_end() { return end(); }
+  auto edge_begin() const { return vortices_->begin() + Index(rows_ - 1, 0); }
+  auto edge_end() const { return end(); }
   auto cbegin() const { return vortices_->cbegin() + Index(0); }
   auto cend() const { return vortices_->cbegin() + Index(rows_ * cols_); }
+
+  std::vector<Eigen::Vector3d> DumpPos() const;
+  void LoadPos(const std::vector<Eigen::Vector3d>& pos);
 
  private:
   vortices_ptr_t vortices_;

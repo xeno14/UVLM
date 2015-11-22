@@ -5,17 +5,16 @@
 
 #include "simulator.h"
 
-#include "../proto/uvlm.pb.h"
-#include "calc_load/calc_load.h"
-#include "calc_load/joukowski.h"
-#include "uvlm_vortex_ring.h"
-#include "morphing.h"
-#include "linear.h"
-#include "shed.h"
-#include "proto_adaptor.h"
-#include "util.h"
-#include "vortex_container.h"
-#include "wing_builder.h"
+#include "../../proto/uvlm.pb.h"
+#include "../calc_load/calc_load.h"
+#include "../uvlm_vortex_ring.h"
+#include "../morphing.h"
+#include "../linear.h"
+#include "../shed.h"
+#include "../proto_adaptor.h"
+#include "../util.h"
+#include "../vortex_container.h"
+#include "../wing_builder.h"
 
 #include <fstream>
 #include <gflags/gflags.h>
@@ -54,8 +53,12 @@ std::size_t WakeOffset() {
 }
 
 void CheckReady() {
-  if (morphings.size() == 0) LOG(FATAL) << FLAGS_run_name << " " << "No morphing";
-  if (wings.size() == 0) LOG(FATAL) << FLAGS_run_name << " " << "No wing";
+  if (morphings.size() == 0)
+    LOG(FATAL) << FLAGS_run_name << " "
+               << "No morphing";
+  if (wings.size() == 0)
+    LOG(FATAL) << FLAGS_run_name << " "
+               << "No wing";
 
   std::ofstream ofs_load(output_load_path);
   // TODO check output path is writable
@@ -73,20 +76,24 @@ void CreateContainers() {
               << "]: " << containers[i].rows() << " x " << containers[i].cols();
 }
 
-auto ShedProcess(const double dt) {
-  // shed[i]: 翼iから放出される渦
-  std::vector<std::vector<UVLM::VortexRing>> shed(containers.size());
+/**
+ * @brief Connect trailing edge and newly shed wake
+ */
+void ConnectProcess() {
+  // TODO multiple wings
+  const std::size_t shed_size =
+      std::distance(containers[0].edge_begin(), containers[0].edge_end());
+  auto shed_first = vortices->begin() + WakeOffset();
+  auto shed_last = shed_first + shed_size;
+  auto edge = containers[0].edge_begin();
 
-  // 放出する渦の計算
-  for (std::size_t i = 0; i < containers.size(); i++) {
-    auto edge_first = containers[i].edge_begin();
-    auto edge_last = containers[i].edge_end();
-    shed[i].resize(std::distance(edge_first, edge_last));
-    UVLM::ShedAtTrailingEdge(edge_first, edge_last, shed[i].begin(),
-                             vortices->cbegin(), vortices->cend(), rings, inlet,
-                             0, dt);
+  if (shed_last > vortices->end()) return;
+
+  for (auto it = shed_first; it != shed_last; ++it, ++edge) {
+    it->nodes().resize(4);
+    it->nodes()[0] = edge->nodes()[1];
+    it->nodes()[3] = edge->nodes()[2];
   }
-  return shed;
 }
 
 void MorphingProcess(const double t) {
@@ -97,38 +104,12 @@ void MorphingProcess(const double t) {
       }
     }
   }
+  ConnectProcess();
 }
 
-void AdvectProcess(std::vector<UVLM::VortexRing>* wake, const double dt) {
-  const std::size_t wake_offset = WakeOffset();
-  wake->clear();
-  // copy current wake vortices
-  wake->insert(wake->begin(), vortices->cbegin() + wake_offset,
-               vortices->cend());
-  UVLM::AdvectWake(wake,
-                   vortices->cbegin(), vortices->cend(), rings, inlet, dt);
-}
-
-void AppendShedProcess(std::vector<std::vector<UVLM::VortexRing>>* shed) {
-  for (std::size_t i = 0; i < containers.size(); i++) {
-    UVLM::AttachShedVorticesToEdge(containers[i].edge_begin(),
-                                   containers[i].edge_end(),
-                                   shed->at(i).begin());
-  }
-  for (std::size_t i = 0; i < shed->size(); i++) {
-    vortices->insert(vortices->end(), shed->at(i).cbegin(), shed->at(i).cend());
-  }
-}
-
-/** 
- * @todo multiple morphings
- */
 void SolveLinearProblem(double t) {
   const std::size_t wake_offset = internal::WakeOffset();
-  auto morphing = *(morphings.begin());
-  auto gamma = ::UVLM::SolveLinearProblem(
-      vortices->cbegin(), vortices->cbegin() + wake_offset,
-      vortices->cbegin() + wake_offset, vortices->cend(), inlet, morphing, t);
+  auto gamma = ::UVLM::SolveLinearProblem(containers, morphings, inlet, t);
   for (std::size_t i = 0; i < wake_offset; i++) {
     vortices->at(i).set_gamma(gamma(i));
   }
@@ -150,6 +131,26 @@ void OutputSnapshot2(const std::size_t step, const double t) {
   for (const auto& vortex : *vortices) {
     snapshot.add_vortices()->CopyFrom(::UVLM::VortexRingToProto(vortex));
   }
+  for (std::size_t i = 0; i < containers.size(); i++) {
+    const auto& morphing = morphings[i];
+    for (const auto& v : containers[i]) {
+      auto* mv = snapshot.add_morphing_velocities();
+      mv->mutable_freestream()->CopyFrom(UVLM::Vector3dToPoint(inlet));
+      Eigen::Vector3d vc;
+      morphing.Velocity(&vc, v.ReferenceCentroid(), t);
+      mv->mutable_center()->CopyFrom(::UVLM::Vector3dToPoint(vc));
+      std::vector<Eigen::Vector3d> nodes;
+      v.ForEachSegment([&](const auto& start, const auto& end,
+                           const auto& start0, const auto& end0) {
+        Eigen::Vector3d vel;
+        morphing.Velocity(&vel, (start0 + end0) / 2, t);
+        nodes.push_back(vel);
+      });
+      for (const auto& vn : nodes) {
+        mv->add_nodes()->CopyFrom(UVLM::Vector3dToPoint(vn));
+      }
+    }
+  }
   char filename[256];
   sprintf(filename, "%s/%08lu", output_path.c_str(), step);
   std::ofstream ofs(filename, std::ios::binary);
@@ -157,35 +158,43 @@ void OutputSnapshot2(const std::size_t step, const double t) {
   snapshot.SerializeToOstream(&ofs);
 }
 
+// TODO multiple output
 void CalcLoadProcess(const double t, const double dt) {
   std::vector<Eigen::Vector3d> loads;
-  std::stringstream line;
-  for (std::size_t i=0; i<containers.size(); i++) {
+  std::vector<double> data;
+  data.push_back(t);
+  if (FLAGS_use_joukowski) {
+    LOG(INFO) << "joukowski";
+  } else {
+    LOG(INFO) << "Katz and Plotkin";
+  }
+  for (std::size_t i = 0; i < containers.size(); i++) {
     const auto& c = containers[i];
     const auto& c_prev = containers_prev[i];
     const auto& m = morphings[i];
     const double rho = 1;
     const double S = c.chord() * c.span();
-    auto wake = GetWake(containers);
 
     UVLM::calc_load::AerodynamicLoad load;
     if (FLAGS_use_joukowski) {
       load =
           UVLM::calc_load::CalcLoadJoukowski(c, c_prev, m, inlet, rho, t, dt);
     } else {
-      LOG(FATAL) << "CalcLoad in Katz-Plotkin method is deprecated";
-      load = UVLM::calc_load::CalcLoad(c, c_prev, wake.first, wake.second, m,
-                                       inlet, rho, t, dt);
+      load = UVLM::calc_load::CalcLoadKatzPlotkin(c, c_prev, m, rings, inlet,
+                                                  rho, t, dt);
     }
     const double U = inlet.norm();
     auto coeff = load.F / (0.5 * rho * U * U * S);
 
-    line << t << "\t" << coeff.x() << "\t" << coeff.y() << "\t" << coeff.z()
-      << "\t" << load.Pin << "\t" << load.Pout;
+    data.push_back(coeff.x());
+    data.push_back(coeff.y());
+    data.push_back(coeff.z());
+    data.push_back(load.Pin);
+    data.push_back(load.Pout);
   }
   std::ofstream ofs(output_load_path, std::ios::app);
   CHECK((bool)ofs) << "Unable to open " << output_load_path;
-  ofs << line.str() << std::endl;
+  ofs << UVLM::util::join("\t", data.begin(), data.end()) << std::endl;
 }
 
 }  // namespace internal
@@ -197,6 +206,7 @@ void InitSimulator() {
 void AddWing(const ::UVLM::proto::Wing& wing, const ::UVLM::Morphing& m) {
   wings.emplace_back(wing);
   morphings.emplace_back(m);
+  morphings.rbegin()->set_origin(UVLM::PointToVector3d(wing.origin()));
 }
 
 void SetInlet(double x, double y, double z) {
@@ -210,47 +220,50 @@ void SetOutputLoadPath(const std::string& path) { output_load_path = path; }
 void Start(const std::size_t steps, const double dt) {
   internal::CheckReady();
   internal::CreateContainers();
-  rings.bound_vortices() = *vortices;
-
-  internal::MorphingProcess(0);
 
   // Main loop
-  for (std::size_t step = 1; step <= steps; ++step) {
-    LOG(INFO) << FLAGS_run_name << " " << "step: " << step;
+  // See Katz and Plotkin p.408 Fig. 13.25
+  // or Bueso2011 Fig 3.10
+  for (std::size_t step = 0; step <= steps; ++step) {
+    LOG(INFO) << FLAGS_run_name << " "
+              << "step: " << step;
     const double t = dt * step;
     const std::size_t wake_offset = internal::WakeOffset();
 
     // Save circulations of bound vortices at the previous step
+    LOG(INFO) << "copy";
     containers_prev.resize(containers.size());
     CopyContainers(containers.begin(), containers.end(),
                    containers_prev.begin());
 
-    // 連立方程式を解いて翼の上の循環を求める
+    LOG(INFO) << "Kinematics";
+    internal::MorphingProcess(t);
+
+    LOG(INFO) << "Boundary Cond";
     internal::SolveLinearProblem(t);
 
-    // TODO remove rings
-    std::copy(vortices->begin(), vortices->begin() + wake_offset,
-              rings.bound_vortices().begin());
     internal::OutputSnapshot2(step, t);
     if (output_load_path.size()) {
+      LOG(INFO) << "Calc loads";
       internal::CalcLoadProcess(t, dt);
     }
     if (step == steps) break;
 
     if (!FLAGS_disable_wake) {
-      auto shed = internal::ShedProcess(dt);
-      std::vector<UVLM::VortexRing> wake_next;
-      internal::AdvectProcess(&wake_next, dt);
-      internal::MorphingProcess(t);
-      // Renew wake vortices
+      LOG(INFO) << "Wake Rollup";
+      // TODO multiple wings
+      std::vector<UVLM::VortexRing> wake_next(containers[0].edge_begin(),
+          containers[0].edge_end());
+      wake_next.insert(wake_next.end(),
+                       vortices->cbegin() + wake_offset, vortices->cend());
+      UVLM::AdvectParallel(vortices->cbegin(), vortices->cend(),
+                           wake_next.begin(), wake_next.end(),
+                           inlet, dt);
+      // update
+      vortices->resize(wake_offset + wake_next.size());
       std::copy(wake_next.cbegin(), wake_next.cend(),
                 vortices->begin() + wake_offset);
-      internal::AppendShedProcess(&shed);
-
-      // TODO remove rings
-      rings.wake_vortices().resize(vortices->size() - wake_offset);
-      std::copy(vortices->begin() + wake_offset, vortices->end(),
-                rings.wake_vortices().begin());
+      // LOG(INFO) << vortices.size();
     }
   }
 }

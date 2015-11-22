@@ -1,9 +1,10 @@
-
 /**
  * @file vortex.h
  * @brief Add description here
  */
 #pragma once
+
+#include "multiple_sheet/multiple_sheet.h"
 
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
@@ -11,13 +12,13 @@
 #include <vector>
 
 using Eigen::Vector3d;
+using multiple_sheet::MultipleSheet;
 
 namespace UVLM {
 
 /** @brief 点と直線の距離
  */
-double DistanceLineAndPoint(const Vector3d& start,
-                            const Vector3d& end,
+double DistanceLineAndPoint(const Vector3d& start, const Vector3d& end,
                             const Vector3d& pos);
 
 /** @brief Biot-Savartの法則の線分バージョン
@@ -27,10 +28,8 @@ double DistanceLineAndPoint(const Vector3d& start,
  * @param end 終点
  * @param pos 位置
  */
-void BiotSavartLaw(Vector3d* result,
-                   const Vector3d& start, const Vector3d& end,
+void BiotSavartLaw(Vector3d* result, const Vector3d& start, const Vector3d& end,
                    const Vector3d& pos);
-
 
 /** @brief 渦輪=Vortex filamentの集合
  */
@@ -66,7 +65,7 @@ class VortexRing {
   VortexRing& PushNode(double x, double y, double z);
   void SaveReferenceNode();
 
-  /** @brief 法線ベクトル 
+  /** @brief 法線ベクトル
    *  @todo キャッシュする
    */
   Vector3d Normal() const;
@@ -75,7 +74,11 @@ class VortexRing {
    */
   Vector3d Tangent() const;
 
-  /** @brief 中心の位置 
+  /** @brief tangent vector perpendiculer to normal and tangent
+   */
+  Vector3d Tangent2() const;
+
+  /** @brief 中心の位置
    *  @todo ちゃんと計算する
    */
   Vector3d Centroid() const;
@@ -110,13 +113,25 @@ class VortexRing {
   double CalcB() const;
 
   /**
+   * @brief Area of ring
+   * sum of triangles
+   */
+  double Area() const;
+
+  /**
+   * @brief Vortex impulse
+   */
+  Eigen::Vector3d Impulse() const;
+
+  /**
    * @brief loop for each line segment of ring
    *
    * start and end are given for the function. the function must be formed
    * func(const Eigen::Vector3d& start, const Eigen::Vector3d& end)
    */
-  inline void ForEachSegment(std::function<void(const Eigen::Vector3d&,
-                                         const Eigen::Vector3d&)> func) const {
+  inline void ForEachSegment(
+      std::function<void(const Eigen::Vector3d&, const Eigen::Vector3d&)> func)
+      const {
     for (std::size_t i = 0; i < nodes_.size(); i++) {
       const Vector3d& start = nodes_[(i + 1) % nodes_.size()];
       const Vector3d& end = nodes_[i];
@@ -152,7 +167,23 @@ class VortexRing {
  private:
   double gamma_;
   std::vector<Vector3d> nodes_;
-  std::vector<Vector3d> nodes0_; // reference nodes (immutable)
+  std::vector<Vector3d> nodes0_;  // reference nodes (immutable)
 };
+
+inline Eigen::Vector3d VORTEX(const Eigen::Vector3d& x,
+                              const Eigen::Vector3d& x1,
+                              const Eigen::Vector3d& x2, double gamma) {
+  // (10.16)
+  // impl p. 584
+  Eigen::Vector3d res;
+  UVLM::BiotSavartLaw(&res, x1, x2, x);
+  res *= gamma;
+  return res;
+}
+
+Eigen::Vector3d VORING(const Eigen::Vector3d& x,
+                       const MultipleSheet<Eigen::Vector3d>& pos,
+                       const MultipleSheet<double>& gamma, std::size_t n,
+                       std::size_t i, std::size_t j);
 
 }  // namespace UVLM

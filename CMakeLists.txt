@@ -85,16 +85,20 @@ add_library(uvlm
             ${PROTO_DIR}/uvlm.pb.cc
             src/shed.cpp
             src/vortex.cpp
+            src/vortex_container.cpp
             src/uvlm_vortex_ring.cpp
             src/wing_builder.cpp
-            src/calc_load/calc_load.cpp
-            src/simulator.cpp)
+            src/calc_load/katz_plotkin.cpp
+            src/calc_load/joukowski.cpp
+            src/simulator/simulator.cpp
+            src/simulator/simple_simulator.cpp)
 target_link_libraries(uvlm morphing protobuf glog)
 
 
 add_library(wing
             ${PROTO_DIR}/uvlm.pb.cc
             src/wing/rect.cpp
+            src/wing/naca4digit.cpp
             src/wing/naca00XX.cpp)
 enable_gflags(wing)          
 target_link_libraries(wing protobuf)
@@ -103,12 +107,7 @@ add_executable(naca00XX src/wing/naca00XX_main.cpp)
 enable_gflags(naca00XX)
 target_link_libraries(naca00XX wing)
 
-
 add_subdirectory(test)
-
-add_executable(calc_load src/calc_load/calc_load_main.cpp)
-enable_gflags(calc_load)
-target_link_libraries(calc_load uvlm glog)
 
 add_executable(flapping_validation src/validation/flapping_validation.cpp)
 target_link_libraries(flapping_validation uvlm wing protobuf glog yaml-cpp)
@@ -119,8 +118,38 @@ target_link_libraries(plunging_validation uvlm wing protobuf glog yaml-cpp)
 add_executable(fixed_plate src/validation/fixed_plate.cpp)
 target_link_libraries(fixed_plate uvlm wing protobuf glog yaml-cpp)
 
+add_executable(steady src/validation/stady_problem_main.cpp)
+target_link_libraries(steady uvlm wing protobuf glog yaml-cpp)
+
+add_executable(steady2 src/validation/stady_problem2_main.cpp)
+target_link_libraries(steady2 uvlm wing protobuf glog yaml-cpp)
+
+add_executable(unsteady_plate src/validation/unsteady_plate.cpp)
+target_link_libraries(unsteady_plate uvlm wing protobuf glog yaml-cpp)
+
 add_executable(2d_velocity src/tools/2d_velocity_main.cpp)
 target_link_libraries(2d_velocity uvlm protobuf glog)
+
+add_executable(multiple_flapping_wings src/multiple_flapping_wings_main.cpp)
+enable_gflags(multiple_flapping_wings)
+target_link_libraries(multiple_flapping_wings uvlm wing protobuf glog yaml-cpp)
+
+add_executable(stanford_baseline src/validation/stanford_baseline_main.cpp)
+enable_gflags(stanford_baseline)
+target_link_libraries(stanford_baseline uvlm wing protobuf glog yaml-cpp)
+
+add_executable(calc_impulse src/calc_impulse_main.cpp)
+enable_gflags(calc_impulse)
+target_link_libraries(calc_impulse uvlm protobuf glog yaml-cpp)
+
+add_executable(dump_circulation src/tools/dump_circulation_main.cpp)
+enable_gflags(dump_circulation)
+target_link_libraries(dump_circulation uvlm protobuf glog yaml-cpp)
+
+add_executable(dump_centroid src/tools/dump_centroid_main.cpp)
+enable_gflags(dump_centroid)
+target_link_libraries(dump_centroid uvlm protobuf glog yaml-cpp)
+
 
 ###########################################################
 # install
@@ -134,6 +163,6 @@ install (
   flapping_validation
   plunging_validation
   fixed_plate
-  calc_load
   2d_velocity
+  multiple_flapping_wings
   DESTINATION /usr/local/bin)
