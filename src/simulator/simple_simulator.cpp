@@ -44,6 +44,26 @@ std::vector<Eigen::Vector3d> Normals(
   return res;
 }
 
+Eigen::Vector3d SimpleSimulator::BoundVelocity(const Eigen::Vector3d& x) const{
+  Eigen::Vector3d res = Eigen::Vector3d::Zero();
+  for (auto index : wing_gamma_.list_index()) {
+    std::size_t n, i, j;
+    std::tie(std::ignore, n, i, j) = index;
+    res += UVLM::VORING(x, wing_pos_, wing_gamma_, n, i, j);
+  }
+  return res;
+}
+
+Eigen::Vector3d SimpleSimulator::WakeVelocity(const Eigen::Vector3d& x) const {
+  Eigen::Vector3d res = Eigen::Vector3d::Zero();
+  for (auto index : wake_gamma_.list_index()) {
+    std::size_t n, i, j;
+    std::tie(std::ignore, n, i, j) = index;
+    res += UVLM::VORING(x, wake_pos_, wake_gamma_, n, i, j);
+  }
+  return res;
+}
+
 Eigen::MatrixXd SimpleSimulator::CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
                            const std::vector<Eigen::Vector3d>& normal) const {
   // A_kl
@@ -67,6 +87,17 @@ Eigen::MatrixXd SimpleSimulator::CalcMatrix(const std::vector<Eigen::Vector3d>& 
   }
   return res;
 }
+
+// auto SimpleSimulator::CalcRhs(const double t) const {
+//   const std::size_t sz = cpos.size();
+//   Eigen::VectorXd res(sz);
+//   for (std::size_t K = 0; K < sz; ++K) {
+//     Eigen::Vector3d u = -forward_flight + WakeVelocity(cpos[K]) -
+//                         MorphingVelocity(cpos_init[K], t);
+//     res(K) = -u.dot(normal[K]);
+//   }
+//   return res;
+// }
 
 void SimpleSimulator::AddWing(const Morphing& morphing, const double chord,
                               const double span, const std::size_t rows,
@@ -118,7 +149,6 @@ void SimpleSimulator::Shed(const std::size_t step) {
     te_pos.insert(te_pos.end(), wing_pos_.iterator_at(n, wing_pos_.rows() - 1, 0),
                   wing_pos_.iterator_at(n + 1, 0, 0));
   }
-  LOG(INFO) << te_pos.size();
   wake_pos_.prepend_row(te_pos.begin(), te_pos.end());
   if (step > 1) {
     for (std::size_t n = 0; n < wing_gamma_.num(); n++) {
@@ -164,7 +194,6 @@ void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
   }
   LOG(INFO) << "Shed";
   Shed(step);
-  LOG(INFO) << "shed done " <<wake_pos_.size()<<" "<<wake_gamma_.size();
   
   const auto cpos = CollocationPoints(wing_pos_);
   const auto normal = Normals(wing_pos_);
@@ -187,15 +216,12 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
 void SimpleSimulator::OutputPanels(const std::size_t step, const double dt) const {
   char filename[256];
   UVLM::proto::Snapshot2 snapshot;
-  LOG(INFO) << wing_pos_.size() <<" "<< wing_gamma_.size();
   for (std::size_t n = 0; n < wing_gamma_.num(); n++) {
     UVLM::output::SimpleAppendSnapshot(
         &snapshot, wing_pos_.sheet_begin(n), wing_pos_.sheet_end(n),
         wing_gamma_.sheet_begin(n), wing_gamma_.sheet_end(n),
         wing_gamma_.cols());
     if (wake_gamma_.size()) {
-      LOG(INFO) << wake_pos_.size() << " " << wake_gamma_.size() << " "
-                << wake_gamma_.cols();
       UVLM::output::SimpleAppendSnapshot(
           &snapshot, wake_pos_.sheet_begin(n), wake_pos_.sheet_end(n),
           wake_gamma_.sheet_begin(n), wake_gamma_.sheet_end(n),
