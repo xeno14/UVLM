@@ -12,6 +12,7 @@
 using UVLM::simulator::SimpleSimulator;
 
 DEFINE_string(result_path, "", "directory to save Snapshot2");
+DEFINE_string(load_path, "", "path to aerodynamic loads");
 
 namespace {
 double AR = 6;
@@ -27,6 +28,7 @@ double OMEGA = 2 * Q * Kg / CHORD;
 void Run() {
   SimpleSimulator simulator;
   simulator.set_result_path(FLAGS_result_path);
+  simulator.set_load_path(FLAGS_load_path);
 
   UVLM::Morphing m;
   const double omega = OMEGA;
@@ -44,7 +46,6 @@ int main(int argc, char* argv[]) {
   google::InitGoogleLogging(argv[0]);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InstallFailureSignalHandler();
-  FLAGS_logtostderr = true;
 
   Run();
   return 0;

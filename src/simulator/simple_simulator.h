@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#include <fstream>
+
 #include "../../proto/uvlm.pb.h"
 #include "../morphing.h"
 #include "../multiple_sheet/multiple_sheet.h"
@@ -28,7 +30,9 @@ std::vector<Eigen::Vector3d> Normals(const MultipleSheet<Eigen::Vector3d>& pos);
 
 class SimpleSimulator {
  public:
-  SimpleSimulator() : forward_flight_(Eigen::Vector3d::Zero()) {}
+  SimpleSimulator()
+      : forward_flight_(Eigen::Vector3d::Zero()), ofs_load_(nullptr) {}
+  ~SimpleSimulator() {}
 
   /**
    * @brief Add wing information
@@ -44,6 +48,7 @@ class SimpleSimulator {
 
   void set_forward_flight(const Eigen::Vector3d& v) { forward_flight_ = v; }
   void set_result_path(const std::string& path) { result_path_ = path; }
+  void set_load_path(const std::string& loadpath);
 
  private:
   MultipleSheet<Eigen::Vector3d> wing_pos_;
@@ -56,6 +61,7 @@ class SimpleSimulator {
   std::vector<Morphing> morphings_;
   std::vector<WingInformation> wing_info_;
   std::string result_path_;
+  std::unique_ptr<std::ofstream> ofs_load_;
 
   Eigen::MatrixXd CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
                              const std::vector<Eigen::Vector3d>& normal) const;
@@ -65,6 +71,8 @@ class SimpleSimulator {
                           const double t) const;
   void Shed(const std::size_t step);
   void Advect(const double dt);
+  void CalcLoad(const std::vector<Eigen::Vector3d>& normal,
+                const double t, const double dt) const;
   Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) const;
   Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) const;
   Eigen::Vector3d Velocity(const Eigen::Vector3d& x) const {
