@@ -14,8 +14,15 @@ using multiple_sheet::MultipleSheet;
 namespace UVLM {
 namespace simulator {
 
-std::vector<Eigen::Vector3d> CollocationPoints(
-    const MultipleSheet<Eigen::Vector3d>& pos);
+struct WingInformation {
+  Morphing morphing;
+  double chord, span;
+  std::size_t rows, cols;
+  Eigen::Vector3d origin;
+};
+
+std::vector<Eigen::Vector3d>
+    CollocationPoints(const MultipleSheet<Eigen::Vector3d>& pos);
 
 std::vector<Eigen::Vector3d> Normals(const MultipleSheet<Eigen::Vector3d>& pos);
 
@@ -38,14 +45,15 @@ class SimpleSimulator {
   void set_forward_flight(const Eigen::Vector3d& v) { forward_flight_ = v; }
 
  private:
-  MultipleSheet<Eigen::Vector3d> wing_pos;
-  MultipleSheet<Eigen::Vector3d> wing_pos_init;
-  MultipleSheet<Eigen::Vector3d> wake_pos;
-  MultipleSheet<double> wing_gamma;
-  MultipleSheet<double> wing_gamma_prev;
-  MultipleSheet<double> wake_gamma;
+  MultipleSheet<Eigen::Vector3d> wing_pos_;
+  MultipleSheet<Eigen::Vector3d> wing_pos_init_;
+  MultipleSheet<Eigen::Vector3d> wake_pos_;
+  MultipleSheet<double> wing_gamma_;
+  MultipleSheet<double> wing_gamma_prev_;
+  MultipleSheet<double> wake_gamma_;
   Eigen::Vector3d forward_flight_;
   std::vector<Morphing> morphings_;
+  std::vector<WingInformation> wing_info_;
 
   template <class Range1, class Range2>
   Eigen::MatrixXd CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
@@ -59,6 +67,7 @@ class SimpleSimulator {
     return -forward_flight_ + BoundVelocity(x) + WakeVelocity(x);
   }
 
+  void BuildWing();
   void MainLoop(const std::size_t step, const double dt);
 };
 }  // namespace simulator

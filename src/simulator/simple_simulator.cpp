@@ -4,6 +4,7 @@
  */
 
 #include "simple_simulator.h"
+#include "../wing/wing.h"
 
 #include <glog/logging.h>
 
@@ -42,16 +43,55 @@ std::vector<Eigen::Vector3d> Normals(
   return res;
 }
 
+void SimpleSimulator::AddWing(const Morphing& morphing, const double chord,
+                              const double span, const std::size_t rows,
+                              const std::size_t cols,
+                              const Eigen::Vector3d& origin) {
+  if (wing_info_.size()) {
+    CHECK(wing_info_.rbegin()->rows == rows);
+    CHECK(wing_info_.rbegin()->cols == cols);
+  }
+  wing_info_.push_back(
+      WingInformation{morphing, chord, span, rows, cols, origin});
+}
+
+void SimpleSimulator::BuildWing() {
+  CHECK(wing_info_.size() > 0) << "call AddWing at least once";
+  const std::size_t num = wing_info_.size();
+  const std::size_t rows = wing_info_.rbegin()->rows;
+  const std::size_t cols = wing_info_.rbegin()->cols;
+
+  wing_pos_.resize(num, rows + 1, cols + 1);
+  wing_pos_init_.resize(num, rows + 1, cols + 1);
+  wing_gamma_.resize(num, rows, cols);
+  wing_gamma_prev_.resize(num, rows, cols);
+
+  std::size_t n = 0;
+  for (const auto& info : wing_info_) {
+    morphings_.push_back(info.morphing);
+
+    UVLM::proto::Wing wing, half;
+    UVLM::wing::NACA4digitGenerator wing_generator(
+        83, info.chord, info.span / 2, rows, cols / 2);
+    wing_generator.Generate(&half);
+    UVLM::wing::WholeWing(&wing, half);
+    wing.mutable_origin()->CopyFrom(UVLM::Vector3dToPoint(info.origin));
+    const auto points = UVLM::PointsToVector(wing.points());
+    std::copy(points.begin(), points.end(), wing_pos_init_.sheet_begin(n++));
+  }
+  std::copy(wing_pos_init_.begin(), wing_pos_init_.end(), wing_pos_.begin());
+}
+
 void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
   const double t = step * dt;
 
-  std::copy(wing_gamma.begin(), wing_gamma.end(), wing_gamma_prev.begin());
+  std::copy(wing_gamma_.begin(), wing_gamma_.end(), wing_gamma_prev_.begin());
   
   LOG(INFO) << "Morphing";
-  CHECK(wing_pos.size() == wing_pos_init.size());
-  for (std::size_t n = 0; n < wing_pos.num(); n++) {
-    std::transform(wing_pos_init.sheet_begin(n), wing_pos_init.sheet_end(n),
-                   wing_pos.sheet_begin(n),
+  CHECK(wing_pos_.size() == wing_pos_init_.size());
+  for (std::size_t n = 0; n < wing_pos_.num(); n++) {
+    std::transform(wing_pos_init_.sheet_begin(n), wing_pos_init_.sheet_end(n),
+                   wing_pos_.sheet_begin(n),
                    [t, n, this](const Eigen::Vector3d& x0) {
                      return this->morphings_[n].Perfome(x0, t);
                    });
