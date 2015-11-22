@@ -9,8 +9,7 @@
 
 namespace UVLM {
 
-double DistanceLineAndPoint(const Vector3d& start,
-                            const Vector3d& end,
+double DistanceLineAndPoint(const Vector3d& start, const Vector3d& end,
                             const Vector3d& pos) {
   Vector3d direction = end - start;
   direction.normalize();
@@ -43,16 +42,15 @@ void VortexRing::BiotSavartLaw(Vector3d* result, const Vector3d& pos,
                                double gamma) const {
   *result = ::Eigen::Vector3d::Zero();
   Vector3d tmp;
-  this->ForEachSegment(
-      [&](const auto& start, const auto& end) {
-        ::UVLM::BiotSavartLaw(&tmp, start, end, pos);
-        *result += tmp;
-      });
+  this->ForEachSegment([&](const auto& start, const auto& end) {
+    ::UVLM::BiotSavartLaw(&tmp, start, end, pos);
+    *result += tmp;
+  });
   *result *= gamma;
 }
 
 void VortexRing::ChordwiseBiotSavartLaw(Vector3d* result, const Vector3d& pos,
-                              double gamma) const {
+                                        double gamma) const {
   *result = ::Eigen::Vector3d::Zero();
   Vector3d tmp;
   // 0-1 and 2-3
@@ -95,9 +93,7 @@ Vector3d VortexRing::Tangent() const {
   return res;
 }
 
-Vector3d VortexRing::Tangent2() const {
-  return Normal().cross(Tangent());
-}
+Vector3d VortexRing::Tangent2() const { return Normal().cross(Tangent()); }
 
 Vector3d VortexRing::Centroid() const {
   return (nodes_[0] + nodes_[1] + nodes_[2] + nodes_[3]) / 4;
@@ -144,6 +140,23 @@ double VortexRing::Area() const {
 Eigen::Vector3d VortexRing::Impulse() const {
   // -1 comes from clockwise loop
   return Normal() * gamma_ * Area() * (-1);
+}
+
+Eigen::Vector3d VORING(const Eigen::Vector3d& x,
+                       const MultipleSheet<Eigen::Vector3d>& pos,
+                       const MultipleSheet<double>& gamma, std::size_t n,
+                       std::size_t i, std::size_t j) {
+  Eigen::Vector3d u = Eigen::Vector3d::Zero();
+  double g = gamma.at(n, i, j);
+  const auto& p0 = pos.at(n, i, j);
+  const auto& p1 = pos.at(n, i, j + 1);
+  const auto& p2 = pos.at(n, i + 1, j + 1);
+  const auto& p3 = pos.at(n, i + 1, j);
+  u += VORTEX(x, p0, p1, g);
+  u += VORTEX(x, p1, p2, g);
+  u += VORTEX(x, p2, p3, g);
+  u += VORTEX(x, p3, p0, g);
+  return u;
 }
 
 }  // namespace UVLM

@@ -3,10 +3,7 @@
  * @brief Add description here
  */
 
-#include "../proto/uvlm.pb.h"
-#include "util.h"
-#include "proto_adaptor.h"
-#include "calc_impulse.h"
+#include "uvlm.h"
 
 #include <algorithm>
 #include <fstream>

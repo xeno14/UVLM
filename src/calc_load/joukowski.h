@@ -6,12 +6,14 @@
 #pragma once
 
 #include "../../proto/uvlm.pb.h"
+#include "../multiple_sheet/multiple_sheet.h"
 #include "../vortex_container.h"
-#include "../uvlm_vortex_ring.cpp"
 #include "../shed.h"
 #include "../util.h"
 #include "../morphing.h"
 #include "functions.h"
+
+using multiple_sheet::MultipleSheet;
 
 namespace UVLM {
 namespace calc_load {
@@ -22,7 +24,6 @@ template <class InputIterator>
 inline void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
                                    InputIterator vortices_first,
                                    InputIterator vortices_last,
-                                   const UVLM::UVLMVortexRing& rings,
                                    const Morphing& morphing,
                                    const Eigen::Vector3d& freestream,
                                    const double rho, const double t,
@@ -40,7 +41,7 @@ inline void JoukowskiSteadyOnPanel(Eigen::Vector3d* result, const VortexRing& v,
     const Vector3d& end0 = v.nodes0()[i];
     mid = (start + end) / 2;
     mid0 = (start0 + end0) / 2;
-    rings.InducedVelocity(&Uind, mid);
+    UVLM::InducedVelocity(&Uind, mid, vortices_first, vortices_last);
     // U = (Ub + Uw) + Um = Uind + Um
     Um = internal::CalcUm(morphing, mid0, freestream, t);
     U = Uind + Um;
@@ -61,7 +62,6 @@ inline void JoukowskiUnsteadyOnPanel(Eigen::Vector3d* result,
 
 inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
                                   const VortexContainer& vb_prev,
-                                  const UVLM::UVLMVortexRing& rings,
                                   const Morphing& morphing,
                                   const Eigen::Vector3d& freestream,
                                   const double rho, const double t,
@@ -70,7 +70,6 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
   auto dim = DoubleLoop(vb.rows(), vb.cols());
   double Fx=0, Fy=0, Fz=0, Pin=0, Pout=0;
 
-  LOG(INFO) << "JOU\n";
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:Fx, Fy, Fz, Pin)
 #endif
@@ -82,7 +81,7 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
 
 
     internal::JoukowskiSteadyOnPanel(&dF_st, vb.at(i, j), vortices.cbegin(),
-                                     vortices.cend(), rings, morphing, freestream, rho,
+                                     vortices.cend(), morphing, freestream, rho,
                                      t, i+1==vb.rows());
     internal::JoukowskiUnsteadyOnPanel(&dF_unst, vb.at(i, j), vb_prev.at(i, j),
                                        rho, dt);
@@ -104,6 +103,49 @@ inline AerodynamicLoad CalcLoadJoukowski(const VortexContainer& vb,
   Eigen::Vector3d F(Fx, Fy, Fz);
   Pout = Fx * freestream.norm() * (-1);    // assume foward flight
   return AerodynamicLoad{F, Pin, Pout};
+}
+
+struct VortexLine {
+  Eigen::Vector3d p0, p1;
+  Eigen::Vector3d p0_init, p1_init;
+  double gamma;
+};
+
+std::vector<VortexLine> GetLines(const MultipleSheet<Eigen::Vector3d>& pos,
+                                 const MultipleSheet<Eigen::Vector3d>& pos_init,
+                                 const MultipleSheet<double>& gamma,
+                                 std::size_t n);
+
+Eigen::Vector3d JoukowskiSteady(
+    const std::vector<UVLM::calc_load::VortexLine>& lines,
+    const std::vector<Eigen::Vector3d>& U, double t);
+
+std::vector<double> CalcPanelArea(const MultipleSheet<Eigen::Vector3d>& pos,
+                                  const std::size_t n);
+
+
+Eigen::Vector3d JoukowskiUnsteady(const MultipleSheet<double>& gamma,
+                                  const MultipleSheet<double>& gamma_prev,
+                                  const std::vector<double>& area,
+                                  const std::vector<Eigen::Vector3d>& normal,
+                                  std::size_t n, const double dt);
+
+template <class Range1, class Range2, class Range3, class Range4>
+Eigen::Vector3d JoukowskiUnsteady(const Range1& gamma, const Range2& gamma_prev,
+                                  const Range3& area, const Range4& normal,
+                                  const double dt) {
+  double Fx = 0, Fy = 0, Fz = 0;
+  for (const auto tup : UVLM::util::zip(gamma, gamma_prev, area, normal)) {
+    double g, g_prev, A;
+    Eigen::Vector3d n;
+    boost::tie(g, g_prev, A, n) = tup;
+    const double dg_dt = (g - g_prev) / dt;
+    Eigen::Vector3d df = n * dg_dt * A;
+    Fx += df.x();
+    Fy += df.y();
+    Fz += df.z();
+  }
+  return Eigen::Vector3d(Fx, Fy, Fz);
 }
 
 }  // namespace calc_load

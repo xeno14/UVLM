@@ -120,8 +120,13 @@ class VortexContainer {
   auto end() const { return vortices_->begin() + Index(rows_ * cols_); }
   auto edge_begin() { return vortices_->begin() + Index(rows_ - 1, 0); }
   auto edge_end() { return end(); }
+  auto edge_begin() const { return vortices_->begin() + Index(rows_ - 1, 0); }
+  auto edge_end() const { return end(); }
   auto cbegin() const { return vortices_->cbegin() + Index(0); }
   auto cend() const { return vortices_->cbegin() + Index(rows_ * cols_); }
+
+  std::vector<Eigen::Vector3d> DumpPos() const;
+  void LoadPos(const std::vector<Eigen::Vector3d>& pos);
 
  private:
   vortices_ptr_t vortices_;

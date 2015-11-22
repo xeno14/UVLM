@@ -1,30 +1,25 @@
 /**
- * @file multiple_flapping_wings_main.cpp
+ * @file stanford_baseline_main.cpp
  * @brief Add description here
  */
 
-#include "uvlm.h"
-#include "output.h"
-#include <fstream>
+#include "../uvlm.h"
+#include "../output.h"
 #include <gflags/gflags.h>
 #include <glog/logging.h>
-
-using UVLM::simulator::SimpleSimulator;
 
 DEFINE_string(result_path, "", "directory to save Snapshot2");
 DEFINE_string(load_path, "", "path to aerodynamic loads");
 DEFINE_int32(rows, 6, "chordwise num");
 DEFINE_int32(cols, 20, "spanwise num");
-DEFINE_int32(lines, 2, "number of formation lines");
-DEFINE_double(xrel, 3, "relative position x");
-DEFINE_double(yrel, 6, "relative position y");
-DEFINE_double(phase, 0., "phase difference");
 DEFINE_int32(steps, 50, "number of steps to simulate");
 DEFINE_int32(steps_per_cycle, 40, "number of steps per flapping cycle");
+DEFINE_double(alpha, 5, "angle of attack");
+
+using UVLM::simulator::SimpleSimulator;
 
 namespace {
 const double AR = 6;
-const double ALPHA = 5. * M_PI / 180.;
 const double CHORD = 1.;
 const double SPAN = CHORD * AR;
 const double Kg = 0.1;
@@ -32,22 +27,11 @@ const double Q = 1;
 const double OMEGA = 2 * Q * Kg / CHORD;
 
 void AddWing(SimpleSimulator* simulator) {
-  UVLM::Morphing m_leading;
+  UVLM::Morphing m;
   const double omega = OMEGA;
-  m_leading.set_flap([omega](double t) { return M_PI_4 * cos(omega * t); });
-  m_leading.set_alpha(ALPHA);
-  simulator->AddWing(m_leading, CHORD, SPAN, FLAGS_rows, FLAGS_cols, {0, 0, 0});
-  for (int i = 1; i < FLAGS_lines; i++) {
-    UVLM::Morphing m;
-    const double dphi = FLAGS_phase * i;
-    const double xrel = FLAGS_xrel * i;
-    const double yrel = FLAGS_yrel * i;
-    m.set_flap(
-        [omega, dphi](double t) { return M_PI_4 * cos(omega * t + dphi); });
-    m.set_alpha(ALPHA);
-    simulator->AddWing(m, CHORD, SPAN, 6, 20, {xrel, yrel, 0});
-    simulator->AddWing(m, CHORD, SPAN, 6, 20, {xrel, -yrel, 0});
-  }
+  m.set_flap([omega](double t) { return M_PI_4 * cos(omega * t); });
+  m.set_alpha(FLAGS_alpha * M_PI / 180.);
+  simulator->AddWing(m, CHORD, SPAN, FLAGS_rows, FLAGS_cols, {0, 0, 0});
 }
 
 void Run() {

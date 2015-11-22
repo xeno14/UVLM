@@ -1,6 +1,6 @@
 /**
  * @file proto_adaptor.h
- * @brief Add description here
+ * @brief Adaptors from proto to UVLM classes
  */
 #pragma once
 
@@ -11,10 +11,12 @@
 
 namespace UVLM {
 
+/** @brief proto::Point to Eigen::Vector3d */
 inline Eigen::Vector3d PointToVector3d(const proto::Point& point) {
   return Eigen::Vector3d(point.x(), point.y(), point.z());
 }
 
+/** @brief Eigen::Vector3d to proto::Point */
 inline proto::Point Vector3dToPoint(const Eigen::Vector3d& vec) {
   proto::Point res;
   res.set_x(vec.x());
@@ -47,6 +49,14 @@ inline UVLM::VortexRing ProtoToVortexRing(const proto::VortexRing& v) {
   for (const auto& node : v.nodes()) {
     res.PushNode(PointToVector3d(node));
   }
+  return res;
+}
+
+template <class Range>
+inline std::vector<Eigen::Vector3d> PointsToVector(const Range& points) {
+  std::vector<Eigen::Vector3d> res;
+  std::transform(points.begin(), points.end(), std::back_inserter(res),
+                 [](const auto& p) { return UVLM::PointToVector3d(p); });
   return res;
 }
 

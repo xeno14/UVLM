@@ -1,6 +1,6 @@
 /**
  * @file morphing.cpp
- * @brief Add description here
+ * @brief Implemention of morphing.h
  */
 
 #include "morphing.h"
@@ -58,8 +58,8 @@ void Morphing::PrepareMatrix(Eigen::Matrix3d* m, const Eigen::Vector3d& x0,
   Eigen::Matrix3d flap;
   const double phi = flap_(t);
   flap << 1, 0, 0,
-          0, cos(phi), sin(phi),
-          0, -sin(phi), cos(phi);
+          0, cos(phi), -sin(phi),
+          0, sin(phi),  cos(phi);
 
   Eigen::Matrix3d attack;
   const double alpha = alpha_;
