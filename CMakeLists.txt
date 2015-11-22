@@ -90,7 +90,8 @@ add_library(uvlm
             src/wing_builder.cpp
             src/calc_load/katz_plotkin.cpp
             src/calc_load/joukowski.cpp
-            src/simulator/simulator.cpp)
+            src/simulator/simulator.cpp
+            src/simulator/simple_simulator.cpp)
 target_link_libraries(uvlm morphing protobuf glog)
 
 
