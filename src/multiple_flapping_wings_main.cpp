@@ -33,7 +33,7 @@ void Run() {
   m.set_flap([omega](double t) { return M_PI_4 * cos(omega * t); });
   m.set_alpha(ALPHA);
   simulator.AddWing(m, CHORD, SPAN, 6, 20, {0, 0, 0});
-  // simulator.AddWing(m, CHORD, SPAN, 6, 20, {3, 7, 0});
+  simulator.AddWing(m, CHORD, SPAN, 6, 20, {3, 7, 5});
   simulator.set_forward_flight({-Q, 0, 0});
 
   const double dt =  2. * M_PI / OMEGA / 40;

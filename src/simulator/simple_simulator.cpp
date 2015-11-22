@@ -69,18 +69,24 @@ void SimpleSimulator::BuildWing() {
 
   std::size_t n = 0;
   for (const auto& info : wing_info_) {
+    const auto origin = info.origin;
     morphings_.push_back(info.morphing);
+    morphings_.rbegin()->set_origin(origin);
 
     UVLM::proto::Wing wing, half;
     UVLM::wing::NACA4digitGenerator wing_generator(
         83, info.chord, info.span / 2, rows, cols / 2);
     wing_generator.Generate(&half);
     UVLM::wing::WholeWing(&wing, half);
-    wing.mutable_origin()->CopyFrom(UVLM::Vector3dToPoint(info.origin));
-    const auto points = UVLM::PointsToVector(wing.points());
-    std::copy(points.begin(), points.end(), wing_pos_init_.sheet_begin(n++));
+    LOG(INFO) << "origin " << info.origin.transpose();
+    auto points = UVLM::PointsToVector(wing.points());
+    std::transform(points.begin(), points.end(),
+        points.begin(),
+        [origin](const auto& x) { return x + origin; });
+    std::copy(points.begin(), points.end(), wing_pos_init_.sheet_begin(n));
+    LOG(INFO) << wing_pos_.sheet_begin(n)->transpose();
+    ++n;
   }
-  std::copy(wing_pos_init_.begin(), wing_pos_init_.end(), wing_pos_.begin());
 }
 
 void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
@@ -110,9 +116,14 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
 void SimpleSimulator::OutputPanels(const std::size_t step, const double dt) const {
   char filename[256];
   UVLM::proto::Snapshot2 snapshot;
-  UVLM::output::SimpleAppendSnapshot(&snapshot, wing_pos_.begin(),
-                                      wing_pos_.end(), wing_gamma_.begin(),
-                                      wing_gamma_.end(), wing_gamma_.cols());
+  // LOG(INFO) << wing_gamma_.num();
+  // LOG(INFO) << wing_pos_.num();
+  for (std::size_t n = 0; n < wing_gamma_.num(); n++) {
+    UVLM::output::SimpleAppendSnapshot(
+        &snapshot, wing_pos_.sheet_begin(n), wing_pos_.sheet_end(n),
+        wing_gamma_.sheet_begin(n), wing_gamma_.sheet_end(n),
+        wing_gamma_.cols());
+  }
   if (wake_gamma_.size()) {
     UVLM::output::SimpleAppendSnapshot(&snapshot, wake_pos_.begin(),
                                         wake_pos_.end(), wake_gamma_.begin(),
