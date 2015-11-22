@@ -88,16 +88,23 @@ Eigen::MatrixXd SimpleSimulator::CalcMatrix(const std::vector<Eigen::Vector3d>& 
   return res;
 }
 
-// auto SimpleSimulator::CalcRhs(const double t) const {
-//   const std::size_t sz = cpos.size();
-//   Eigen::VectorXd res(sz);
-//   for (std::size_t K = 0; K < sz; ++K) {
-//     Eigen::Vector3d u = -forward_flight + WakeVelocity(cpos[K]) -
-//                         MorphingVelocity(cpos_init[K], t);
-//     res(K) = -u.dot(normal[K]);
-//   }
-//   return res;
-// }
+Eigen::VectorXd SimpleSimulator::CalcRhs(const std::vector<Eigen::Vector3d>& cpos,
+    const std::vector<Eigen::Vector3d>& cpos_init,
+                          const std::vector<Eigen::Vector3d>& normal,
+                          const double t) const{
+  Eigen::VectorXd res(cpos.size());
+  for (auto index : wing_gamma_.list_index()) {
+    std::size_t K, n, i, j;
+    std::tie(K, n, i, j) = index;
+    const Eigen::Vector3d Uw = WakeVelocity(cpos[K]);
+    const Eigen::Vector3d Uls = morphings_[n].Velocity(cpos_init[K], t);
+
+    // local velocity at panel K other than that induced by bound vortices
+    Eigen::Vector3d u =  Uw - (Uls + forward_flight_);
+    res(K) = -u.dot(normal[K]);
+  }
+  return res;
+}
 
 void SimpleSimulator::AddWing(const Morphing& morphing, const double chord,
                               const double span, const std::size_t rows,
@@ -196,6 +203,7 @@ void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
   Shed(step);
   
   const auto cpos = CollocationPoints(wing_pos_);
+  const auto cpos_init = CollocationPoints(wing_pos_init_);
   const auto normal = Normals(wing_pos_);
 
   if (result_path_.size()) OutputPanels(step, dt);

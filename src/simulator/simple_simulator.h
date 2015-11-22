@@ -60,6 +60,7 @@ class SimpleSimulator {
   Eigen::MatrixXd CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
                              const std::vector<Eigen::Vector3d>& normal) const;
   Eigen::VectorXd CalcRhs(const std::vector<Eigen::Vector3d>& cpos,
+    const std::vector<Eigen::Vector3d>& cpos_init,
                           const std::vector<Eigen::Vector3d>& normal,
                           const double t) const;
   void Shed(const std::size_t step);
