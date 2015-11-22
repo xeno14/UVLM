@@ -100,9 +100,14 @@ Eigen::VectorXd SimpleSimulator::CalcRhs(const std::vector<Eigen::Vector3d>& cpo
                           const std::vector<Eigen::Vector3d>& normal,
                           const double t) const{
   Eigen::VectorXd res(cpos.size());
-  for (auto index : wing_gamma_.list_index()) {
+  auto indices = wing_gamma_.list_index();
+
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (std::size_t _=0; _<indices.size(); _++) {
     std::size_t K, n, i, j;
-    std::tie(K, n, i, j) = index;
+    std::tie(K, n, i, j) = indices[_];
     const Eigen::Vector3d Uw = WakeVelocity(cpos[K]);
     const Eigen::Vector3d Uls = morphings_[n].Velocity(cpos_init[K], t);
 
