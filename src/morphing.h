@@ -36,6 +36,12 @@ class Morphing {
   void Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& x0,
                const double t) const;
 
+  Eigen::Vector3d Perfome(const Eigen::Vector3d& x0, const double t) const {
+    Eigen::Vector3d res;
+    Perfome(&res, x0, t);
+    return res;
+  }
+
   /** @brief 変形速度
    *
    *  変形を行い、数値微分（中心差分）をして速度とする。

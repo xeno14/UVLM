@@ -5,6 +5,8 @@
 
 #include "simple_simulator.h"
 
+#include <glog/logging.h>
+
 namespace UVLM {
 namespace simulator {
 
@@ -38,6 +40,22 @@ std::vector<Eigen::Vector3d> Normals(
     }
   }
   return res;
+}
+
+void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
+  const double t = step * dt;
+
+  std::copy(wing_gamma.begin(), wing_gamma.end(), wing_gamma_prev.begin());
+  
+  LOG(INFO) << "Morphing";
+  CHECK(wing_pos.size() == wing_pos_init.size());
+  for (std::size_t n = 0; n < wing_pos.num(); n++) {
+    std::transform(wing_pos_init.sheet_begin(n), wing_pos_init.sheet_end(n),
+                   wing_pos.sheet_begin(n),
+                   [t, n, this](const Eigen::Vector3d& x0) {
+                     return this->morphings_[n].Perfome(x0, t);
+                   });
+  }
 }
 
 }  // namespace simulator

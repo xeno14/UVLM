@@ -7,6 +7,7 @@
 #include "../../proto/uvlm.pb.h"
 #include "../morphing.h"
 #include "../multiple_sheet/multiple_sheet.h"
+#include "../calc_load/joukowski.h"
 
 using multiple_sheet::MultipleSheet;
 
@@ -44,6 +45,7 @@ class SimpleSimulator {
   MultipleSheet<double> wing_gamma_prev;
   MultipleSheet<double> wake_gamma;
   Eigen::Vector3d forward_flight_;
+  std::vector<Morphing> morphings_;
 
   template <class Range1, class Range2>
   Eigen::MatrixXd CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
