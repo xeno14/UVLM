@@ -62,6 +62,8 @@ class SimpleSimulator {
   Eigen::VectorXd CalcRhs(const std::vector<Eigen::Vector3d>& cpos,
                           const std::vector<Eigen::Vector3d>& normal,
                           const double t) const;
+  void Shed(const std::size_t step);
+  void Advect(const double dt);
   Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) const;
   Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) const;
   Eigen::Vector3d Velocity(const Eigen::Vector3d& x) const {

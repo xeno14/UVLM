@@ -102,14 +102,49 @@ void SimpleSimulator::BuildWing() {
         83, info.chord, info.span / 2, rows, cols / 2);
     wing_generator.Generate(&half);
     UVLM::wing::WholeWing(&wing, half);
-    LOG(INFO) << "origin " << info.origin.transpose();
     auto points = UVLM::PointsToVector(wing.points());
     std::transform(points.begin(), points.end(),
         points.begin(),
         [origin](const auto& x) { return x + origin; });
     std::copy(points.begin(), points.end(), wing_pos_init_.sheet_begin(n));
-    LOG(INFO) << wing_pos_.sheet_begin(n)->transpose();
     ++n;
+  }
+}
+
+void SimpleSimulator::Shed(const std::size_t step) {
+  std::vector<Eigen::Vector3d> te_pos;
+  std::vector<double> te_gamma;
+  for (std::size_t n = 0; n < wing_pos_.num(); n++) {
+    te_pos.insert(te_pos.end(), wing_pos_.iterator_at(n, wing_pos_.rows() - 1, 0),
+                  wing_pos_.iterator_at(n + 1, 0, 0));
+  }
+  LOG(INFO) << te_pos.size();
+  wake_pos_.prepend_row(te_pos.begin(), te_pos.end());
+  if (step > 1) {
+    for (std::size_t n = 0; n < wing_gamma_.num(); n++) {
+      te_gamma.insert(te_gamma.end(),
+                      wing_gamma_.iterator_at(n, wing_gamma_.rows() - 1, 0),
+                      wing_gamma_.iterator_at(n + 1, 0, 0));
+    }
+    wake_gamma_.prepend_row(te_gamma.begin(), te_gamma.end());
+  }
+}
+
+void SimpleSimulator::Advect(const double dt) {
+  std::vector<Eigen::Vector3d> wake_vel(wake_pos_.size());
+
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (std::size_t i = 0; i < wake_pos_.size(); i++) {
+    // wake_vel[i] = Velocity(wake_pos[i]);
+    wake_vel[i] = -forward_flight_;
+  }
+
+  // for trailing edge
+  std::fill(wake_vel.begin(), wake_vel.end(), -forward_flight_);
+  for (std::size_t i = 0; i < wake_pos_.size(); i++) {
+    wake_pos_[i] += wake_vel[i] * dt;
   }
 }
 
@@ -127,15 +162,23 @@ void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
                      return this->morphings_[n].Perfome(x0, t);
                    });
   }
+  LOG(INFO) << "Shed";
+  Shed(step);
+  LOG(INFO) << "shed done " <<wake_pos_.size()<<" "<<wake_gamma_.size();
   
   const auto cpos = CollocationPoints(wing_pos_);
   const auto normal = Normals(wing_pos_);
 
   if (result_path_.size()) OutputPanels(step, dt);
+
+  LOG(INFO) << "Advect";
+  Advect(dt);
 }
 
 void SimpleSimulator::Run(const std::size_t steps, const double dt) {
   BuildWing();
+  wake_pos_.resize(wing_pos_.num(), 0, wing_pos_.cols());
+  wake_gamma_.resize(wing_gamma_.num(), 0, wing_gamma_.cols());
   for (std::size_t step = 1; step<=steps; step++) {
     MainLoop(step, dt);
   }
@@ -144,18 +187,20 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
 void SimpleSimulator::OutputPanels(const std::size_t step, const double dt) const {
   char filename[256];
   UVLM::proto::Snapshot2 snapshot;
-  // LOG(INFO) << wing_gamma_.num();
-  // LOG(INFO) << wing_pos_.num();
+  LOG(INFO) << wing_pos_.size() <<" "<< wing_gamma_.size();
   for (std::size_t n = 0; n < wing_gamma_.num(); n++) {
     UVLM::output::SimpleAppendSnapshot(
         &snapshot, wing_pos_.sheet_begin(n), wing_pos_.sheet_end(n),
         wing_gamma_.sheet_begin(n), wing_gamma_.sheet_end(n),
         wing_gamma_.cols());
-  }
-  if (wake_gamma_.size()) {
-    UVLM::output::SimpleAppendSnapshot(&snapshot, wake_pos_.begin(),
-                                        wake_pos_.end(), wake_gamma_.begin(),
-                                        wake_gamma_.end(), wake_gamma_.cols());
+    if (wake_gamma_.size()) {
+      LOG(INFO) << wake_pos_.size() << " " << wake_gamma_.size() << " "
+                << wake_gamma_.cols();
+      UVLM::output::SimpleAppendSnapshot(
+          &snapshot, wake_pos_.sheet_begin(n), wake_pos_.sheet_end(n),
+          wake_gamma_.sheet_begin(n), wake_gamma_.sheet_end(n),
+          wake_gamma_.cols());
+    }
   }
 
   // TODO change path
