@@ -57,7 +57,6 @@ class SimpleSimulator {
   std::vector<WingInformation> wing_info_;
   std::string result_path_;
 
-  template <class Range1, class Range2>
   Eigen::MatrixXd CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
                              const std::vector<Eigen::Vector3d>& normal) const;
   Eigen::VectorXd CalcRhs(const std::vector<Eigen::Vector3d>& cpos,

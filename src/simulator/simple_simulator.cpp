@@ -44,6 +44,30 @@ std::vector<Eigen::Vector3d> Normals(
   return res;
 }
 
+Eigen::MatrixXd SimpleSimulator::CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
+                           const std::vector<Eigen::Vector3d>& normal) const {
+  // A_kl
+  Eigen::MatrixXd res(wing_gamma_.size(), wing_gamma_.size());
+  MultipleSheet<double> gamma(wing_gamma_);
+  std::fill(gamma.begin(), gamma.end(), 1);
+
+  // loop for all bound vortices
+  for (auto index_K : wing_gamma_.list_index()) {
+    std::size_t K;
+    std::tie(K, std::ignore, std::ignore, std::ignore) = index_K;
+    const auto& cp = cpos[K];
+    const auto& nl = normal[K];
+
+    for (auto index_L : wing_gamma_.list_index()) {
+      std::size_t L, nn, ii, jj;
+      std::tie(L, nn, ii, jj) = index_L;
+      auto u = UVLM::VORING(cp, wing_pos_, gamma, nn, ii, jj);
+      res(K, L) = u.dot(nl);
+    }
+  }
+  return res;
+}
+
 void SimpleSimulator::AddWing(const Morphing& morphing, const double chord,
                               const double span, const std::size_t rows,
                               const std::size_t cols,
@@ -103,6 +127,10 @@ void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
                      return this->morphings_[n].Perfome(x0, t);
                    });
   }
+  
+  const auto cpos = CollocationPoints(wing_pos_);
+  const auto normal = Normals(wing_pos_);
+
   if (result_path_.size()) OutputPanels(step, dt);
 }
 
