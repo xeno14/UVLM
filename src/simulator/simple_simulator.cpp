@@ -5,6 +5,7 @@
 
 #include "simple_simulator.h"
 #include "../wing/wing.h"
+#include "../output.h"
 
 #include <glog/logging.h>
 
@@ -96,6 +97,33 @@ void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
                      return this->morphings_[n].Perfome(x0, t);
                    });
   }
+  if (result_path_.size()) OutputPanels(step, dt);
+}
+
+void SimpleSimulator::Run(const std::size_t steps, const double dt) {
+  BuildWing();
+  for (std::size_t step = 1; step<=steps; step++) {
+    MainLoop(step, dt);
+  }
+}
+
+void SimpleSimulator::OutputPanels(const std::size_t step, const double dt) const {
+  char filename[256];
+  UVLM::proto::Snapshot2 snapshot;
+  UVLM::output::SimpleAppendSnapshot(&snapshot, wing_pos_.begin(),
+                                      wing_pos_.end(), wing_gamma_.begin(),
+                                      wing_gamma_.end(), wing_gamma_.cols());
+  if (wake_gamma_.size()) {
+    UVLM::output::SimpleAppendSnapshot(&snapshot, wake_pos_.begin(),
+                                        wake_pos_.end(), wake_gamma_.begin(),
+                                        wake_gamma_.end(), wake_gamma_.cols());
+  }
+
+  // TODO change path
+  sprintf(filename, "%s/%08lu", result_path_.c_str(), step);
+  std::ofstream ofs(filename);
+  CHECK(ofs);
+  snapshot.SerializeToOstream(&ofs);
 }
 
 }  // namespace simulator

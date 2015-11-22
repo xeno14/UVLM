@@ -43,6 +43,7 @@ class SimpleSimulator {
   void Run(const std::size_t steps, const double dt);
 
   void set_forward_flight(const Eigen::Vector3d& v) { forward_flight_ = v; }
+  void set_result_path(const std::string& path) { result_path_ = path; }
 
  private:
   MultipleSheet<Eigen::Vector3d> wing_pos_;
@@ -54,6 +55,7 @@ class SimpleSimulator {
   Eigen::Vector3d forward_flight_;
   std::vector<Morphing> morphings_;
   std::vector<WingInformation> wing_info_;
+  std::string result_path_;
 
   template <class Range1, class Range2>
   Eigen::MatrixXd CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
@@ -69,6 +71,7 @@ class SimpleSimulator {
 
   void BuildWing();
   void MainLoop(const std::size_t step, const double dt);
+  void OutputPanels(const std::size_t step, const double dt) const;
 };
 }  // namespace simulator
 }  // namespace UVLM

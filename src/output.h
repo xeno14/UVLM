@@ -8,6 +8,7 @@
 #include "../proto/uvlm.pb.h"
 #include "proto_adaptor.h"
 
+#include <glog/logging.h>
 #include <fstream>
 #include <iterator>
 #include <type_traits>
@@ -29,10 +30,8 @@ void SimpleAppendSnapshot(UVLM::proto::Snapshot2* snapshot,
 
   const std::size_t pos_size = std::distance(pos_first, pos_last);
   const std::size_t gamma_size = std::distance(gamma_first, gamma_last);
-  LOG(INFO) << pos_size << " " << gamma_size;
   CHECK(pos_size == (cols + 1) * (gamma_size / cols + 1));
 
-  LOG(INFO) << std::distance(gamma_first, gamma_last);
   for (std::size_t K = 0; K < gamma_size; ++K) {
     auto gamma = gamma_first + K;
     std::size_t i = K / cols;
