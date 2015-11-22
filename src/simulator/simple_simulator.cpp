@@ -174,8 +174,7 @@ void SimpleSimulator::Advect(const double dt) {
 #pragma omp parallel for
 #endif
   for (std::size_t i = 0; i < wake_pos_.size(); i++) {
-    // wake_vel[i] = Velocity(wake_pos[i]);
-    wake_vel[i] = -forward_flight_;
+    wake_vel[i] = Velocity(wake_pos_[i]);
   }
 
   // for trailing edge
@@ -205,6 +204,15 @@ void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
   const auto cpos = CollocationPoints(wing_pos_);
   const auto cpos_init = CollocationPoints(wing_pos_init_);
   const auto normal = Normals(wing_pos_);
+
+  // solve linear
+  LOG(INFO) << "Linear";
+  auto A = CalcMatrix(cpos, normal);
+  auto rhs = CalcRhs(cpos, cpos_init, normal, t);
+  Eigen::FullPivLU<Eigen::MatrixXd> solver(A);
+  Eigen::VectorXd gamma_v = solver.solve(rhs);
+  for (std::size_t K = 0; K < wing_gamma_.size(); ++K)
+    wing_gamma_[K] = gamma_v(K);
 
   if (result_path_.size()) OutputPanels(step, dt);
 
