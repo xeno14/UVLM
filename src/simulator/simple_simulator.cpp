@@ -229,6 +229,7 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
   wake_pos_.resize(wing_pos_.num(), 0, wing_pos_.cols());
   wake_gamma_.resize(wing_gamma_.num(), 0, wing_gamma_.cols());
   for (std::size_t step = 1; step<=steps; step++) {
+    LOG(INFO) << "step=" << step;
     MainLoop(step, dt);
   }
 }
