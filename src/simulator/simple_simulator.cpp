@@ -267,7 +267,7 @@ void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
 
   // output
   if (result_path_.size()) OutputPanels(step, dt);
-  if (*ofs_load_) {
+  if (ofs_load_.get() != nullptr && *ofs_load_) {
     LOG(INFO) << "Load";
     CalcLoad(normal, t, dt);
   }
@@ -282,7 +282,7 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
   wake_gamma_.resize(wing_gamma_.num(), 0, wing_gamma_.cols());
 
   // header for load output
-  if (*ofs_load_) {
+  if (ofs_load_.get() != nullptr && *ofs_load_) {
     std::vector<std::string> names {"t"};
     for (std::size_t n=0; n<wing_pos_.num(); n++) {
       names.emplace_back("CD" + std::to_string(n));
