@@ -180,3 +180,7 @@ TEST_F(VortexContainerTest, CopyContainers) {
     EXPECT_DOUBLE_EQ(containers[i].span(), copied[i].span());
   }
 }
+
+TEST_F(VortexContainerTest, Grad) {
+  
+}

@@ -1,6 +1,6 @@
 /**
  * @file proto_adaptor.h
- * @brief Add description here
+ * @brief Adaptors from proto to UVLM classes
  */
 #pragma once
 
@@ -11,10 +11,12 @@
 
 namespace UVLM {
 
+/** @brief proto::Point to Eigen::Vector3d */
 inline Eigen::Vector3d PointToVector3d(const proto::Point& point) {
   return Eigen::Vector3d(point.x(), point.y(), point.z());
 }
 
+/** @brief Eigen::Vector3d to proto::Point */
 inline proto::Point Vector3dToPoint(const Eigen::Vector3d& vec) {
   proto::Point res;
   res.set_x(vec.x());
@@ -50,6 +52,14 @@ inline UVLM::VortexRing ProtoToVortexRing(const proto::VortexRing& v) {
   return res;
 }
 
+template <class Range>
+inline std::vector<Eigen::Vector3d> PointsToVector(const Range& points) {
+  std::vector<Eigen::Vector3d> res;
+  std::transform(points.begin(), points.end(), std::back_inserter(res),
+                 [](const auto& p) { return UVLM::PointToVector3d(p); });
+  return res;
+}
+
 inline void UVLMVortexRingToBird(proto::FlyingWing* bird,
                                  const UVLMVortexRing& rings) {
   bird->Clear();
@@ -79,6 +89,24 @@ inline auto Snapshot2ToContainers(
                              shape.chord(), shape.span());
   }
   return vortices;
+}
+
+inline void Snapshot2ToMorphingVelocities(
+    std::vector<Eigen::Vector3d>* centers,
+    std::vector<std::vector<Eigen::Vector3d>>* v_nodes,
+    std::vector<Eigen::Vector3d>* freestreams,
+    const proto::Snapshot2& snapshot2) {
+  centers->clear();
+  v_nodes->clear();
+  for (const auto& mv : snapshot2.morphing_velocities()) {
+    centers->emplace_back(PointToVector3d(mv.center()));
+    freestreams->emplace_back(PointToVector3d(mv.freestream()));
+    std::vector<Eigen::Vector3d> a;
+    for (const auto& vn : mv.nodes()) {
+      a.emplace_back(PointToVector3d(vn));
+    }
+    v_nodes->emplace_back(a);
+  }
 }
 
 }  // namespace UVLM

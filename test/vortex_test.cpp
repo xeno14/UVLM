@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "vortex.h"
 #include "testutil.h"
+#include "vortex.h"
 
 using UVLM::VortexRing;
 
@@ -32,14 +32,20 @@ class BiotSavartLawTest : public ::testing::Test {
 };
 
 TEST_F(BiotSavartLawTest, infinite_length) {
-  // When the line segment is sufficiently long, strength equals to 1/4pi
-  a << 0, 0, -100000;
-  b << 0, 0,  100000;
+  // Sufficiently long line segment induces velocity of G /2 pi r
+  a << 0, 0, -1e10;
+  b << 0, 0,  1e10;
   c << 1, 0, 0;
   UVLM::BiotSavartLaw(&result, a, b, c);
-  EXPECT_NEAR(0, result.x(), EPS);
-  EXPECT_NEAR(1./2./M_PI, result.y(), EPS);
-  EXPECT_NEAR(0, result.z(), EPS);
+  EXPECT_VECTOR3D_NEAR(0, 1./2./M_PI, 0, result, EPS);
+
+  c << 2, 0, 0;
+  UVLM::BiotSavartLaw(&result, a, b, c);
+  EXPECT_VECTOR3D_NEAR(0, 1./4./M_PI, 0, result, EPS);
+
+  c << 8, 0, 0;
+  UVLM::BiotSavartLaw(&result, a, b, c);
+  EXPECT_VECTOR3D_NEAR(0, 1./16./M_PI, 0, result, EPS);
 }
 
 TEST_F(BiotSavartLawTest, finite_length) {
@@ -80,15 +86,6 @@ class VortexRingTest : public ::testing::Test {
   virtual void SetUp() {}
   virtual void TearDown() { ring.Clear(); }
   UVLM::VortexRing ring;
-
-  UVLM::VortexRing GetSquareRing(double l) {
-    UVLM::VortexRing res;
-    res.PushNode(Vector3d(0, 0, 0))
-       .PushNode(Vector3d(l, 0, 0))
-       .PushNode(Vector3d(l, l, 0))
-       .PushNode(Vector3d(0, l, 0));
-    return res;
-  }
 };
 
 TEST_F(VortexRingTest, Assemble) {
@@ -138,10 +135,35 @@ TEST_F(VortexRingTest, Normal) {
   EXPECT_VECTOR3D_EQ(0, 0, 1, n);
 }
 
+TEST_F(VortexRingTest, Normal_lean) {
+  VortexRing v;
+  v.PushNode(Vector3d(0, 0, 0))   // 0
+   .PushNode(Vector3d(1, 0, 1))   // 1
+   .PushNode(Vector3d(1, 1, 1))   // 2
+   .PushNode(Vector3d(0, 1, 0));  // 3
+  EXPECT_VECTOR3D_EQ(-M_SQRT1_2, 0, M_SQRT1_2, v.Normal());
+}
+
 TEST_F(VortexRingTest, Tangent) {
   auto v = GetSquareRing(20000);
   auto t = v.Tangent();
   EXPECT_VECTOR3D_EQ(1, 0, 0, t);
+}
+
+TEST_F(VortexRingTest, Tangent_lean) {
+  VortexRing v;
+  v.PushNode(Vector3d(0, 0, 0))   // 0
+   .PushNode(Vector3d(1, 0, 0.5))   // 1
+   .PushNode(Vector3d(1, 1, 0.5))   // 2
+   .PushNode(Vector3d(0, 1, 0));  // 3
+  const double SQRT_5 = sqrt(5);
+  EXPECT_VECTOR3D_EQ(2./SQRT_5, 0, 1./SQRT_5, v.Tangent());
+}
+
+TEST_F(VortexRingTest, Tangent2) {
+  auto v = GetSquareRing(20000);
+  auto t = v.Tangent2();
+  EXPECT_VECTOR3D_EQ(0, 1, 0, t);
 }
 
 TEST_F(VortexRingTest, AngleOfAttack) {
@@ -167,6 +189,13 @@ TEST_F(VortexRingTest, ForEach) {
   EXPECT_VECTOR3D_EQ(1, 1, 0, ends[2]);
   EXPECT_VECTOR3D_EQ(0, 0, 0, starts[3]);
   EXPECT_VECTOR3D_EQ(0, 1, 0, ends[3]);
+}
+
+TEST_F(VortexRingTest, Impulse) {
+  auto v = GetSquareRing(2);
+  v.set_gamma(10);
+  auto i = v.Impulse();
+  EXPECT_VECTOR3D_EQ(0, 0, -4*10, i);
 }
 
 class ChordSpanTest : public ::testing::Test {
@@ -196,4 +225,8 @@ TEST_F(ChordSpanTest, c) {
 
 TEST_F(ChordSpanTest, b) {
   EXPECT_DOUBLE_EQ(2, v.CalcB());
+}
+
+TEST_F(ChordSpanTest, area) {
+  EXPECT_NEAR(2.05, v.Area(), EPS);
 }

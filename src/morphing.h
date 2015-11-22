@@ -29,23 +29,36 @@ class Morphing {
   ~Morphing() = default;
 
   /** @brief 変形を行う
-   *  @param x  変形後の位置
-   *  @param x0 reference frameでの座標
-   *  @param t  時刻
+   *  @param x[out]  変形後の位置
+   *  @param x0[in] reference frameでの座標
+   *  @param t[in]  時刻
    */
   void Perfome(Eigen::Vector3d* x, const Eigen::Vector3d& x0,
                const double t) const;
 
+  Eigen::Vector3d Perfome(const Eigen::Vector3d& x0, const double t) const {
+    Eigen::Vector3d res;
+    Perfome(&res, x0, t);
+    return res;
+  }
+
   /** @brief 変形速度
    *
    *  変形を行い、数値微分（中心差分）をして速度とする。
-   *  @param v 変形速度
-   *  @param x0 reference frameでの位置
-   *  @param t 時刻
+   *  @param v[out] 変形速度
+   *  @param x0[in] reference frameでの位置
+   *  @param t[in] 時刻
    */
   void Velocity(Eigen::Vector3d* v,
                 const Eigen::Vector3d& x0, const double t,
                 const double dt = 1e-6) const;
+
+  Eigen::Vector3d Velocity(const Eigen::Vector3d& x0, const double t,
+                           const double dt = 1e-6) const {
+    Eigen::Vector3d res;
+    Velocity(&res, x0, t, dt);
+    return res;
+  }
 
   /** @brief 回転行列を用意する
    *  
@@ -63,8 +76,13 @@ class Morphing {
   void set_bend(std::function<double(const Eigen::Vector3d&, double)> f) {
     bend_ = f;
   }
+
+  /** @brief Set position of the root of wing */
   void set_origin(const Eigen::Vector3d& origin) { origin_ = origin; }
 
+  /**
+   * @brief Clear functions that do nothing
+   */
   void Clear();
 
  private:

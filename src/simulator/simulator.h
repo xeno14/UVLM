@@ -5,9 +5,9 @@
  */
 #pragma once
 
-#include "../proto/uvlm.pb.h"
-#include "vortex.h"
-#include "morphing.h"
+#include "../../proto/uvlm.pb.h"
+#include "../vortex.h"
+#include "../morphing.h"
 
 namespace UVLM {
 namespace simulator {

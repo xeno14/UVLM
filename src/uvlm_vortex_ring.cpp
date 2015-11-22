@@ -21,6 +21,17 @@ void InducedVelocityByVortices(Eigen::Vector3d* const result,
   }
 }
 
+void InducedVelocityByChordwiseVortices(Eigen::Vector3d* const result,
+                               const Eigen::Vector3d& pos,
+                               const std::vector<VortexRing>& vortices) {
+  *result = Eigen::Vector3d::Zero();
+  Eigen::Vector3d tmp;
+  for (const auto& vortex : vortices) {
+    vortex.ChordwiseBiotSavartLaw(&tmp, pos);
+    *result += tmp;
+  }
+}
+
 }  // namespace internal
 
 void UVLMVortexRing::InitWing(const std::vector<Eigen::Vector3d>& pos,
