@@ -51,7 +51,7 @@ void SimpleSimulator::set_load_path(const std::string& load_path) {
   }
 }
 
-Eigen::Vector3d SimpleSimulator::BoundVelocity(const Eigen::Vector3d& x) const{
+Eigen::Vector3d SimpleSimulator::BoundVelocity(const Eigen::Vector3d& x) const {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   for (auto index : wing_gamma_.list_index()) {
     std::size_t n, i, j;
@@ -71,17 +71,20 @@ Eigen::Vector3d SimpleSimulator::WakeVelocity(const Eigen::Vector3d& x) const {
   return res;
 }
 
-Eigen::MatrixXd SimpleSimulator::CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
-                           const std::vector<Eigen::Vector3d>& normal) const {
+Eigen::MatrixXd SimpleSimulator::CalcMatrix(
+    const std::vector<Eigen::Vector3d>& cpos,
+    const std::vector<Eigen::Vector3d>& normal) const {
   // A_kl
   Eigen::MatrixXd res(wing_gamma_.size(), wing_gamma_.size());
   MultipleSheet<double> gamma(wing_gamma_);
   std::fill(gamma.begin(), gamma.end(), 1);
 
   // loop for all bound vortices
-  for (auto index_K : wing_gamma_.list_index()) {
-    std::size_t K;
-    std::tie(K, std::ignore, std::ignore, std::ignore) = index_K;
+  const auto indices = wing_gamma_.list_index();
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (std::size_t K = 0; K < indices.size(); K++) {
     const auto& cp = cpos[K];
     const auto& nl = normal[K];
 
@@ -95,24 +98,24 @@ Eigen::MatrixXd SimpleSimulator::CalcMatrix(const std::vector<Eigen::Vector3d>& 
   return res;
 }
 
-Eigen::VectorXd SimpleSimulator::CalcRhs(const std::vector<Eigen::Vector3d>& cpos,
+Eigen::VectorXd SimpleSimulator::CalcRhs(
+    const std::vector<Eigen::Vector3d>& cpos,
     const std::vector<Eigen::Vector3d>& cpos_init,
-                          const std::vector<Eigen::Vector3d>& normal,
-                          const double t) const{
+    const std::vector<Eigen::Vector3d>& normal, const double t) const {
   Eigen::VectorXd res(cpos.size());
-  auto indices = wing_gamma_.list_index();
+  const auto indices = wing_gamma_.list_index();
 
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (std::size_t _=0; _<indices.size(); _++) {
+  for (std::size_t _ = 0; _ < indices.size(); _++) {
     std::size_t K, n, i, j;
     std::tie(K, n, i, j) = indices[_];
     const Eigen::Vector3d Uw = WakeVelocity(cpos[K]);
     const Eigen::Vector3d Uls = morphings_[n].Velocity(cpos_init[K], t);
 
     // local velocity at panel K other than that induced by bound vortices
-    Eigen::Vector3d u =  Uw - (Uls + forward_flight_);
+    Eigen::Vector3d u = Uw - (Uls + forward_flight_);
     res(K) = -u.dot(normal[K]);
   }
   return res;
@@ -153,9 +156,8 @@ void SimpleSimulator::BuildWing() {
     wing_generator.Generate(&half);
     UVLM::wing::WholeWing(&wing, half);
     auto points = UVLM::PointsToVector(wing.points());
-    std::transform(points.begin(), points.end(),
-        points.begin(),
-        [origin](const auto& x) { return x + origin; });
+    std::transform(points.begin(), points.end(), points.begin(),
+                   [origin](const auto& x) { return x + origin; });
     std::copy(points.begin(), points.end(), wing_pos_init_.sheet_begin(n));
     ++n;
   }
@@ -165,7 +167,8 @@ void SimpleSimulator::Shed(const std::size_t step) {
   std::vector<Eigen::Vector3d> te_pos;
   std::vector<double> te_gamma;
   for (std::size_t n = 0; n < wing_pos_.num(); n++) {
-    te_pos.insert(te_pos.end(), wing_pos_.iterator_at(n, wing_pos_.rows() - 1, 0),
+    te_pos.insert(te_pos.end(),
+                  wing_pos_.iterator_at(n, wing_pos_.rows() - 1, 0),
                   wing_pos_.iterator_at(n + 1, 0, 0));
   }
   wake_pos_.prepend_row(te_pos.begin(), te_pos.end());
@@ -192,8 +195,8 @@ void SimpleSimulator::Advect(const double dt) {
 
   // for trailing edge
   for (std::size_t n = 0; n < wake_vel.num(); n++) {
-    std::fill(wake_vel.iterator_at(n, 0, 0),
-        wake_vel.iterator_at(n, 1, 0), -forward_flight_);
+    std::fill(wake_vel.iterator_at(n, 0, 0), wake_vel.iterator_at(n, 1, 0),
+              -forward_flight_);
   }
   for (std::size_t i = 0; i < wake_pos_.size(); i++) {
     wake_pos_[i] += wake_vel[i] * dt;
@@ -244,7 +247,7 @@ void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
   const double t = step * dt;
 
   std::copy(wing_gamma_.begin(), wing_gamma_.end(), wing_gamma_prev_.begin());
-  
+
   LOG(INFO) << "Morphing";
   CHECK(wing_pos_.size() == wing_pos_init_.size());
   for (std::size_t n = 0; n < wing_pos_.num(); n++) {
@@ -256,7 +259,7 @@ void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
   }
   LOG(INFO) << "Shed";
   Shed(step);
-  
+
   const auto cpos = CollocationPoints(wing_pos_);
   const auto cpos_init = CollocationPoints(wing_pos_init_);
   const auto normal = Normals(wing_pos_);
@@ -288,8 +291,8 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
 
   // header for load output
   if (ofs_load_.get() != nullptr && *ofs_load_) {
-    std::vector<std::string> names {"t"};
-    for (std::size_t n=0; n<wing_pos_.num(); n++) {
+    std::vector<std::string> names{"t"};
+    for (std::size_t n = 0; n < wing_pos_.num(); n++) {
       names.emplace_back("CD" + std::to_string(n));
       names.emplace_back("CL" + std::to_string(n));
     }
@@ -297,13 +300,14 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
                << std::endl;
   }
 
-  for (std::size_t step = 1; step<=steps; step++) {
+  for (std::size_t step = 1; step <= steps; step++) {
     LOG(INFO) << "step=" << step;
     MainLoop(step, dt);
   }
 }
 
-void SimpleSimulator::OutputPanels(const std::size_t step, const double dt) const {
+void SimpleSimulator::OutputPanels(const std::size_t step,
+                                   const double dt) const {
   char filename[256];
   UVLM::proto::Snapshot2 snapshot;
   for (std::size_t n = 0; n < wing_gamma_.num(); n++) {
