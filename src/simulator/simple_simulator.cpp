@@ -168,7 +168,8 @@ void SimpleSimulator::Shed(const std::size_t step) {
 }
 
 void SimpleSimulator::Advect(const double dt) {
-  std::vector<Eigen::Vector3d> wake_vel(wake_pos_.size());
+  MultipleSheet<Eigen::Vector3d> wake_vel(wake_pos_.num(), wake_pos_.rows(),
+                                          wake_pos_.cols());
 
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -178,7 +179,10 @@ void SimpleSimulator::Advect(const double dt) {
   }
 
   // for trailing edge
-  std::fill(wake_vel.begin(), wake_vel.end(), -forward_flight_);
+  for (std::size_t n = 0; n < wake_vel.num(); n++) {
+    std::fill(wake_vel.iterator_at(n, 0, 0),
+        wake_vel.iterator_at(n, 1, 0), -forward_flight_);
+  }
   for (std::size_t i = 0; i < wake_pos_.size(); i++) {
     wake_pos_[i] += wake_vel[i] * dt;
   }
