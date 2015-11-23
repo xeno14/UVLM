@@ -3,9 +3,9 @@
  * @brief Add description here
  */
 
-#include "simple_simulator.h"
-#include "../wing/wing.h"
 #include "../output.h"
+#include "../wing/wing.h"
+#include "simple_simulator.h"
 
 #include <glog/logging.h>
 
@@ -300,6 +300,12 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
                << std::endl;
   }
 
+  // writer
+  std::ofstream result_ofs;
+  CHECK((result_ofs.open(result_path_, std::ios::binary), result_ofs));
+  recordio::RecordWriter writer(&result_ofs);
+  writer_.reset(new recordio::RecordWriter(&result_ofs));
+
   for (std::size_t step = 1; step <= steps; step++) {
     LOG(INFO) << "step=" << step;
     MainLoop(step, dt);
@@ -308,7 +314,6 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
 
 void SimpleSimulator::OutputPanels(const std::size_t step,
                                    const double dt) const {
-  char filename[256];
   UVLM::proto::Snapshot2 snapshot;
   for (std::size_t n = 0; n < wing_gamma_.num(); n++) {
     UVLM::output::SimpleAppendSnapshot(
@@ -322,12 +327,7 @@ void SimpleSimulator::OutputPanels(const std::size_t step,
           wake_gamma_.cols());
     }
   }
-
-  // TODO change path
-  sprintf(filename, "%s/%08lu", result_path_.c_str(), step);
-  std::ofstream ofs(filename);
-  CHECK(ofs);
-  snapshot.SerializeToOstream(&ofs);
+  writer_->WriteProtocolMessage(snapshot);
 }
 
 }  // namespace simulator

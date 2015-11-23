@@ -7,9 +7,10 @@
 #include <fstream>
 
 #include "../../proto/uvlm.pb.h"
+#include "../calc_load/joukowski.h"
 #include "../morphing.h"
 #include "../multiple_sheet/multiple_sheet.h"
-#include "../calc_load/joukowski.h"
+#include "../recordio/recordio.h"
 
 using multiple_sheet::MultipleSheet;
 
@@ -62,6 +63,7 @@ class SimpleSimulator {
   std::vector<WingInformation> wing_info_;
   std::string result_path_;
   std::unique_ptr<std::ofstream> ofs_load_;
+  std::unique_ptr<recordio::RecordWriter> writer_;
 
   Eigen::MatrixXd CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
                              const std::vector<Eigen::Vector3d>& normal) const;

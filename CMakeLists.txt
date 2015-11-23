@@ -93,7 +93,7 @@ add_library(uvlm
             src/calc_load/joukowski.cpp
             src/simulator/simulator.cpp
             src/simulator/simple_simulator.cpp)
-target_link_libraries(uvlm morphing protobuf glog)
+target_link_libraries(uvlm morphing protobuf glog recordio)
 
 
 add_library(wing
