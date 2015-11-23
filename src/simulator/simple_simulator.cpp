@@ -303,7 +303,6 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
   // writer
   std::ofstream result_ofs;
   CHECK((result_ofs.open(result_path_, std::ios::binary), result_ofs));
-  recordio::RecordWriter writer(&result_ofs);
   writer_.reset(new recordio::RecordWriter(&result_ofs));
 
   for (std::size_t step = 1; step <= steps; step++) {
