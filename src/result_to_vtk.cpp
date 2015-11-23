@@ -15,8 +15,9 @@
 #include <iostream>
 #include <vector>
 
-DEFINE_string(input, "", "input files with format. e.g. \%08d.dat");
+DEFINE_string(input, "", "glob pettern or recordio");
 DEFINE_string(output, "", "output destination");
+DEFINE_string(prefix, "vtk", "prefix of output vtk files");
 
 namespace {
 
@@ -32,9 +33,11 @@ void Writer(const std::string& input, const std::string& output) {
   UVLM::vtk::WriteSnapshot2(out, snapshot);
 }
 
-std::string OutputPath(const std::string& output, const std::size_t index) {
+std::string OutputPath(const std::string& output_path,
+                       const std::string& prefix,
+                       const std::size_t index) {
   char path[256];
-  sprintf(path, "%s/vtk%08lu.vtk", output.c_str(), index);
+  sprintf(path, "%s/%s%08lu.vtk", output_path.c_str(), prefix.c_str(), index);
   return std::string(path);
 }
 
@@ -43,7 +46,7 @@ void GlobWriter(const std::string& input_path, const std::string& output_path) {
 
   int _ = glob(input_path.c_str(), 0, NULL, &globbuf);
   for (uint32_t i = 0; i < globbuf.gl_pathc; i++) {
-    Writer(globbuf.gl_pathv[i], OutputPath(output_path, i));
+    Writer(globbuf.gl_pathv[i], OutputPath(output_path, FLAGS_prefix, i));
   }
   globfree(&globbuf);
 }
