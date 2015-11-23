@@ -17,6 +17,7 @@
 
 DEFINE_string(input, "", "glob pettern or recordio");
 DEFINE_string(output, "", "output destination");
+DEFINE_bool(recordio, false, "use recordio instead of glob");
 DEFINE_string(prefix, "vtk", "prefix of output vtk files");
 
 namespace {
@@ -24,12 +25,15 @@ namespace {
 void Writer(const std::string& input, const std::string& output) {
   LOG(INFO) << input << " --> " << output;
 
-  std::ifstream in(input, std::ios::binary);
-  CHECK(in);
+  std::ifstream in;
+  CHECK((in.open(input, std::ios::binary), in));
+
   UVLM::proto::Snapshot2 snapshot;
-  snapshot.ParseFromIstream(&in);
-  FILE* out = fopen(output.c_str(), "w");
-  CHECK(out);
+  CHECK(snapshot.ParseFromIstream(&in)) << "failed to parse " << input;
+
+  FILE* out;
+  CHECK(out = fopen(output.c_str(), "w"));
+
   UVLM::vtk::WriteSnapshot2(out, snapshot);
 }
 
