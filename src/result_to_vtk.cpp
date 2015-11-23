@@ -5,6 +5,7 @@
 
 #include "util.h"
 #include "vtk/vtk.h"
+#include "recordio/recordio.h"
 
 #include <cstdio>
 #include <chrono>
@@ -22,15 +23,7 @@ DEFINE_string(prefix, "vtk", "prefix of output vtk files");
 
 namespace {
 
-void Writer(const std::string& input, const std::string& output) {
-  LOG(INFO) << input << " --> " << output;
-
-  std::ifstream in;
-  CHECK((in.open(input, std::ios::binary), in));
-
-  UVLM::proto::Snapshot2 snapshot;
-  CHECK(snapshot.ParseFromIstream(&in)) << "failed to parse " << input;
-
+void Write(const UVLM::proto::Snapshot2& snapshot, const std::string& output) {
   FILE* out;
   CHECK(out = fopen(output.c_str(), "w"));
 
@@ -38,21 +31,43 @@ void Writer(const std::string& input, const std::string& output) {
 }
 
 std::string OutputPath(const std::string& output_path,
-                       const std::string& prefix,
-                       const std::size_t index) {
+                       const std::string& prefix, const std::size_t index) {
   char path[256];
   sprintf(path, "%s/%s%08lu.vtk", output_path.c_str(), prefix.c_str(), index);
   return std::string(path);
 }
 
-void GlobWriter(const std::string& input_path, const std::string& output_path) {
+std::size_t GlobWriter(const std::string& input_path, const std::string& output_path) {
   glob_t globbuf;
 
-  int _ = glob(input_path.c_str(), 0, NULL, &globbuf);
-  for (uint32_t i = 0; i < globbuf.gl_pathc; i++) {
-    Writer(globbuf.gl_pathv[i], OutputPath(output_path, FLAGS_prefix, i));
+  CHECK(glob(input_path.c_str(), 0, NULL, &globbuf) == 0);
+  std::size_t index = 0;
+  for (index = 0; index < globbuf.gl_pathc; index++) {
+    std::ifstream in;
+    CHECK((in.open(globbuf.gl_pathv[index], std::ios::binary), in));
+
+    UVLM::proto::Snapshot2 snapshot;
+    CHECK(snapshot.ParseFromIstream(&in));
+
+    Write(snapshot, OutputPath(output_path, FLAGS_prefix, index));
   }
   globfree(&globbuf);
+  return index;
+}
+
+std::size_t RecordioWriter(const std::string& input_path,
+                    const std::string& output_path) {
+  std::ifstream in;
+  CHECK((in.open(input_path, std::ios::binary), in));
+  recordio::RecordReader reader(&in);
+
+  std::size_t index = 0;
+  UVLM::proto::Snapshot2 snapshot;
+  while (reader.ReadProtocolMessage(&snapshot)) {
+    Write(snapshot, OutputPath(output_path, FLAGS_prefix, index));
+    ++index;
+  }
+  return index;
 }
 
 }  // anonymous namespace
@@ -63,7 +78,13 @@ int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   FLAGS_logtostderr = true;
 
-  GlobWriter(FLAGS_input, FLAGS_output);
+  std::size_t num = 0;
+  if (FLAGS_recordio) {
+    num = RecordioWriter(FLAGS_input, FLAGS_output);
+  } else {
+    num = GlobWriter(FLAGS_input, FLAGS_output);
+  }
+  LOG(INFO) << "write " << num << " files with prefix '" << FLAGS_prefix << "'";
 
   return 0;
 }
