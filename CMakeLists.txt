@@ -108,6 +108,7 @@ enable_gflags(naca00XX)
 target_link_libraries(naca00XX wing)
 
 add_subdirectory(test)
+add_subdirectory(src/recordio)
 
 add_executable(flapping_validation src/validation/flapping_validation.cpp)
 target_link_libraries(flapping_validation uvlm wing protobuf glog yaml-cpp)
