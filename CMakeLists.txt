@@ -77,6 +77,7 @@ target_link_libraries(result_to_gnuplot protobuf)
 
 add_executable(result_to_vtk
                ${PROTO_DIR}/uvlm.pb.cc
+               src/vtk/vtk.cpp
                src/result_to_vtk.cpp)
 enable_gflags(result_to_vtk)
 target_link_libraries(result_to_vtk protobuf)
