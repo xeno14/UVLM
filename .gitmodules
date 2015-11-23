@@ -1,3 +1,6 @@
 [submodule "src/multiple_sheet"]
 	path = src/multiple_sheet
 	url = https://github.com/xeno1991/multiple_sheet
+[submodule "src/recordio"]
+	path = src/recordio
+	url = https://github.com/xeno1991/recordio
