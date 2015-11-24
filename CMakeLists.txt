@@ -121,10 +121,10 @@ target_link_libraries(plunging_validation uvlm wing protobuf glog yaml-cpp)
 add_executable(fixed_plate src/validation/fixed_plate.cpp)
 target_link_libraries(fixed_plate uvlm wing protobuf glog yaml-cpp)
 
-add_executable(steady src/validation/stady_problem_main.cpp)
+add_executable(steady src/validation/steady_problem_main.cpp)
 target_link_libraries(steady uvlm wing protobuf glog yaml-cpp)
 
-add_executable(steady2 src/validation/stady_problem2_main.cpp)
+add_executable(steady2 src/validation/steady_problem2_main.cpp)
 target_link_libraries(steady2 uvlm wing protobuf glog yaml-cpp)
 
 add_executable(unsteady_plate src/validation/unsteady_plate.cpp)
