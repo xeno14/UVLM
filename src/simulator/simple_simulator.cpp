@@ -61,8 +61,9 @@ void SimpleSimulator::set_load_path(const std::string& path) {
   CHECK(*ofs_load_);
 
   // header for load output
+  CHECK(wing_info_.size() > 0) << "call AddWing before set_load_path";
   std::vector<std::string> names{"t"};
-  for (std::size_t n = 0; n < wing_pos_.num(); n++) {
+  for (std::size_t n = 0; n < wing_info_.size(); n++) {
     names.emplace_back("CD" + std::to_string(n));
     names.emplace_back("CL" + std::to_string(n));
   }
@@ -141,17 +142,19 @@ Eigen::VectorXd SimpleSimulator::CalcRhs(
   return res;
 }
 
-void SimpleSimulator::AddWing(const wing::WingGenerator& wing_generator,
-                              const Morphing& morphing, const double chord,
-                              const double span, const std::size_t rows,
-                              const std::size_t cols,
-                              const Eigen::Vector3d& origin) {
+void SimpleSimulator::AddWing(
+    wing::WingGenerator* wing_generator,
+    const Morphing& morphing, const double chord, const double span,
+    const std::size_t rows, const std::size_t cols,
+    const Eigen::Vector3d& origin) {
+  // make sure size of wing is const
   if (wing_info_.size()) {
     CHECK(wing_info_.rbegin()->rows == rows);
     CHECK(wing_info_.rbegin()->cols == cols);
   }
   wing_info_.push_back(
-      WingInformation{wing_generator, morphing, chord, span, rows, cols, origin});
+      WingInformation{std::unique_ptr<wing::WingGenerator>(wing_generator),
+                      morphing, chord, span, rows, cols, origin});
 }
 
 void SimpleSimulator::BuildWing() {
@@ -172,21 +175,14 @@ void SimpleSimulator::BuildWing() {
     morphings_.rbegin()->set_origin(origin);
 
     UVLM::proto::Wing wing, half;
-    // info.generator.Generate(&half, info.chord, info.span / 2, rows, cols / 2);
-    // LOG(INFO) << info.chord << " " << info.span << " " << info.
-    wing::RectGenerator()
-        .Generate(&half, info.chord, info.span / 2, info.rows, info.cols / 2);
+    info.generator->Generate(&half, info.chord, info.span / 2, info.rows,
+                             info.cols / 2);
     UVLM::wing::WholeWing(&wing, half);
     auto points = UVLM::PointsToVector(wing.points());
     std::transform(points.begin(), points.end(), points.begin(),
                    [origin](const auto& x) { return x + origin; });
     std::copy(points.begin(), points.end(), wing_pos_init_.sheet_begin(n));
     ++n;
-  }
-
-  // DEBUG
-  for (auto p : wing_pos_init_) {
-    std::cout << p.transpose() << std::endl;
   }
 }
 
