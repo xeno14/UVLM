@@ -98,6 +98,7 @@ target_link_libraries(uvlm morphing protobuf glog recordio)
 
 add_library(wing
             ${PROTO_DIR}/uvlm.pb.cc
+            src/wing/wing.cpp
             src/wing/rect.cpp
             src/wing/naca4digit.cpp
             src/wing/naca00XX.cpp)
