@@ -27,7 +27,8 @@ const double Q = 1;
 const double OMEGA = 2 * Q * Kg / CHORD;
 
 void AddWing(SimpleSimulator* simulator) {
-  UVLM::wing::NACA4digitGenerator wing_generator(83);
+  // UVLM::wing::NACA4digitGenerator wing_generator(83);
+  UVLM::wing::RectGenerator wing_generator;
   UVLM::Morphing m;
   const double omega = OMEGA;
   m.set_flap([omega](double t) { return M_PI_4 * cos(omega * t); });

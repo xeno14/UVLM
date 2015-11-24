@@ -172,13 +172,21 @@ void SimpleSimulator::BuildWing() {
     morphings_.rbegin()->set_origin(origin);
 
     UVLM::proto::Wing wing, half;
-    info.generator.Generate(&half, info.chord, info.span / 2, rows, cols / 2);
+    // info.generator.Generate(&half, info.chord, info.span / 2, rows, cols / 2);
+    // LOG(INFO) << info.chord << " " << info.span << " " << info.
+    wing::RectGenerator()
+        .Generate(&half, info.chord, info.span / 2, info.rows, info.cols / 2);
     UVLM::wing::WholeWing(&wing, half);
     auto points = UVLM::PointsToVector(wing.points());
     std::transform(points.begin(), points.end(), points.begin(),
                    [origin](const auto& x) { return x + origin; });
     std::copy(points.begin(), points.end(), wing_pos_init_.sheet_begin(n));
     ++n;
+  }
+
+  // DEBUG
+  for (auto p : wing_pos_init_) {
+    std::cout << p.transpose() << std::endl;
   }
 }
 
