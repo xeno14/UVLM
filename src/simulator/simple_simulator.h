@@ -18,6 +18,7 @@ namespace UVLM {
 namespace simulator {
 
 struct WingInformation {
+  std::unique_ptr<wing::WingGenerator> generator;
   Morphing morphing;
   double chord, span;
   std::size_t rows, cols;
@@ -41,7 +42,8 @@ class SimpleSimulator {
    * @param chor
    * @todo specify wing generator
    */
-  void AddWing(const Morphing& morphing, const double chord, const double span,
+  void AddWing(wing::WingGenerator* wing_generator,
+               const Morphing& morphing, const double chord, const double span,
                const std::size_t rows, const std::size_t cols,
                const Eigen::Vector3d& origin);
 
@@ -61,6 +63,7 @@ class SimpleSimulator {
   Eigen::Vector3d forward_flight_;
   std::vector<Morphing> morphings_;
   std::vector<WingInformation> wing_info_;
+  std::unique_ptr<std::ofstream> ofs_result_;
   std::unique_ptr<std::ofstream> ofs_load_;
   std::unique_ptr<recordio::RecordWriter> writer_;
 
@@ -83,6 +86,7 @@ class SimpleSimulator {
   void BuildWing();
   void MainLoop(const std::size_t step, const double dt);
   void OutputPanels(const std::size_t step, const double dt) const;
+  void PrepareOutputLoad();
 };
 }  // namespace simulator
 }  // namespace UVLM

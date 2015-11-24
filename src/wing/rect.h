@@ -27,10 +27,11 @@ inline void TransformChebyshev(std::vector<double>* result, std::size_t N,
 
 class RectGenerator : public WingGenerator {
  public:
-  RectGenerator(double chord, double span, std::size_t rows, std::size_t cols)
-      : WingGenerator(chord, span, rows, cols) {}
+  RectGenerator() : WingGenerator() {}
   virtual ~RectGenerator() = default;
-  virtual void Generate(UVLM::proto::Wing* wing) override;
+  virtual void Generate(UVLM::proto::Wing* wing, const double chord,
+                        const double span, const std::size_t rows,
+                        const std::size_t cols) const override;
 };
 
 }  // namespace wing

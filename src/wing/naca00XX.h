@@ -20,13 +20,15 @@ double NACA00XX(double x, double c, int xx);
 
 class NACA00XXGenerator : public RectGenerator {
  public:
-  NACA00XXGenerator(int digit, double chord, double span, std::size_t rows,
-                    std::size_t cols)
-      : RectGenerator(chord, span, rows, cols),
+  NACA00XXGenerator(int digit)
+      : RectGenerator(),
         digit_(digit),
         verbose_(false) {}
   virtual ~NACA00XXGenerator() = default;
-  virtual void Generate(UVLM::proto::Wing* wing) override;
+  virtual void Generate(UVLM::proto::Wing* wing,
+                        const double chord, const double span,
+                        const std::size_t rows,
+                        const std::size_t cols) const override;
   void set_verbose(bool flag) { verbose_ = flag; }
 
  private:

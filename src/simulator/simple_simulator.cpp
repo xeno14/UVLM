@@ -48,26 +48,16 @@ std::vector<Eigen::Vector3d> Normals(
 void SimpleSimulator::set_result_path(const std::string& path) {
   if (path.size() == 0) return;
 
-  std::ofstream result_ofs;
-  CHECK((result_ofs.open(path, std::ios::binary), result_ofs));
-  writer_.reset(new recordio::RecordWriter(&result_ofs));
+
+  CHECK((ofs_result_.reset(new std::ofstream(path)), *ofs_result_));
+  writer_.reset(new recordio::RecordWriter(ofs_result_.get()));
 }
 
 
 void SimpleSimulator::set_load_path(const std::string& path) {
   if (path.size() == 0) return;
 
-  ofs_load_.reset(new std::ofstream(path));
-  CHECK(*ofs_load_);
-
-  // header for load output
-  std::vector<std::string> names{"t"};
-  for (std::size_t n = 0; n < wing_pos_.num(); n++) {
-    names.emplace_back("CD" + std::to_string(n));
-    names.emplace_back("CL" + std::to_string(n));
-  }
-  *ofs_load_ << UVLM::util::join("\t", names.begin(), names.end())
-             << std::endl;
+  CHECK((ofs_load_.reset(new std::ofstream(path)), *ofs_load_));
 }
 
 
@@ -141,16 +131,19 @@ Eigen::VectorXd SimpleSimulator::CalcRhs(
   return res;
 }
 
-void SimpleSimulator::AddWing(const Morphing& morphing, const double chord,
-                              const double span, const std::size_t rows,
-                              const std::size_t cols,
-                              const Eigen::Vector3d& origin) {
+void SimpleSimulator::AddWing(
+    wing::WingGenerator* wing_generator,
+    const Morphing& morphing, const double chord, const double span,
+    const std::size_t rows, const std::size_t cols,
+    const Eigen::Vector3d& origin) {
+  // make sure size of wing is const
   if (wing_info_.size()) {
     CHECK(wing_info_.rbegin()->rows == rows);
     CHECK(wing_info_.rbegin()->cols == cols);
   }
   wing_info_.push_back(
-      WingInformation{morphing, chord, span, rows, cols, origin});
+      WingInformation{std::unique_ptr<wing::WingGenerator>(wing_generator),
+                      morphing, chord, span, rows, cols, origin});
 }
 
 void SimpleSimulator::BuildWing() {
@@ -171,9 +164,8 @@ void SimpleSimulator::BuildWing() {
     morphings_.rbegin()->set_origin(origin);
 
     UVLM::proto::Wing wing, half;
-    UVLM::wing::NACA4digitGenerator wing_generator(
-        83, info.chord, info.span / 2, rows, cols / 2);
-    wing_generator.Generate(&half);
+    info.generator->Generate(&half, info.chord, info.span / 2, info.rows,
+                             info.cols / 2);
     UVLM::wing::WholeWing(&wing, half);
     auto points = UVLM::PointsToVector(wing.points());
     std::transform(points.begin(), points.end(), points.begin(),
@@ -312,6 +304,8 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
   wake_pos_.resize(wing_pos_.num(), 0, wing_pos_.cols());
   wake_gamma_.resize(wing_gamma_.num(), 0, wing_gamma_.cols());
 
+  PrepareOutputLoad();
+
   for (std::size_t step = 1; step <= steps; step++) {
     LOG(INFO) << "step=" << step;
     MainLoop(step, dt);
@@ -334,6 +328,19 @@ void SimpleSimulator::OutputPanels(const std::size_t step,
     }
   }
   writer_->WriteProtocolMessage(snapshot);
+}
+
+void SimpleSimulator::PrepareOutputLoad() {
+  if (!ofs_load_) return;
+
+  // header for load output
+  std::vector<std::string> names{"t"};
+  for (std::size_t n = 0; n < wing_pos_.num(); n++) {
+    names.emplace_back("CD" + std::to_string(n));
+    names.emplace_back("CL" + std::to_string(n));
+  }
+  *ofs_load_ << UVLM::util::join("\t", names.begin(), names.end())
+             << std::endl;
 }
 
 }  // namespace simulator
