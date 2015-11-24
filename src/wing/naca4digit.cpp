@@ -24,15 +24,15 @@ double NACA4digit(double x, double c, int xx) {
   return res;
 }
 
-void NACA4digitGenerator::Generate(UVLM::proto::Wing* wing) {
-  // 長方形の翼を生成してzの値のみを変更する
-  RectGenerator::Generate(wing);
+void NACA4digitGenerator::Generate(UVLM::proto::Wing* wing, const double chord,
+                                   const double span, const std::size_t rows,
+                                   const std::size_t cols) {
+  // map cordinates on a rectangular wing
+  RectGenerator::Generate(wing, chord, span, rows, cols);
 
-  const double chord = chord_;
-  const int digit = digit_;
   for (int i = 0; i < wing->points_size(); i++) {
     auto* p = wing->mutable_points(i);
-    p->set_z(NACA4digit(p->x(), chord, digit));
+    p->set_z(NACA4digit(p->x(), chord, digit_));
   }
 }
 

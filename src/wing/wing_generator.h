@@ -12,23 +12,24 @@ namespace wing {
 
 class WingGenerator {
  public:
-  WingGenerator(double chord, double span, std::size_t rows, std::size_t cols)
-      : chord_(chord), span_(span), rows_(rows), cols_(cols) {}
+  WingGenerator() {}
   virtual ~WingGenerator() = default;
-  virtual void Generate(UVLM::proto::Wing* wing) {
+
+  virtual void Generate(UVLM::proto::Wing* wing, const double chord,
+                        const double span, const std::size_t rows,
+                        const std::size_t cols) {
     wing->Clear();
-    wing->set_chord(chord_);
-    wing->set_span(span_);
-    wing->set_cols(cols_);
-    wing->set_rows(rows_);
+    wing->set_chord(chord);
+    wing->set_span(span);
+    wing->set_cols(cols);
+    wing->set_rows(rows);
   }
 
-  virtual void operator() (UVLM::proto::Wing* wing) final {
-    this->Generate(wing);
+  virtual void operator()(UVLM::proto::Wing* wing, const double chord,
+                          const double span, const std::size_t rows,
+                          const std::size_t cols) final {
+    this->Generate(wing, chord, span, rows, cols);
   }
- protected:
-  double chord_, span_;
-  std::size_t rows_, cols_;
 };
 
 }  // namespace wing

@@ -26,5 +26,7 @@ inline void SetOrigin(::UVLM::proto::Wing* wing,
 
 void WholeWing(::UVLM::proto::Wing* wing, const ::UVLM::proto::Wing& half);
 
+std::unique_ptr<WingGenerator> GeneratorFactory(const std::string& name);
+
 }  // namespace wing
 }  // namespace UVLM

@@ -19,15 +19,15 @@ double NACA00XX(double x, double c, int xx) {
                       0.2843 * z * z * z + (-0.1015) * z * z * z * z);
 }
 
-void NACA00XXGenerator::Generate(UVLM::proto::Wing* wing) {
+void NACA00XXGenerator::Generate(UVLM::proto::Wing* wing, const double chord,
+                                 const double span, const std::size_t rows,
+                                 const std::size_t cols) {
   // 長方形の翼を生成してzの値のみを変更する
-  RectGenerator::Generate(wing);
+  RectGenerator::Generate(wing, chord, span, rows, cols);
 
-  const double chord = chord_;
-  const int digit = digit_;
   for (int i = 0; i < wing->points_size(); i++) {
     auto* p = wing->mutable_points(i);
-    p->set_z(NACA00XX(p->x(), chord, digit));
+    p->set_z(NACA00XX(p->x(), chord, digit_));
   }
 }
 

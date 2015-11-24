@@ -21,13 +21,14 @@ double NACA4digit(double x, double c, int xx);
 
 class NACA4digitGenerator : public RectGenerator {
  public:
-  NACA4digitGenerator(int digit, double chord, double span, std::size_t rows,
-                    std::size_t cols)
-      : RectGenerator(chord, span, rows, cols),
+  NACA4digitGenerator(int digit)
+      : RectGenerator(),
         digit_(digit),
         verbose_(false) {}
   virtual ~NACA4digitGenerator() = default;
-  virtual void Generate(UVLM::proto::Wing* wing) override;
+  virtual void Generate(UVLM::proto::Wing* wing, const double chord,
+                        const double span, const std::size_t rows,
+                        const std::size_t cols) override;
   void set_verbose(bool flag) { verbose_ = flag; }
 
  private:
