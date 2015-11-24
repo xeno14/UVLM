@@ -21,7 +21,6 @@ DEFINE_double(yrel, 6, "relative position y");
 DEFINE_double(phase, 0., "phase difference");
 DEFINE_int32(steps, 50, "number of steps to simulate");
 DEFINE_int32(steps_per_cycle, 40, "number of steps per flapping cycle");
-DEFINE_int32(omp_num_threads, 0, "number of threads. if positive, the number is set.");
 
 namespace {
 const double AR = 6;
@@ -70,11 +69,6 @@ int main(int argc, char* argv[]) {
   google::InitGoogleLogging(argv[0]);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InstallFailureSignalHandler();
-
-#ifdef _OPENMP
-  if (FLAGS_omp_num_threads > 0)
-    omp_set_num_threads(FLAGS_omp_num_threads);
-#endif
 
   Run();
   return 0;

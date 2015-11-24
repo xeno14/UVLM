@@ -8,6 +8,9 @@
 #include "simple_simulator.h"
 
 #include <glog/logging.h>
+#include <gflags/gflags.h>
+
+DEFINE_int32(omp_num_threads, 0, "number of threads. if 0, use default value.");
 
 namespace UVLM {
 namespace simulator {
@@ -305,6 +308,10 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
   wake_gamma_.resize(wing_gamma_.num(), 0, wing_gamma_.cols());
 
   PrepareOutputLoad();
+
+#ifdef _OPENMP
+  if (FLAGS_omp_num_threads > 0) omp_set_num_threads(FLAGS_omp_num_threads);
+#endif
 
   for (std::size_t step = 1; step <= steps; step++) {
     LOG(INFO) << "step=" << step;
