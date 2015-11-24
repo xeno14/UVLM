@@ -44,12 +44,32 @@ std::vector<Eigen::Vector3d> Normals(
   return res;
 }
 
-void SimpleSimulator::set_load_path(const std::string& load_path) {
-  if (load_path.size()) {
-    ofs_load_.reset(new std::ofstream(load_path));
-    CHECK(*ofs_load_);
-  }
+
+void SimpleSimulator::set_result_path(const std::string& path) {
+  if (path.size() == 0) return;
+
+  std::ofstream result_ofs;
+  CHECK((result_ofs.open(path, std::ios::binary), result_ofs));
+  writer_.reset(new recordio::RecordWriter(&result_ofs));
 }
+
+
+void SimpleSimulator::set_load_path(const std::string& path) {
+  if (path.size() == 0) return;
+
+  ofs_load_.reset(new std::ofstream(path));
+  CHECK(*ofs_load_);
+
+  // header for load output
+  std::vector<std::string> names{"t"};
+  for (std::size_t n = 0; n < wing_pos_.num(); n++) {
+    names.emplace_back("CD" + std::to_string(n));
+    names.emplace_back("CL" + std::to_string(n));
+  }
+  *ofs_load_ << UVLM::util::join("\t", names.begin(), names.end())
+             << std::endl;
+}
+
 
 Eigen::Vector3d SimpleSimulator::BoundVelocity(const Eigen::Vector3d& x) const {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
@@ -274,8 +294,11 @@ void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
     wing_gamma_[K] = gamma_v(K);
 
   // output
-  if (result_path_.size()) OutputPanels(step, dt);
-  if (ofs_load_.get() != nullptr && *ofs_load_) {
+  if (writer_) {
+    LOG(INFO) << "Output";
+    OutputPanels(step, dt);
+  }
+  if (ofs_load_) {
     LOG(INFO) << "Load";
     CalcLoad(normal, t, dt);
   }
@@ -288,22 +311,6 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
   BuildWing();
   wake_pos_.resize(wing_pos_.num(), 0, wing_pos_.cols());
   wake_gamma_.resize(wing_gamma_.num(), 0, wing_gamma_.cols());
-
-  // header for load output
-  if (ofs_load_.get() != nullptr && *ofs_load_) {
-    std::vector<std::string> names{"t"};
-    for (std::size_t n = 0; n < wing_pos_.num(); n++) {
-      names.emplace_back("CD" + std::to_string(n));
-      names.emplace_back("CL" + std::to_string(n));
-    }
-    *ofs_load_ << UVLM::util::join("\t", names.begin(), names.end())
-               << std::endl;
-  }
-
-  // writer
-  std::ofstream result_ofs;
-  CHECK((result_ofs.open(result_path_, std::ios::binary), result_ofs));
-  writer_.reset(new recordio::RecordWriter(&result_ofs));
 
   for (std::size_t step = 1; step <= steps; step++) {
     LOG(INFO) << "step=" << step;
