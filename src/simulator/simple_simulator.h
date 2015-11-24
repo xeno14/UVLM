@@ -63,6 +63,7 @@ class SimpleSimulator {
   Eigen::Vector3d forward_flight_;
   std::vector<Morphing> morphings_;
   std::vector<WingInformation> wing_info_;
+  std::unique_ptr<std::ofstream> ofs_result_;
   std::unique_ptr<std::ofstream> ofs_load_;
   std::unique_ptr<recordio::RecordWriter> writer_;
 
@@ -85,6 +86,7 @@ class SimpleSimulator {
   void BuildWing();
   void MainLoop(const std::size_t step, const double dt);
   void OutputPanels(const std::size_t step, const double dt) const;
+  void PrepareOutputLoad();
 };
 }  // namespace simulator
 }  // namespace UVLM
