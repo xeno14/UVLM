@@ -27,11 +27,13 @@ const double Q = 1;
 const double OMEGA = 2 * Q * Kg / CHORD;
 
 void AddWing(SimpleSimulator* simulator) {
+  UVLM::wing::NACA4digitGenerator wing_generator(83);
   UVLM::Morphing m;
   const double omega = OMEGA;
   m.set_flap([omega](double t) { return M_PI_4 * cos(omega * t); });
   m.set_alpha(FLAGS_alpha * M_PI / 180.);
-  simulator->AddWing(m, CHORD, SPAN, FLAGS_rows, FLAGS_cols, {0, 0, 0});
+  simulator->AddWing(wing_generator, m, CHORD, SPAN, FLAGS_rows, FLAGS_cols,
+                     {0, 0, 0});
 }
 
 void Run() {
