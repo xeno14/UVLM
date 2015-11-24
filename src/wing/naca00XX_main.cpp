@@ -39,12 +39,12 @@ void ToStdOut(const UVLM::proto::Wing& wing) {
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-  UVLM::wing::NACA00XXGenerator generator(
-      FLAGS_digit, FLAGS_chord, FLAGS_span, FLAGS_rows, FLAGS_cols);
+  UVLM::wing::NACA00XXGenerator generator(FLAGS_digit);
+      
   generator.set_verbose(true);
 
   UVLM::proto::Wing wing;
-  generator(&wing);
+  generator(&wing, FLAGS_chord, FLAGS_span, FLAGS_rows, FLAGS_cols);
 
   if (FLAGS_stdout) {
     ToStdOut(wing);

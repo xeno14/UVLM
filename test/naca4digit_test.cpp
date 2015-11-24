@@ -41,3 +41,15 @@ TEST_F(NACA4digitTest, NACA62XX) {
   err /= data.size();
   EXPECT_GT(1e-6, err);
 }
+
+TEST_F(NACA4digitTest, NACA62XX_use_class) {
+  auto data = GetWingData("NACA62XX.dat");
+  UVLM::wing::NACA4digitGenerator generator(83);
+
+  UVLM::proto::Wing wing;
+  generator.Generate(&wing, 3, 2, 10, 10);
+
+  for (const auto& p : wing.points()) {
+    EXPECT_DOUBLE_EQ(UVLM::wing::NACA4digit(p.x(), 3, 83), p.z());
+  }
+}

@@ -18,10 +18,10 @@ const double EPS=1e-10;
  */
 class WholeWingTest : public ::testing::Test {
  protected:
-  WholeWingTest() : rect(1, 2, 2, 2) {}
+  WholeWingTest() : rect() {}
   virtual void SetUp() {
     wing_base.Clear();
-    rect.Generate(&wing_base);
+    rect.Generate(&wing_base, 1, 2, 2, 2);
   }
   RectGenerator rect;
   Wing wing_base;

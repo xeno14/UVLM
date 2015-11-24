@@ -29,7 +29,8 @@ auto InitWing() {
   const double chord = 1;
   const double AR = PARAM_aspect_ratio;
   const double span = chord * AR / 2;
-  UVLM::wing::RectGenerator(chord, span, PARAM_rows, PARAM_cols).Generate(&wing);
+  UVLM::wing::RectGenerator().Generate(&wing, chord, span, PARAM_rows,
+                                       PARAM_cols);
   UVLM::wing::SetOrigin(&wing, {0, 0, 0});
   return wing;
 }

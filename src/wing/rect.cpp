@@ -15,13 +15,10 @@ DEFINE_bool(chebyshev_span, false, "use chebyshev in spanwise direction");
 namespace UVLM {
 namespace wing {
 
-void RectGenerator::Generate(UVLM::proto::Wing* wing) {
-  WingGenerator::Generate(wing);
-
-  const double chord = chord_;
-  const double span = span_;
-  const int rows = rows_;
-  const int cols = cols_;
+void RectGenerator::Generate(UVLM::proto::Wing* wing, const double chord,
+                        const double span, const std::size_t rows,
+                        const std::size_t cols) const {
+  WingGenerator::Generate(wing, chord, span, rows, cols);
 
   std::vector<double> xs, ys;
   if (FLAGS_chebyshev_chord) {

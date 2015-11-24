@@ -39,7 +39,7 @@ TEST_F(NACA0012Test, Defference) {
 
 TEST_F(NACA0012Test, Generate) {
   ::UVLM::proto::Wing wing;
-  ::UVLM::wing::NACA00XXGenerator(12, 2., 2., 2, 2).Generate(&wing);
+  ::UVLM::wing::NACA00XXGenerator(12).Generate(&wing, 2, 2, 2, 2);
   const double z1 = UVLM::wing::NACA00XX(1., 2., 12);
   const double z2 = UVLM::wing::NACA00XX(2., 2., 12);
   EXPECT_VECTOR3D_EQ(0, 0, 0, wing.points(0)); 
@@ -55,7 +55,7 @@ TEST_F(NACA0012Test, Generate) {
 
 TEST_F(NACA0012Test, GenerateRect) {
   ::UVLM::proto::Wing wing;
-  ::UVLM::wing::NACA00XXGenerator(0, 2., 2., 2, 2).Generate(&wing);
+  ::UVLM::wing::NACA00XXGenerator(0).Generate(&wing, 2, 2, 2, 2);
   EXPECT_VECTOR3D_EQ(0, 0, 0, wing.points(0)); 
   EXPECT_VECTOR3D_EQ(0, 1, 0, wing.points(1)); 
   EXPECT_VECTOR3D_EQ(0, 2, 0, wing.points(2)); 

@@ -50,8 +50,8 @@ void InitParam() {
 
 auto InitWing() {
   UVLM::proto::Wing wing;
-  UVLM::wing::RectGenerator(CHORD, SPAN / 2, ROWS, COLS/2)
-      .Generate(&wing);
+  UVLM::wing::RectGenerator()
+      .Generate(&wing, CHORD, SPAN / 2, ROWS, COLS/2);
   UVLM::wing::SetOrigin(&wing, {0, 0, 0});
   UVLM::WingBuilder builder(&containers, vortices);
   builder.AddWing(wing);

@@ -37,7 +37,8 @@ void AddWing(SimpleSimulator* simulator) {
   const double omega = OMEGA;
   m_leading.set_flap([omega](double t) { return M_PI_4 * cos(omega * t); });
   m_leading.set_alpha(ALPHA);
-  simulator->AddWing(m_leading, CHORD, SPAN, FLAGS_rows, FLAGS_cols, {0, 0, 0});
+  simulator->AddWing(new UVLM::wing::NACA4digitGenerator(83), m_leading, CHORD,
+                     SPAN, FLAGS_rows, FLAGS_cols, {0, 0, 0});
   for (int i = 1; i < FLAGS_lines; i++) {
     UVLM::Morphing m;
     const double dphi = FLAGS_phase * i;
@@ -46,17 +47,19 @@ void AddWing(SimpleSimulator* simulator) {
     m.set_flap(
         [omega, dphi](double t) { return M_PI_4 * cos(omega * t + dphi); });
     m.set_alpha(ALPHA);
-    simulator->AddWing(m, CHORD, SPAN, FLAGS_rows, FLAGS_cols, {xrel, yrel, 0});
-    simulator->AddWing(m, CHORD, SPAN, FLAGS_rows, FLAGS_cols, {xrel, -yrel, 0});
+    simulator->AddWing(new UVLM::wing::NACA4digitGenerator(83), m, CHORD, SPAN,
+                       FLAGS_rows, FLAGS_cols, {xrel, yrel, 0});
+    simulator->AddWing(new UVLM::wing::NACA4digitGenerator(83), m, CHORD, SPAN,
+                       FLAGS_rows, FLAGS_cols, {xrel, -yrel, 0});
   }
 }
 
 void Run() {
   SimpleSimulator simulator;
+  AddWing(&simulator);
   simulator.set_result_path(FLAGS_result_path);
   simulator.set_load_path(FLAGS_load_path);
   simulator.set_forward_flight({-Q, 0, 0});
-  AddWing(&simulator);
 
   const double dt = 2. * M_PI / OMEGA / FLAGS_steps_per_cycle;
   simulator.Run(FLAGS_steps, dt);
