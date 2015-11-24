@@ -171,9 +171,8 @@ void SimpleSimulator::BuildWing() {
     morphings_.rbegin()->set_origin(origin);
 
     UVLM::proto::Wing wing, half;
-    UVLM::wing::NACA4digitGenerator wing_generator(
-        83, info.chord, info.span / 2, rows, cols / 2);
-    wing_generator.Generate(&half);
+    UVLM::wing::NACA4digitGenerator wing_generator(83);
+    wing_generator.Generate(&half, info.chord, info.span / 2, rows, cols / 2);
     UVLM::wing::WholeWing(&wing, half);
     auto points = UVLM::PointsToVector(wing.points());
     std::transform(points.begin(), points.end(), points.begin(),
