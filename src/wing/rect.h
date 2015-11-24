@@ -31,7 +31,7 @@ class RectGenerator : public WingGenerator {
   virtual ~RectGenerator() = default;
   virtual void Generate(UVLM::proto::Wing* wing, const double chord,
                         const double span, const std::size_t rows,
-                        const std::size_t cols) override;
+                        const std::size_t cols) const override;
 };
 
 }  // namespace wing

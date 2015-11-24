@@ -141,7 +141,8 @@ Eigen::VectorXd SimpleSimulator::CalcRhs(
   return res;
 }
 
-void SimpleSimulator::AddWing(const Morphing& morphing, const double chord,
+void SimpleSimulator::AddWing(const wing::WingGenerator& wing_generator,
+                              const Morphing& morphing, const double chord,
                               const double span, const std::size_t rows,
                               const std::size_t cols,
                               const Eigen::Vector3d& origin) {
@@ -150,7 +151,7 @@ void SimpleSimulator::AddWing(const Morphing& morphing, const double chord,
     CHECK(wing_info_.rbegin()->cols == cols);
   }
   wing_info_.push_back(
-      WingInformation{morphing, chord, span, rows, cols, origin});
+      WingInformation{wing_generator, morphing, chord, span, rows, cols, origin});
 }
 
 void SimpleSimulator::BuildWing() {
@@ -171,8 +172,7 @@ void SimpleSimulator::BuildWing() {
     morphings_.rbegin()->set_origin(origin);
 
     UVLM::proto::Wing wing, half;
-    UVLM::wing::NACA4digitGenerator wing_generator(83);
-    wing_generator.Generate(&half, info.chord, info.span / 2, rows, cols / 2);
+    info.generator.Generate(&half, info.chord, info.span / 2, rows, cols / 2);
     UVLM::wing::WholeWing(&wing, half);
     auto points = UVLM::PointsToVector(wing.points());
     std::transform(points.begin(), points.end(), points.begin(),

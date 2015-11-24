@@ -21,7 +21,7 @@ double NACA00XX(double x, double c, int xx) {
 
 void NACA00XXGenerator::Generate(UVLM::proto::Wing* wing, const double chord,
                                  const double span, const std::size_t rows,
-                                 const std::size_t cols) {
+                                 const std::size_t cols) const {
   // 長方形の翼を生成してzの値のみを変更する
   RectGenerator::Generate(wing, chord, span, rows, cols);
 

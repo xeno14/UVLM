@@ -17,7 +17,7 @@ class WingGenerator {
 
   virtual void Generate(UVLM::proto::Wing* wing, const double chord,
                         const double span, const std::size_t rows,
-                        const std::size_t cols) {
+                        const std::size_t cols) const {
     wing->Clear();
     wing->set_chord(chord);
     wing->set_span(span);
@@ -27,7 +27,7 @@ class WingGenerator {
 
   virtual void operator()(UVLM::proto::Wing* wing, const double chord,
                           const double span, const std::size_t rows,
-                          const std::size_t cols) final {
+                          const std::size_t cols) const final {
     this->Generate(wing, chord, span, rows, cols);
   }
 };

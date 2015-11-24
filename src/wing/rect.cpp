@@ -17,7 +17,7 @@ namespace wing {
 
 void RectGenerator::Generate(UVLM::proto::Wing* wing, const double chord,
                         const double span, const std::size_t rows,
-                        const std::size_t cols) {
+                        const std::size_t cols) const {
   WingGenerator::Generate(wing, chord, span, rows, cols);
 
   std::vector<double> xs, ys;

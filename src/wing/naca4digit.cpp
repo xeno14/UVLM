@@ -26,7 +26,7 @@ double NACA4digit(double x, double c, int xx) {
 
 void NACA4digitGenerator::Generate(UVLM::proto::Wing* wing, const double chord,
                                    const double span, const std::size_t rows,
-                                   const std::size_t cols) {
+                                   const std::size_t cols) const {
   // map cordinates on a rectangular wing
   RectGenerator::Generate(wing, chord, span, rows, cols);
 

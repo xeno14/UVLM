@@ -18,6 +18,7 @@ namespace UVLM {
 namespace simulator {
 
 struct WingInformation {
+  wing::WingGenerator generator;
   Morphing morphing;
   double chord, span;
   std::size_t rows, cols;
@@ -41,7 +42,8 @@ class SimpleSimulator {
    * @param chor
    * @todo specify wing generator
    */
-  void AddWing(const Morphing& morphing, const double chord, const double span,
+  void AddWing(const wing::WingGenerator& wing_generator,
+               const Morphing& morphing, const double chord, const double span,
                const std::size_t rows, const std::size_t cols,
                const Eigen::Vector3d& origin);
 

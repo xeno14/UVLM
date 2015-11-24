@@ -28,7 +28,7 @@ class NACA4digitGenerator : public RectGenerator {
   virtual ~NACA4digitGenerator() = default;
   virtual void Generate(UVLM::proto::Wing* wing, const double chord,
                         const double span, const std::size_t rows,
-                        const std::size_t cols) override;
+                        const std::size_t cols) const override;
   void set_verbose(bool flag) { verbose_ = flag; }
 
  private:
