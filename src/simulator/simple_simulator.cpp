@@ -139,11 +139,12 @@ void SimpleSimulator::AddWing(
     const Morphing& morphing, const double chord, const double span,
     const std::size_t rows, const std::size_t cols,
     const Eigen::Vector3d& origin) {
-  // make sure size of wing is const
+  // make sure the size of wings are same
   if (wing_info_.size()) {
     CHECK(wing_info_.rbegin()->rows == rows);
     CHECK(wing_info_.rbegin()->cols == cols);
   }
+  CHECK((cols & 1) == 0) << "columns must be even.";
   wing_info_.push_back(
       WingInformation{std::unique_ptr<wing::WingGenerator>(wing_generator),
                       morphing, chord, span, rows, cols, origin});
