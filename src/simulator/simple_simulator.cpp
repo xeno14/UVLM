@@ -64,26 +64,6 @@ void SimpleSimulator::set_load_path(const std::string& path) {
 }
 
 
-Eigen::Vector3d SimpleSimulator::BoundVelocity(const Eigen::Vector3d& x) const {
-  Eigen::Vector3d res = Eigen::Vector3d::Zero();
-  for (auto index : wing_gamma_.list_index()) {
-    std::size_t n, i, j;
-    std::tie(std::ignore, n, i, j) = index;
-    res += UVLM::VORING(x, wing_pos_, wing_gamma_, n, i, j);
-  }
-  return res;
-}
-
-Eigen::Vector3d SimpleSimulator::WakeVelocity(const Eigen::Vector3d& x) const {
-  Eigen::Vector3d res = Eigen::Vector3d::Zero();
-  for (auto index : wake_gamma_.list_index()) {
-    std::size_t n, i, j;
-    std::tie(std::ignore, n, i, j) = index;
-    res += UVLM::VORING(x, wake_pos_, wake_gamma_, n, i, j);
-  }
-  return res;
-}
-
 Eigen::MatrixXd SimpleSimulator::CalcMatrix(
     const std::vector<Eigen::Vector3d>& cpos,
     const std::vector<Eigen::Vector3d>& normal) const {
@@ -139,11 +119,12 @@ void SimpleSimulator::AddWing(
     const Morphing& morphing, const double chord, const double span,
     const std::size_t rows, const std::size_t cols,
     const Eigen::Vector3d& origin) {
-  // make sure size of wing is const
+  // make sure the size of wings are same
   if (wing_info_.size()) {
     CHECK(wing_info_.rbegin()->rows == rows);
     CHECK(wing_info_.rbegin()->cols == cols);
   }
+  CHECK((cols & 1) == 0) << "columns must be even.";
   wing_info_.push_back(
       WingInformation{std::unique_ptr<wing::WingGenerator>(wing_generator),
                       morphing, chord, span, rows, cols, origin});
@@ -198,24 +179,8 @@ void SimpleSimulator::Shed(const std::size_t step) {
 }
 
 void SimpleSimulator::Advect(const double dt) {
-  MultipleSheet<Eigen::Vector3d> wake_vel(wake_pos_.num(), wake_pos_.rows(),
-                                          wake_pos_.cols());
-
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for (std::size_t i = 0; i < wake_pos_.size(); i++) {
-    wake_vel[i] = Velocity(wake_pos_[i]);
-  }
-
-  // for trailing edge
-  for (std::size_t n = 0; n < wake_vel.num(); n++) {
-    std::fill(wake_vel.iterator_at(n, 0, 0), wake_vel.iterator_at(n, 1, 0),
-              -forward_flight_);
-  }
-  for (std::size_t i = 0; i < wake_pos_.size(); i++) {
-    wake_pos_[i] += wake_vel[i] * dt;
-  }
+  advection_->Advect(&wake_pos_, wing_pos_, wing_gamma_, wake_pos_, wake_gamma_,
+                     forward_flight_, dt);
 }
 
 void SimpleSimulator::CalcLoad(const std::vector<Eigen::Vector3d>& normal,
@@ -312,6 +277,11 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
 #ifdef _OPENMP
   if (FLAGS_omp_num_threads > 0) omp_set_num_threads(FLAGS_omp_num_threads);
 #endif
+
+  if (!advection_) {
+    LOG(WARNING) << "Advection is not set. Euler is used.";
+    advection_.reset(new advect::Euler);
+  }
 
   for (std::size_t step = 1; step <= steps; step++) {
     LOG(INFO) << "step=" << step;

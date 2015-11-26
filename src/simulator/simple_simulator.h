@@ -7,10 +7,12 @@
 #include <fstream>
 
 #include "../../proto/uvlm.pb.h"
+#include "../advect.h"
 #include "../calc_load/joukowski.h"
 #include "../morphing.h"
 #include "../multiple_sheet/multiple_sheet.h"
 #include "../recordio/recordio.h"
+#include "../velocity.h"
 
 using multiple_sheet::MultipleSheet;
 
@@ -52,8 +54,12 @@ class SimpleSimulator {
   void set_forward_flight(const Eigen::Vector3d& v) { forward_flight_ = v; }
   void set_result_path(const std::string& path);
   void set_load_path(const std::string& loadpath);
+  void set_advection(advect::Advection* advection) {
+    advection_.reset(advection);
+  }
 
  private:
+  std::unique_ptr<advect::Advection> advection_;
   MultipleSheet<Eigen::Vector3d> wing_pos_;
   MultipleSheet<Eigen::Vector3d> wing_pos_init_;
   MultipleSheet<Eigen::Vector3d> wake_pos_;
@@ -77,8 +83,12 @@ class SimpleSimulator {
   void Advect(const double dt);
   void CalcLoad(const std::vector<Eigen::Vector3d>& normal,
                 const double t, const double dt) const;
-  Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) const;
-  Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) const;
+  Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) const {
+    return UVLM::InducedVelocity(x, wing_pos_, wing_gamma_);
+  }
+  Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) const {
+    return UVLM::InducedVelocity(x, wake_pos_, wake_gamma_);
+  }
   Eigen::Vector3d Velocity(const Eigen::Vector3d& x) const {
     return -forward_flight_ + BoundVelocity(x) + WakeVelocity(x);
   }
