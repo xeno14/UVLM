@@ -71,7 +71,7 @@ void RungeKutta2::Advect(MultipleSheet<Eigen::Vector3d>* next,
 #pragma omp parallel for
 #endif
   for (std::size_t K = 0; K < wake_pos.size(); K++) {
-    k1[K] = Velocity(pos2[K], wing_pos, wing_gamma, pos2, wake_gamma,
+    k2[K] = Velocity(pos2[K], wing_pos, wing_gamma, pos2, wake_gamma,
                      forward_flight);
   }
   for (std::size_t n = 0; n < k2.num(); n++) {
@@ -85,9 +85,9 @@ void RungeKutta2::Advect(MultipleSheet<Eigen::Vector3d>* next,
     std::size_t K, i;
     std::tie(K, std::ignore, i, std::ignore) = index;
     if (i > 5) {
-      (*next)[K] = wake_pos[K] + (k1[K] + k2[K]) * dt / 2;
+      (*next)[K] = wake_pos[K] + (k1[K] + k2[K]) * dt / 2;  // RK2
     } else {
-      (*next)[K] = wake_pos[K] + k1[K] * dt;
+      (*next)[K] = wake_pos[K] + k1[K] * dt;                // Euler
     }
   }
 }
