@@ -168,7 +168,7 @@ void SimpleSimulator::Shed(const std::size_t step) {
                   wing_pos_.iterator_at(n + 1, 0, 0));
   }
   wake_pos_.prepend_row(te_pos.begin(), te_pos.end());
-  if (step > 1) {
+  if (step > STEP_MIN) {
     for (std::size_t n = 0; n < wing_gamma_.num(); n++) {
       te_gamma.insert(te_gamma.end(),
                       wing_gamma_.iterator_at(n, wing_gamma_.rows() - 1, 0),
@@ -283,7 +283,7 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
     advection_.reset(new advect::Euler);
   }
 
-  for (std::size_t step = 1; step <= steps; step++) {
+  for (std::size_t step = STEP_MIN; step <= STEP_MIN + steps; step++) {
     LOG(INFO) << "step=" << step;
     MainLoop(step, dt);
   }

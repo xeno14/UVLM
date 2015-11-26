@@ -34,6 +34,8 @@ std::vector<Eigen::Vector3d> Normals(const MultipleSheet<Eigen::Vector3d>& pos);
 
 class SimpleSimulator {
  public:
+  static const std::size_t STEP_MIN = 0;
+
   SimpleSimulator()
       : forward_flight_(Eigen::Vector3d::Zero()), ofs_load_(nullptr) {}
   ~SimpleSimulator() {}

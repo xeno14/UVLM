@@ -34,7 +34,7 @@ const double OMEGA = 2 * Q * Kg / CHORD;
 void AddWing(SimpleSimulator* simulator) {
   UVLM::Morphing m_leading;
   const double omega = OMEGA;
-  m_leading.set_flap([omega](double t) { return M_PI_4 * cos(omega * t); });
+  m_leading.set_flap([omega](double t) { return - M_PI_4 * cos(omega * t); });
   m_leading.set_alpha(ALPHA);
   simulator->AddWing(new UVLM::wing::NACA4digitGenerator(83), m_leading, CHORD,
                      SPAN, FLAGS_rows, FLAGS_cols, {0, 0, 0});
