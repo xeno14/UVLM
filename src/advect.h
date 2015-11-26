@@ -63,5 +63,19 @@ class RungeKutta2 : public Advection {
   mutable MultipleSheet<Eigen::Vector3d> pos1, pos2;
 };
 
+class RungeKutta4 : public Advection {
+ public:
+  void Advect(MultipleSheet<Eigen::Vector3d>* next,
+              const MultipleSheet<Eigen::Vector3d>& wing_pos,
+              const MultipleSheet<double>& wing_gamma,
+              const MultipleSheet<Eigen::Vector3d>& wake_pos,
+              const MultipleSheet<double>& wake_gamma,
+              const Eigen::Vector3d& forward_flight,
+              const double dt) const override;
+ private:
+  mutable MultipleSheet<Eigen::Vector3d> k1, k2, k3, k4;
+  mutable MultipleSheet<Eigen::Vector3d> pos1, pos2, pos3, pos4;
+};
+
 }  // namespace advect
 }  // namespace UVLM
