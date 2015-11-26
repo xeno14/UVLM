@@ -54,8 +54,12 @@ class SimpleSimulator {
   void set_forward_flight(const Eigen::Vector3d& v) { forward_flight_ = v; }
   void set_result_path(const std::string& path);
   void set_load_path(const std::string& loadpath);
+  void set_advection(advect::Advection* advection) {
+    advection_.reset(advection);
+  }
 
  private:
+  std::unique_ptr<advect::Advection> advection_;
   MultipleSheet<Eigen::Vector3d> wing_pos_;
   MultipleSheet<Eigen::Vector3d> wing_pos_init_;
   MultipleSheet<Eigen::Vector3d> wake_pos_;

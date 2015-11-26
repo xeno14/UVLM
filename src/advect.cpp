@@ -8,6 +8,32 @@
 namespace UVLM {
 namespace advect {
 
+void Euler::Advect(MultipleSheet<Eigen::Vector3d>* next,
+                   const MultipleSheet<Eigen::Vector3d>& wing_pos,
+                   const MultipleSheet<double>& wing_gamma,
+                   const MultipleSheet<Eigen::Vector3d>& wake_pos,
+                   const MultipleSheet<double>& wake_gamma,
+                   const Eigen::Vector3d& forward_flight,
+                   const double dt) const {
+  vel.resize(wake_pos.num(), wake_pos.rows(), wake_pos.cols());
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (std::size_t K = 0; K < wake_pos.size(); K++) {
+    vel[K] = Velocity(wake_pos[K], wing_pos, wing_gamma, wake_pos, wake_gamma,
+                      forward_flight);
+  }
+
+  // for trailing edge
+  for (std::size_t n = 0; n < vel.num(); n++) {
+    std::fill(vel.iterator_at(n, 0, 0), vel.iterator_at(n, 1, 0),
+              -forward_flight);
+  }
+  for (std::size_t K = 0; K < wake_pos.size(); K++) {
+    (*next)[K] = wake_pos[K] + vel[K] * dt;
+  }
+}
+
 void RungeKutta2::Advect(MultipleSheet<Eigen::Vector3d>* next,
                          const MultipleSheet<Eigen::Vector3d>& wing_pos,
                          const MultipleSheet<double>& wing_gamma,
@@ -15,8 +41,6 @@ void RungeKutta2::Advect(MultipleSheet<Eigen::Vector3d>* next,
                          const MultipleSheet<double>& wake_gamma,
                          const Eigen::Vector3d& forward_flight,
                          const double dt) const {
-  MultipleSheet<Eigen::Vector3d> k1, k2;
-  MultipleSheet<Eigen::Vector3d> pos1, pos2;
   k1.resize(wake_pos.num(), wake_pos.rows(), wake_pos.cols());
   k2.resize(wake_pos.num(), wake_pos.rows(), wake_pos.cols());
   pos1.resize(wake_pos.num(), wake_pos.rows(), wake_pos.cols());
@@ -30,7 +54,8 @@ void RungeKutta2::Advect(MultipleSheet<Eigen::Vector3d>* next,
 #pragma omp parallel for
 #endif
   for (std::size_t K = 0; K < wake_pos.size(); K++) {
-    k1[K] = Velocity(pos1[K], wing_pos, wing_gamma, pos1, wake_gamma, forward_flight);
+    k1[K] = Velocity(pos1[K], wing_pos, wing_gamma, pos1, wake_gamma,
+                     forward_flight);
   }
   for (std::size_t n = 0; n < k1.num(); n++) {
     // for trailing edge
@@ -46,7 +71,8 @@ void RungeKutta2::Advect(MultipleSheet<Eigen::Vector3d>* next,
 #pragma omp parallel for
 #endif
   for (std::size_t K = 0; K < wake_pos.size(); K++) {
-    k1[K] = Velocity(pos2[K], wing_pos, wing_gamma, pos2, wake_gamma, forward_flight);
+    k1[K] = Velocity(pos2[K], wing_pos, wing_gamma, pos2, wake_gamma,
+                     forward_flight);
   }
   for (std::size_t n = 0; n < k2.num(); n++) {
     // for trailing edge

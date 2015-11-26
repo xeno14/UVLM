@@ -179,61 +179,8 @@ void SimpleSimulator::Shed(const std::size_t step) {
 }
 
 void SimpleSimulator::Advect(const double dt) {
-  MultipleSheet<Eigen::Vector3d> wake_vel(wake_pos_.num(), wake_pos_.rows(),
-                                          wake_pos_.cols());
-  MultipleSheet<Eigen::Vector3d> k1, k2;
-  MultipleSheet<Eigen::Vector3d> pos1, pos2;
-  k1.resize(wake_pos_.num(), wake_pos_.rows(), wake_pos_.cols());
-  k2.resize(wake_pos_.num(), wake_pos_.rows(), wake_pos_.cols());
-  pos1.resize(wake_pos_.num(), wake_pos_.rows(), wake_pos_.cols());
-  pos2.resize(wake_pos_.num(), wake_pos_.rows(), wake_pos_.cols());
-
-  // 1st step
-  for (std::size_t K = 0; K < wake_pos_.size(); K++) {
-    pos1[K] = wake_pos_[K];
-  }
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for (std::size_t K = 0; K < wake_pos_.size(); K++) {
-    const Eigen::Vector3d x = pos1[K];
-    k1[K] = -forward_flight_ + BoundVelocity(x) +
-            InducedVelocity(x, pos1, wake_gamma_);
-  }
-  for (std::size_t n = 0; n < k1.num(); n++) {
-    // for trailing edge
-    std::fill(k1.iterator_at(n, 0, 0), k1.iterator_at(n, 1, 0),
-              -forward_flight_);
-  }
-
-  // 2nd step
-  for (std::size_t K = 0; K < wake_pos_.size(); K++) {
-    pos2[K] = wake_pos_[K] + k1[K] * dt;
-  }
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for (std::size_t K = 0; K < wake_pos_.size(); K++) {
-    const Eigen::Vector3d x = pos2[K];
-    k2[K] = -forward_flight_ + BoundVelocity(x) +
-            InducedVelocity(x, pos2, wake_gamma_);
-  }
-  for (std::size_t n = 0; n < k2.num(); n++) {
-    // for trailing edge
-    std::fill(k2.iterator_at(n, 0, 0), k2.iterator_at(n, 1, 0),
-              -forward_flight_);
-  }
-
-  // update
-  for (const auto& index : wake_pos_.list_index()) {
-    std::size_t K, i;
-    std::tie(K, std::ignore, i, std::ignore) = index;
-    if (i > 5) {
-      wake_pos_[K] += (k1[K] + k2[K]) * dt / 2;
-    } else {
-      wake_pos_[K] += k1[K] * dt;
-    }
-  }
+  advection_->Advect(&wake_pos_, wing_pos_, wing_gamma_, wake_pos_, wake_gamma_,
+                     forward_flight_, dt);
 }
 
 void SimpleSimulator::CalcLoad(const std::vector<Eigen::Vector3d>& normal,
@@ -330,6 +277,11 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
 #ifdef _OPENMP
   if (FLAGS_omp_num_threads > 0) omp_set_num_threads(FLAGS_omp_num_threads);
 #endif
+
+  if (!advection_) {
+    LOG(WARNING) << "Advection is not set. Euler is used.";
+    advection_.reset(new advect::Euler);
+  }
 
   for (std::size_t step = 1; step <= steps; step++) {
     LOG(INFO) << "step=" << step;

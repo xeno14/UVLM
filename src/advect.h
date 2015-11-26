@@ -36,6 +36,19 @@ class Advection {
   }
 };
 
+class Euler : public Advection {
+ public:
+  void Advect(MultipleSheet<Eigen::Vector3d>* next,
+              const MultipleSheet<Eigen::Vector3d>& wing_pos,
+              const MultipleSheet<double>& wing_gamma,
+              const MultipleSheet<Eigen::Vector3d>& wake_pos,
+              const MultipleSheet<double>& wake_gamma,
+              const Eigen::Vector3d& forward_flight,
+              const double dt) const;
+ private:
+  mutable MultipleSheet<Eigen::Vector3d> vel;
+};
+
 class RungeKutta2 : public Advection {
  public:
   void Advect(MultipleSheet<Eigen::Vector3d>* next,
@@ -45,6 +58,9 @@ class RungeKutta2 : public Advection {
               const MultipleSheet<double>& wake_gamma,
               const Eigen::Vector3d& forward_flight,
               const double dt) const;
+ private:
+  mutable MultipleSheet<Eigen::Vector3d> k1, k2;
+  mutable MultipleSheet<Eigen::Vector3d> pos1, pos2;
 };
 
 }  // namespace advect
