@@ -181,21 +181,58 @@ void SimpleSimulator::Shed(const std::size_t step) {
 void SimpleSimulator::Advect(const double dt) {
   MultipleSheet<Eigen::Vector3d> wake_vel(wake_pos_.num(), wake_pos_.rows(),
                                           wake_pos_.cols());
+  MultipleSheet<Eigen::Vector3d> k1, k2;
+  MultipleSheet<Eigen::Vector3d> pos1, pos2;
+  k1.resize(wake_pos_.num(), wake_pos_.rows(), wake_pos_.cols());
+  k2.resize(wake_pos_.num(), wake_pos_.rows(), wake_pos_.cols());
+  pos1.resize(wake_pos_.num(), wake_pos_.rows(), wake_pos_.cols());
+  pos2.resize(wake_pos_.num(), wake_pos_.rows(), wake_pos_.cols());
 
+  // 1st step
+  for (std::size_t K = 0; K < wake_pos_.size(); K++) {
+    pos1[K] = wake_pos_[K];
+  }
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (std::size_t i = 0; i < wake_pos_.size(); i++) {
-    wake_vel[i] = Velocity(wake_pos_[i]);
+  for (std::size_t K = 0; K < wake_pos_.size(); K++) {
+    const Eigen::Vector3d x = pos1[K];
+    k1[K] = -forward_flight_ + BoundVelocity(x) +
+            InducedVelocity(x, pos1, wake_gamma_);
   }
-
-  // for trailing edge
-  for (std::size_t n = 0; n < wake_vel.num(); n++) {
-    std::fill(wake_vel.iterator_at(n, 0, 0), wake_vel.iterator_at(n, 1, 0),
+  for (std::size_t n = 0; n < k1.num(); n++) {
+    // for trailing edge
+    std::fill(k1.iterator_at(n, 0, 0), k1.iterator_at(n, 1, 0),
               -forward_flight_);
   }
-  for (std::size_t i = 0; i < wake_pos_.size(); i++) {
-    wake_pos_[i] += wake_vel[i] * dt;
+
+  // 2nd step
+  for (std::size_t K = 0; K < wake_pos_.size(); K++) {
+    pos2[K] = wake_pos_[K] + k1[K] * dt;
+  }
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (std::size_t K = 0; K < wake_pos_.size(); K++) {
+    const Eigen::Vector3d x = pos2[K];
+    k2[K] = -forward_flight_ + BoundVelocity(x) +
+            InducedVelocity(x, pos2, wake_gamma_);
+  }
+  for (std::size_t n = 0; n < k2.num(); n++) {
+    // for trailing edge
+    std::fill(k2.iterator_at(n, 0, 0), k2.iterator_at(n, 1, 0),
+              -forward_flight_);
+  }
+
+  // update
+  for (const auto& index : wake_pos_.list_index()) {
+    std::size_t K, i;
+    std::tie(K, std::ignore, i, std::ignore) = index;
+    if (i > 5) {
+      wake_pos_[K] += (k1[K] + k2[K]) * dt / 2;
+    } else {
+      wake_pos_[K] += k1[K] * dt;
+    }
   }
 }
 
