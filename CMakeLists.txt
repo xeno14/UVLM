@@ -84,6 +84,7 @@ target_link_libraries(result_to_vtk protobuf glog recordio)
 
 add_library(uvlm
             ${PROTO_DIR}/uvlm.pb.cc
+            src/advect.cpp
             src/shed.cpp
             src/vortex.cpp
             src/vortex_container.cpp

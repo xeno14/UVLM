@@ -7,6 +7,7 @@
 #include <fstream>
 
 #include "../../proto/uvlm.pb.h"
+#include "../advect.h"
 #include "../calc_load/joukowski.h"
 #include "../morphing.h"
 #include "../multiple_sheet/multiple_sheet.h"
