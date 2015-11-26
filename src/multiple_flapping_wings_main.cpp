@@ -18,7 +18,7 @@ DEFINE_int32(cols, 20, "spanwise num");
 DEFINE_int32(lines, 2, "number of formation lines");
 DEFINE_double(xrel, 3, "relative position x");
 DEFINE_double(yrel, 6, "relative position y");
-DEFINE_double(phase, 0., "phase difference");
+DEFINE_double(phase, 0., "phase difference [deg]");
 DEFINE_int32(steps, 50, "number of steps to simulate");
 DEFINE_int32(steps_per_cycle, 40, "number of steps per flapping cycle");
 
@@ -40,11 +40,11 @@ void AddWing(SimpleSimulator* simulator) {
                      SPAN, FLAGS_rows, FLAGS_cols, {0, 0, 0});
   for (int i = 1; i < FLAGS_lines; i++) {
     UVLM::Morphing m;
-    const double dphi = FLAGS_phase * i;
+    const double dphi = FLAGS_phase / 180. * M_PI * i;
     const double xrel = FLAGS_xrel * i;
     const double yrel = FLAGS_yrel * i;
     m.set_flap(
-        [omega, dphi](double t) { return M_PI_4 * cos(omega * t + dphi); });
+        [omega, dphi](double t) { return - M_PI_4 * cos(omega * t + dphi); });
     m.set_alpha(ALPHA);
     simulator->AddWing(new UVLM::wing::NACA4digitGenerator(83), m, CHORD, SPAN,
                        FLAGS_rows, FLAGS_cols, {xrel, yrel, 0});
