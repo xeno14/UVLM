@@ -64,26 +64,6 @@ void SimpleSimulator::set_load_path(const std::string& path) {
 }
 
 
-Eigen::Vector3d SimpleSimulator::BoundVelocity(const Eigen::Vector3d& x) const {
-  Eigen::Vector3d res = Eigen::Vector3d::Zero();
-  for (auto index : wing_gamma_.list_index()) {
-    std::size_t n, i, j;
-    std::tie(std::ignore, n, i, j) = index;
-    res += UVLM::VORING(x, wing_pos_, wing_gamma_, n, i, j);
-  }
-  return res;
-}
-
-Eigen::Vector3d SimpleSimulator::WakeVelocity(const Eigen::Vector3d& x) const {
-  Eigen::Vector3d res = Eigen::Vector3d::Zero();
-  for (auto index : wake_gamma_.list_index()) {
-    std::size_t n, i, j;
-    std::tie(std::ignore, n, i, j) = index;
-    res += UVLM::VORING(x, wake_pos_, wake_gamma_, n, i, j);
-  }
-  return res;
-}
-
 Eigen::MatrixXd SimpleSimulator::CalcMatrix(
     const std::vector<Eigen::Vector3d>& cpos,
     const std::vector<Eigen::Vector3d>& normal) const {

@@ -11,6 +11,7 @@
 #include "../morphing.h"
 #include "../multiple_sheet/multiple_sheet.h"
 #include "../recordio/recordio.h"
+#include "../velocity.h"
 
 using multiple_sheet::MultipleSheet;
 
@@ -77,8 +78,12 @@ class SimpleSimulator {
   void Advect(const double dt);
   void CalcLoad(const std::vector<Eigen::Vector3d>& normal,
                 const double t, const double dt) const;
-  Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) const;
-  Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) const;
+  Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) const {
+    return UVLM::InducedVelocity(x, wing_pos_, wing_gamma_);
+  }
+  Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) const {
+    return UVLM::InducedVelocity(x, wake_pos_, wake_gamma_);
+  }
   Eigen::Vector3d Velocity(const Eigen::Vector3d& x) const {
     return -forward_flight_ + BoundVelocity(x) + WakeVelocity(x);
   }
