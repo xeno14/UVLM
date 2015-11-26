@@ -18,7 +18,6 @@ DEFINE_double(span, 2.0, "Span length (y)");
 DEFINE_int32(rows, 10, "Number of rows (x).");
 DEFINE_int32(cols, 20, "Number of columns (y).");
 DEFINE_string(output, "", "Output file.");
-DEFINE_bool(stdout, false, "Output to stdout (regardless of --output)");
 
 std::string GenFilename(const std::string& base_path, int digit,
                         std::size_t rows, std::size_t cols) {
@@ -46,16 +45,12 @@ int main(int argc, char* argv[]) {
   UVLM::proto::Wing wing;
   generator(&wing, FLAGS_chord, FLAGS_span, FLAGS_rows, FLAGS_cols);
 
-  if (FLAGS_stdout) {
-    ToStdOut(wing);
-  } else {
-    const std::string filename(
-        GenFilename(".", FLAGS_digit, FLAGS_rows, FLAGS_cols));
-    std::ofstream ofs(filename, std::ios::binary);
-    CHECK_OPEN(ofs);
+  const std::string filename(
+      GenFilename(".", FLAGS_digit, FLAGS_rows, FLAGS_cols));
+  std::ofstream ofs(filename, std::ios::binary);
+  CHECK_OPEN(ofs);
 
-    wing.SerializeToOstream(&ofs);
-  }
+  wing.SerializeToOstream(&ofs);
 
   return 0;
 }
