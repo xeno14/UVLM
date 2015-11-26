@@ -84,14 +84,13 @@ void RungeKutta2::Advect(MultipleSheet<Eigen::Vector3d>* next,
   for (const auto& index : wake_pos.list_index()) {
     std::size_t K, i;
     std::tie(K, std::ignore, i, std::ignore) = index;
-    if (i > 5) {
+    if (i > ignore_steps_) {
       (*next)[K] = wake_pos[K] + (k1[K] + k2[K]) * dt / 2;  // RK2
     } else {
-      (*next)[K] = wake_pos[K] + k1[K] * dt;                // Euler
+      (*next)[K] = wake_pos[K] + k1[K] * dt;  // Euler
     }
   }
 }
-
 
 void RungeKutta4::Advect(MultipleSheet<Eigen::Vector3d>* next,
                          const MultipleSheet<Eigen::Vector3d>& wing_pos,
@@ -181,7 +180,7 @@ void RungeKutta4::Advect(MultipleSheet<Eigen::Vector3d>* next,
   for (const auto& index : wake_pos.list_index()) {
     std::size_t K, i;
     std::tie(K, std::ignore, i, std::ignore) = index;
-    if (i > 5) {
+    if (i > ignore_steps_) {
       // RK4
       (*next)[K] =
           wake_pos[K] + (k1[K] + k2[K] * 2 + k3[K] * 2 + k3[K]) * dt / 6;
