@@ -37,5 +37,18 @@ class CutOffKernel : public VortexKernel {
   const double cutoff_length_;
 };
 
+
+class RosenheadMooreKernel : public VortexKernel {
+  public:
+   RosenheadMooreKernel(double delta) : delta_(delta) {}
+
+   Eigen::Vector3d Induce(const Eigen::Vector3d& x, const Eigen::Vector3d& x1,
+                          const Eigen::Vector3d& x2,
+                          const double gamma) const override;
+
+  private:
+    const double delta_;
+};
+
 }  // namespace vortex_kernel
 }  // namespace UVLM
