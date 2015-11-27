@@ -6,6 +6,7 @@
 #include "../uvlm.h"
 #include "../output.h"
 #include "../advect_factory.h"
+#include "../vortex_kernel_factory.h"
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
@@ -44,6 +45,8 @@ void Run() {
   simulator.set_load_path(FLAGS_load_path);
   simulator.set_forward_flight({-Q, 0, 0});
   simulator.set_advection(UVLM::advect::AdvectFactory(FLAGS_advect));
+  simulator.set_vortex_kernel(
+      UVLM::vortex_kernel::VortexKernelFactory("cutoff", 1e-10));
 
   const double dt = 2. * M_PI / OMEGA / FLAGS_steps_per_cycle;
   simulator.Run(FLAGS_steps, dt);
