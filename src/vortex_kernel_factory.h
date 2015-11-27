@@ -20,8 +20,8 @@ enum VortexKernelType {
 };
 
 const std::map<std::string, VortexKernelType> NAME_MAP{
-    {"cutoff", VortexKernelType::CUTOFF},
-    {"rosenhead-moore", VortexKernelType::ROSENHEAD_MOORE},
+    {"cutoff", CUTOFF},
+    {"rosenhead-moore", ROSENHEAD_MOORE},
 };
 
 auto GetKeys() {

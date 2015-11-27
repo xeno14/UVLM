@@ -18,6 +18,8 @@ DEFINE_int32(steps, 50, "number of steps to simulate");
 DEFINE_int32(steps_per_cycle, 40, "number of steps per flapping cycle");
 DEFINE_double(alpha, 5, "angle of attack");
 DEFINE_string(advect, "euler", "advection method (see advect_factory.cpp)");
+DEFINE_string(kernel, "cutoff", "vortex kernel");
+DEFINE_double(kernel_param, 1e-10, "kernel parameter");
 
 using UVLM::simulator::SimpleSimulator;
 
@@ -45,8 +47,8 @@ void Run() {
   simulator.set_load_path(FLAGS_load_path);
   simulator.set_forward_flight({-Q, 0, 0});
   simulator.set_advection(UVLM::advect::AdvectFactory(FLAGS_advect));
-  simulator.set_vortex_kernel(
-      UVLM::vortex_kernel::VortexKernelFactory("cutoff", 1e-10));
+  simulator.set_vortex_kernel(UVLM::vortex_kernel::VortexKernelFactory(
+      FLAGS_kernel, FLAGS_kernel_param));
 
   const double dt = 2. * M_PI / OMEGA / FLAGS_steps_per_cycle;
   simulator.Run(FLAGS_steps, dt);
