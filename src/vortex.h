@@ -5,6 +5,7 @@
 #pragma once
 
 #include "multiple_sheet/multiple_sheet.h"
+#include "vortex_kernel.h"
 
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
@@ -182,6 +183,12 @@ inline Eigen::Vector3d VORTEX(const Eigen::Vector3d& x,
 }
 
 Eigen::Vector3d VORING(const Eigen::Vector3d& x,
+                       const MultipleSheet<Eigen::Vector3d>& pos,
+                       const MultipleSheet<double>& gamma, std::size_t n,
+                       std::size_t i, std::size_t j);
+
+Eigen::Vector3d VORING(const vortex_kernel::VortexKernel& kernel,
+                       const Eigen::Vector3d& x,
                        const MultipleSheet<Eigen::Vector3d>& pos,
                        const MultipleSheet<double>& gamma, std::size_t n,
                        std::size_t i, std::size_t j);

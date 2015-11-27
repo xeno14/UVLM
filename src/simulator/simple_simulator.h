@@ -59,8 +59,12 @@ class SimpleSimulator {
   void set_advection(advect::Advection* advection) {
     advection_.reset(advection);
   }
+  void set_vortex_kernel(vortex_kernel::VortexKernel* kernel) {
+    kernel_.reset(kernel);
+  }
 
  private:
+  std::unique_ptr<vortex_kernel::VortexKernel> kernel_;
   std::unique_ptr<advect::Advection> advection_;
   MultipleSheet<Eigen::Vector3d> wing_pos_;
   MultipleSheet<Eigen::Vector3d> wing_pos_init_;
@@ -86,10 +90,10 @@ class SimpleSimulator {
   void CalcLoad(const std::vector<Eigen::Vector3d>& normal,
                 const double t, const double dt) const;
   Eigen::Vector3d BoundVelocity(const Eigen::Vector3d& x) const {
-    return UVLM::InducedVelocity(x, wing_pos_, wing_gamma_);
+    return UVLM::InducedVelocity(*kernel_, x, wing_pos_, wing_gamma_);
   }
   Eigen::Vector3d WakeVelocity(const Eigen::Vector3d& x) const {
-    return UVLM::InducedVelocity(x, wake_pos_, wake_gamma_);
+    return UVLM::InducedVelocity(*kernel_, x, wake_pos_, wake_gamma_);
   }
   Eigen::Vector3d Velocity(const Eigen::Vector3d& x) const {
     return -forward_flight_ + BoundVelocity(x) + WakeVelocity(x);

@@ -159,4 +159,19 @@ Eigen::Vector3d VORING(const Eigen::Vector3d& x,
   return u;
 }
 
+Eigen::Vector3d VORING(const vortex_kernel::VortexKernel& kernel,
+                       const Eigen::Vector3d& x,
+                       const MultipleSheet<Eigen::Vector3d>& pos,
+                       const MultipleSheet<double>& gamma, std::size_t n,
+                       std::size_t i, std::size_t j) {
+  double g = gamma.at(n, i, j);
+  const auto& p0 = pos.at(n, i, j);
+  const auto& p1 = pos.at(n, i, j + 1);
+  const auto& p2 = pos.at(n, i + 1, j + 1);
+  const auto& p3 = pos.at(n, i + 1, j);
+
+  return kernel.Induce(x, p0, p1, g) + kernel.Induce(x, p1, p2, g) +
+         kernel.Induce(x, p2, p3, g) + kernel.Induce(x, p3, p0, g);
+}
+
 }  // namespace UVLM

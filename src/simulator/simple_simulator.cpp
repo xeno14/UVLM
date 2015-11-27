@@ -84,7 +84,7 @@ Eigen::MatrixXd SimpleSimulator::CalcMatrix(
     for (auto index_L : wing_gamma_.list_index()) {
       std::size_t L, nn, ii, jj;
       std::tie(L, nn, ii, jj) = index_L;
-      auto u = UVLM::VORING(cp, wing_pos_, gamma, nn, ii, jj);
+      auto u = UVLM::VORING(*kernel_, cp, wing_pos_, gamma, nn, ii, jj);
       res(K, L) = u.dot(nl);
     }
   }
@@ -179,8 +179,8 @@ void SimpleSimulator::Shed(const std::size_t step) {
 }
 
 void SimpleSimulator::Advect(const double dt) {
-  advection_->Advect(&wake_pos_, wing_pos_, wing_gamma_, wake_pos_, wake_gamma_,
-                     forward_flight_, dt);
+  advection_->Advect(&wake_pos_, *kernel_, wing_pos_, wing_gamma_, wake_pos_,
+                     wake_gamma_, forward_flight_, dt);
 }
 
 void SimpleSimulator::CalcLoad(const std::vector<Eigen::Vector3d>& normal,
@@ -277,6 +277,11 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
 #ifdef _OPENMP
   if (FLAGS_omp_num_threads > 0) omp_set_num_threads(FLAGS_omp_num_threads);
 #endif
+
+  if (!kernel_) {
+    LOG(WARNING) << "Vortex kernel is not set. Cut off is used.";
+    kernel_.reset(new vortex_kernel::CutOffKernel(1e-10));
+  }
 
   if (!advection_) {
     LOG(WARNING) << "Advection is not set. Euler is used.";

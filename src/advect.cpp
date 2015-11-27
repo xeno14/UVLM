@@ -9,19 +9,21 @@ namespace UVLM {
 namespace advect {
 
 void Euler::Advect(MultipleSheet<Eigen::Vector3d>* next,
+                   const vortex_kernel::VortexKernel& kernel,
                    const MultipleSheet<Eigen::Vector3d>& wing_pos,
                    const MultipleSheet<double>& wing_gamma,
                    const MultipleSheet<Eigen::Vector3d>& wake_pos,
                    const MultipleSheet<double>& wake_gamma,
                    const Eigen::Vector3d& forward_flight,
                    const double dt) const {
-  Velocity(&vel, wing_pos, wing_gamma, wake_pos, wake_gamma, forward_flight);
+  Velocity(kernel, &vel, wing_pos, wing_gamma, wake_pos, wake_gamma, forward_flight);
   for (std::size_t K = 0; K < wake_pos.size(); K++) {
     (*next)[K] = wake_pos[K] + vel[K] * dt;
   }
 }
 
 void RungeKutta2::Advect(MultipleSheet<Eigen::Vector3d>* next,
+                         const vortex_kernel::VortexKernel& kernel,
                          const MultipleSheet<Eigen::Vector3d>& wing_pos,
                          const MultipleSheet<double>& wing_gamma,
                          const MultipleSheet<Eigen::Vector3d>& wake_pos,
@@ -41,7 +43,7 @@ void RungeKutta2::Advect(MultipleSheet<Eigen::Vector3d>* next,
 #pragma omp parallel for
 #endif
   for (std::size_t K = 0; K < wake_pos.size(); K++) {
-    k1[K] = Velocity(pos1[K], wing_pos, wing_gamma, pos1, wake_gamma,
+    k1[K] = Velocity(kernel, pos1[K], wing_pos, wing_gamma, pos1, wake_gamma,
                      forward_flight);
   }
   for (std::size_t n = 0; n < k1.num(); n++) {
@@ -58,7 +60,7 @@ void RungeKutta2::Advect(MultipleSheet<Eigen::Vector3d>* next,
 #pragma omp parallel for
 #endif
   for (std::size_t K = 0; K < wake_pos.size(); K++) {
-    k2[K] = Velocity(pos2[K], wing_pos, wing_gamma, pos2, wake_gamma,
+    k2[K] = Velocity(kernel, pos2[K], wing_pos, wing_gamma, pos2, wake_gamma,
                      forward_flight);
   }
   for (std::size_t n = 0; n < k2.num(); n++) {
@@ -80,6 +82,7 @@ void RungeKutta2::Advect(MultipleSheet<Eigen::Vector3d>* next,
 }
 
 void RungeKutta4::Advect(MultipleSheet<Eigen::Vector3d>* next,
+                         const vortex_kernel::VortexKernel& kernel,
                          const MultipleSheet<Eigen::Vector3d>& wing_pos,
                          const MultipleSheet<double>& wing_gamma,
                          const MultipleSheet<Eigen::Vector3d>& wake_pos,
@@ -103,7 +106,7 @@ void RungeKutta4::Advect(MultipleSheet<Eigen::Vector3d>* next,
 #pragma omp parallel for
 #endif
   for (std::size_t K = 0; K < wake_pos.size(); K++) {
-    k1[K] = Velocity(pos1[K], wing_pos, wing_gamma, pos1, wake_gamma,
+    k1[K] = Velocity(kernel, pos1[K], wing_pos, wing_gamma, pos1, wake_gamma,
                      forward_flight);
   }
   for (std::size_t n = 0; n < k1.num(); n++) {
@@ -120,7 +123,7 @@ void RungeKutta4::Advect(MultipleSheet<Eigen::Vector3d>* next,
 #pragma omp parallel for
 #endif
   for (std::size_t K = 0; K < wake_pos.size(); K++) {
-    k2[K] = Velocity(pos2[K], wing_pos, wing_gamma, pos2, wake_gamma,
+    k2[K] = Velocity(kernel, pos2[K], wing_pos, wing_gamma, pos2, wake_gamma,
                      forward_flight);
   }
   for (std::size_t n = 0; n < k2.num(); n++) {
@@ -137,7 +140,7 @@ void RungeKutta4::Advect(MultipleSheet<Eigen::Vector3d>* next,
 #pragma omp parallel for
 #endif
   for (std::size_t K = 0; K < wake_pos.size(); K++) {
-    k3[K] = Velocity(pos3[K], wing_pos, wing_gamma, pos3, wake_gamma,
+    k3[K] = Velocity(kernel, pos3[K], wing_pos, wing_gamma, pos3, wake_gamma,
                      forward_flight);
   }
   for (std::size_t n = 0; n < k3.num(); n++) {
@@ -154,7 +157,7 @@ void RungeKutta4::Advect(MultipleSheet<Eigen::Vector3d>* next,
 #pragma omp parallel for
 #endif
   for (std::size_t K = 0; K < wake_pos.size(); K++) {
-    k4[K] = Velocity(pos4[K], wing_pos, wing_gamma, pos4, wake_gamma,
+    k4[K] = Velocity(kernel, pos4[K], wing_pos, wing_gamma, pos4, wake_gamma,
                      forward_flight);
   }
   for (std::size_t n = 0; n < k4.num(); n++) {
@@ -179,13 +182,14 @@ void RungeKutta4::Advect(MultipleSheet<Eigen::Vector3d>* next,
 }
 
 void AdamsBashforth2::Advect(MultipleSheet<Eigen::Vector3d>* next,
+                             const vortex_kernel::VortexKernel& kernel,
                              const MultipleSheet<Eigen::Vector3d>& wing_pos,
                              const MultipleSheet<double>& wing_gamma,
                              const MultipleSheet<Eigen::Vector3d>& wake_pos,
                              const MultipleSheet<double>& wake_gamma,
                              const Eigen::Vector3d& forward_flight,
                              const double dt) const {
-  Velocity(&v, wing_pos, wing_gamma, wake_pos, wake_gamma, forward_flight);
+  Velocity(kernel, &v, wing_pos, wing_gamma, wake_pos, wake_gamma, forward_flight);
 
   if (v_prev.size() == 0) {
     // Euler scheme for the first step

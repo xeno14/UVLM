@@ -13,17 +13,19 @@ using multiple_sheet::MultipleSheet;
 namespace UVLM {
 namespace advect {
 
-inline Eigen::Vector3d Velocity(const Eigen::Vector3d& x,
+inline Eigen::Vector3d Velocity(const vortex_kernel::VortexKernel& kernel,
+                                const Eigen::Vector3d& x,
                                 const MultipleSheet<Eigen::Vector3d>& wing_pos,
                                 const MultipleSheet<double>& wing_gamma,
                                 const MultipleSheet<Eigen::Vector3d>& wake_pos,
                                 const MultipleSheet<double>& wake_gamma,
                                 const Eigen::Vector3d& forward_flight) {
-  return -forward_flight + UVLM::InducedVelocity(x, wing_pos, wing_gamma) +
-         UVLM::InducedVelocity(x, wake_pos, wake_gamma);
+  return -forward_flight + UVLM::InducedVelocity(kernel, x, wing_pos, wing_gamma) +
+         UVLM::InducedVelocity(kernel, x, wake_pos, wake_gamma);
 }
 
-inline void Velocity(MultipleSheet<Eigen::Vector3d>* result,
+inline void Velocity(const vortex_kernel::VortexKernel& kernel,
+                     MultipleSheet<Eigen::Vector3d>* result,
                      const MultipleSheet<Eigen::Vector3d>& wing_pos,
                      const MultipleSheet<double>& wing_gamma,
                      const MultipleSheet<Eigen::Vector3d>& wake_pos,
@@ -34,7 +36,7 @@ inline void Velocity(MultipleSheet<Eigen::Vector3d>* result,
 #pragma omp parallel for
 #endif
   for (std::size_t K = 0; K < wake_pos.size(); K++) {
-    (*result)[K] = Velocity(wake_pos[K], wing_pos, wing_gamma, wake_pos,
+    (*result)[K] = Velocity(kernel, wake_pos[K], wing_pos, wing_gamma, wake_pos,
                             wake_gamma, forward_flight);
   }
 
@@ -50,6 +52,8 @@ class Advection {
   Advection() = default;
   virtual ~Advection() = default;
   virtual void Advect(MultipleSheet<Eigen::Vector3d>* next,
+
+                      const vortex_kernel::VortexKernel& kernel,
                       const MultipleSheet<Eigen::Vector3d>& wing_pos,
                       const MultipleSheet<double>& wing_gamma,
                       const MultipleSheet<Eigen::Vector3d>& wake_pos,
@@ -61,6 +65,7 @@ class Advection {
 class Euler : public Advection {
  public:
   void Advect(MultipleSheet<Eigen::Vector3d>* next,
+              const vortex_kernel::VortexKernel& kernel,
               const MultipleSheet<Eigen::Vector3d>& wing_pos,
               const MultipleSheet<double>& wing_gamma,
               const MultipleSheet<Eigen::Vector3d>& wake_pos,
@@ -76,6 +81,7 @@ class RungeKutta2 : public Advection {
  public:
   RungeKutta2(std::size_t steps = 5) : ignore_steps_(steps) {}
   void Advect(MultipleSheet<Eigen::Vector3d>* next,
+              const vortex_kernel::VortexKernel& kernel,
               const MultipleSheet<Eigen::Vector3d>& wing_pos,
               const MultipleSheet<double>& wing_gamma,
               const MultipleSheet<Eigen::Vector3d>& wake_pos,
@@ -93,6 +99,7 @@ class RungeKutta4 : public Advection {
  public:
   RungeKutta4(std::size_t steps = 5) : ignore_steps_(steps) {}
   void Advect(MultipleSheet<Eigen::Vector3d>* next,
+              const vortex_kernel::VortexKernel& kernel,
               const MultipleSheet<Eigen::Vector3d>& wing_pos,
               const MultipleSheet<double>& wing_gamma,
               const MultipleSheet<Eigen::Vector3d>& wake_pos,
@@ -110,6 +117,7 @@ class AdamsBashforth2 : public Advection {
  public:
   AdamsBashforth2() {}
   void Advect(MultipleSheet<Eigen::Vector3d>* next,
+              const vortex_kernel::VortexKernel& kernel,
               const MultipleSheet<Eigen::Vector3d>& wing_pos,
               const MultipleSheet<double>& wing_gamma,
               const MultipleSheet<Eigen::Vector3d>& wake_pos,

@@ -12,18 +12,20 @@ using multiple_sheet::MultipleSheet;
 namespace UVLM {
 
 inline Eigen::Vector3d InducedVelocity(
+    const vortex_kernel::VortexKernel& kernel,
     const Eigen::Vector3d& x, const MultipleSheet<Eigen::Vector3d>& pos,
     const MultipleSheet<double>& gamma) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
   for (auto index : gamma.list_index()) {
     std::size_t n, i, j;
     std::tie(std::ignore, n, i, j) = index;
-    res += UVLM::VORING(x, pos, gamma, n, i, j);
+    res += UVLM::VORING(kernel, x, pos, gamma, n, i, j);
   }
   return res;
 }
 
 inline Eigen::Vector3d ParallelInducedVelocity(
+    const vortex_kernel::VortexKernel& kernel,
     const Eigen::Vector3d& x, const MultipleSheet<Eigen::Vector3d>& pos,
     const MultipleSheet<double>& gamma) {
   Eigen::Vector3d res = Eigen::Vector3d::Zero();
@@ -36,7 +38,7 @@ inline Eigen::Vector3d ParallelInducedVelocity(
     Eigen::Vector3d v;
     std::size_t n, i, j;
     std::tie(std::ignore, n, i, j) = indices[K];
-    v = UVLM::VORING(x, pos, gamma, n, i, j);
+    v = UVLM::VORING(kernel, x, pos, gamma, n, i, j);
     vx += v.x();
     vy += v.y();
     vz += v.z();
