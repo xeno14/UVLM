@@ -5,6 +5,7 @@
 
 #include "uvlm.h"
 #include "output.h"
+#include "advect_factory.h"
 #include <fstream>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
@@ -21,6 +22,7 @@ DEFINE_double(yrel, 6, "relative position y");
 DEFINE_double(phase, 0., "phase difference [deg]");
 DEFINE_int32(steps, 50, "number of steps to simulate");
 DEFINE_int32(steps_per_cycle, 40, "number of steps per flapping cycle");
+DEFINE_string(advect, "euler", "advection method (see advect_factory.cpp)");
 
 namespace {
 const double AR = 6;
@@ -59,6 +61,7 @@ void Run() {
   simulator.set_result_path(FLAGS_result_path);
   simulator.set_load_path(FLAGS_load_path);
   simulator.set_forward_flight({-Q, 0, 0});
+  simulator.set_advection(UVLM::advect::AdvectFactory(FLAGS_advect));
 
   const double dt = 2. * M_PI / OMEGA / FLAGS_steps_per_cycle;
   simulator.Run(FLAGS_steps, dt);
