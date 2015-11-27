@@ -87,6 +87,7 @@ add_library(uvlm
             src/advect.cpp
             src/shed.cpp
             src/vortex.cpp
+            src/vortex_kernel.cpp
             src/vortex_container.cpp
             src/uvlm_vortex_ring.cpp
             src/wing_builder.cpp
