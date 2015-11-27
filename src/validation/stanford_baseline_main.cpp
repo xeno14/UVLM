@@ -15,7 +15,7 @@ DEFINE_int32(cols, 20, "spanwise num");
 DEFINE_int32(steps, 50, "number of steps to simulate");
 DEFINE_int32(steps_per_cycle, 40, "number of steps per flapping cycle");
 DEFINE_double(alpha, 5, "angle of attack");
-DEFINE_string(advect, "euler", "advection scheme [euler, RK2, RK4]");
+DEFINE_string(advect, "euler", "advection scheme [euler, RK2, RK4, AB2]");
 
 using UVLM::simulator::SimpleSimulator;
 
@@ -37,11 +37,16 @@ void AddWing(SimpleSimulator* simulator) {
 }
 
 void SetAdvection(SimpleSimulator* simulator) {
-  if (FLAGS_advect == "RK2") {
+  if (FLAGS_advect == "euler") {
+    simulator->set_advection(new UVLM::advect::Euler);
+  } else if (FLAGS_advect == "RK2") {
     simulator->set_advection(new UVLM::advect::RungeKutta2);
   } else if (FLAGS_advect == "RK4") {
     simulator->set_advection(new UVLM::advect::RungeKutta4);
-  }else {
+  } else if (FLAGS_advect == "AB2") {
+    simulator->set_advection(new UVLM::advect::AdamsBashforth2);
+  } else {
+    LOG(WARNING) << "No advection is set. Euler is used.";
     simulator->set_advection(new UVLM::advect::Euler);
   }
 }

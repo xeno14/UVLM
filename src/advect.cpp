@@ -15,20 +15,7 @@ void Euler::Advect(MultipleSheet<Eigen::Vector3d>* next,
                    const MultipleSheet<double>& wake_gamma,
                    const Eigen::Vector3d& forward_flight,
                    const double dt) const {
-  vel.resize(wake_pos.num(), wake_pos.rows(), wake_pos.cols());
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for (std::size_t K = 0; K < wake_pos.size(); K++) {
-    vel[K] = Velocity(wake_pos[K], wing_pos, wing_gamma, wake_pos, wake_gamma,
-                      forward_flight);
-  }
-
-  // for trailing edge
-  for (std::size_t n = 0; n < vel.num(); n++) {
-    std::fill(vel.iterator_at(n, 0, 0), vel.iterator_at(n, 1, 0),
-              -forward_flight);
-  }
+  Velocity(&vel, wing_pos, wing_gamma, wake_pos, wake_gamma, forward_flight);
   for (std::size_t K = 0; K < wake_pos.size(); K++) {
     (*next)[K] = wake_pos[K] + vel[K] * dt;
   }
@@ -190,5 +177,43 @@ void RungeKutta4::Advect(MultipleSheet<Eigen::Vector3d>* next,
     }
   }
 }
+
+void AdamsBashforth2::Advect(MultipleSheet<Eigen::Vector3d>* next,
+                             const MultipleSheet<Eigen::Vector3d>& wing_pos,
+                             const MultipleSheet<double>& wing_gamma,
+                             const MultipleSheet<Eigen::Vector3d>& wake_pos,
+                             const MultipleSheet<double>& wake_gamma,
+                             const Eigen::Vector3d& forward_flight,
+                             const double dt) const {
+  Velocity(&v, wing_pos, wing_gamma, wake_pos, wake_gamma, forward_flight);
+
+  if (v_prev.size() == 0) {
+    // Euler scheme for the first step
+    for (std::size_t K = 0; K < wake_pos.size(); K++) {
+      (*next)[K] = wake_pos[K] + v[K] * dt;
+    }
+  } else {
+    // Adams Bashforth 2nd order
+    const auto indices = wake_pos.list_index();
+    for (const auto& index : indices) {
+      std::size_t K, n, i, j;
+      std::tie(K, n, i, j) = index;
+      if (i >= 1) {
+        // Because vortices at trailing edge are shed into wake every step,
+        // (i, j) at t corresponds to (i-1, j) at t-dt
+        next->at(n, i, j) =
+            wake_pos.at(n, i, j) +
+            (v.at(n, i, j) * 3 - v_prev.at(n, i - 1, j)) * dt / 2;
+      } else {
+        // for trailing edge
+        next->at(n, i, j) += v[K] * dt;
+      }
+    }
+  }
+  // TODO swap
+  v_prev.resize(v);
+  std::copy(v.begin(), v.end(), v_prev.begin());
+}
+
 }  // namespace advect
 }  // UVLM
