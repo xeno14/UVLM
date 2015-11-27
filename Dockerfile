@@ -18,7 +18,7 @@ RUN yes | pacman -S \
       yaml-cpp
 
 ADD . /tmp/uvlm
-RUN [ -d /tmp/uvlm/build ] || mkdir -p /tmp/uvlm/build
+RUN rm -rf /tmp/uvlm/build && mkdir -p /tmp/uvlm/build
 RUN cd /tmp/uvlm/build && cmake .. && make -j && make install
 RUN cd /tmp/uvlm/build && make test
 
