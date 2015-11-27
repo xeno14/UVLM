@@ -134,11 +134,11 @@ target_link_libraries(unsteady_plate uvlm wing protobuf glog yaml-cpp)
 add_executable(2d_velocity src/tools/2d_velocity_main.cpp)
 target_link_libraries(2d_velocity uvlm protobuf glog)
 
-add_executable(multiple_flapping_wings src/multiple_flapping_wings_main.cpp)
+add_executable(multiple_flapping_wings src/multiple_flapping_wings_main.cpp src/advect_factory.cpp)
 enable_gflags(multiple_flapping_wings)
 target_link_libraries(multiple_flapping_wings uvlm wing protobuf glog yaml-cpp)
 
-add_executable(stanford_baseline src/validation/stanford_baseline_main.cpp)
+add_executable(stanford_baseline src/validation/stanford_baseline_main.cpp src/advect_factory.cpp)
 enable_gflags(stanford_baseline)
 target_link_libraries(stanford_baseline uvlm wing protobuf glog yaml-cpp)
 
