@@ -23,15 +23,26 @@ DEFINE_double(phase, 0., "phase difference [deg]");
 DEFINE_int32(steps, 50, "number of steps to simulate");
 DEFINE_int32(steps_per_cycle, 40, "number of steps per flapping cycle");
 DEFINE_string(advect, "euler", "advection method (see advect_factory.cpp)");
+DEFINE_double(reduced_frequency, 0.1, "reduced frequency");
 
 namespace {
-const double AR = 6;
-const double ALPHA = 5. * M_PI / 180.;
-const double CHORD = 1.;
-const double SPAN = CHORD * AR;
-const double Kg = 0.1;
-const double Q = 1;
-const double OMEGA = 2 * Q * Kg / CHORD;
+double AR;
+double ALPHA;
+double CHORD;
+double SPAN;
+double Kg;
+double Q;
+double OMEGA;
+
+void InitParam() {
+  AR = 6;
+  ALPHA = 5. * M_PI / 180.;
+  CHORD = 1.;
+  SPAN = CHORD * AR;
+  Kg = FLAGS_reduced_frequency;
+  Q = 1;
+  OMEGA = 2 * Q * Kg / CHORD;
+}
 
 void AddWing(SimpleSimulator* simulator) {
   UVLM::Morphing m_leading;
@@ -73,6 +84,7 @@ int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InstallFailureSignalHandler();
 
+  InitParam();
   Run();
   return 0;
 }
