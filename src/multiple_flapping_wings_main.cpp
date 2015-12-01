@@ -24,9 +24,11 @@ DEFINE_int32(steps, 50, "number of steps to simulate");
 DEFINE_int32(steps_per_cycle, 40, "number of steps per flapping cycle");
 DEFINE_string(advect, "euler", "advection method (see advect_factory.cpp)");
 DEFINE_double(reduced_frequency, 0.1, "reduced frequency");
+DEFINE_bool(half, false, "use half of V-shape (i.e. line)");
 
 namespace {
 double AR;
+int WINGDIGIT;
 double ALPHA;
 double CHORD;
 double SPAN;
@@ -36,6 +38,7 @@ double OMEGA;
 
 void InitParam() {
   AR = 6;
+  WINGDIGIT = 83;
   ALPHA = 5. * M_PI / 180.;
   CHORD = 1.;
   SPAN = CHORD * AR;
@@ -47,22 +50,24 @@ void InitParam() {
 void AddWing(SimpleSimulator* simulator) {
   UVLM::Morphing m_leading;
   const double omega = OMEGA;
-  m_leading.set_flap([omega](double t) { return - M_PI_4 * cos(omega * t); });
+  m_leading.set_flap([omega](double t) { return -M_PI_4 * cos(omega * t); });
   m_leading.set_alpha(ALPHA);
-  simulator->AddWing(new UVLM::wing::NACA4digitGenerator(83), m_leading, CHORD,
-                     SPAN, FLAGS_rows, FLAGS_cols, {0, 0, 0});
+  simulator->AddWing(new UVLM::wing::NACA4digitGenerator(WINGDIGIT), m_leading,
+                     CHORD, SPAN, FLAGS_rows, FLAGS_cols, {0, 0, 0});
   for (int i = 1; i < FLAGS_lines; i++) {
     UVLM::Morphing m;
     const double dphi = FLAGS_phase / 180. * M_PI * i;
     const double xrel = FLAGS_xrel * i;
     const double yrel = FLAGS_yrel * i;
     m.set_flap(
-        [omega, dphi](double t) { return - M_PI_4 * cos(omega * t + dphi); });
+        [omega, dphi](double t) { return -M_PI_4 * cos(omega * t + dphi); });
     m.set_alpha(ALPHA);
-    simulator->AddWing(new UVLM::wing::NACA4digitGenerator(83), m, CHORD, SPAN,
-                       FLAGS_rows, FLAGS_cols, {xrel, yrel, 0});
-    simulator->AddWing(new UVLM::wing::NACA4digitGenerator(83), m, CHORD, SPAN,
-                       FLAGS_rows, FLAGS_cols, {xrel, -yrel, 0});
+    simulator->AddWing(new UVLM::wing::NACA4digitGenerator(WINGDIGIT), m, CHORD,
+                       SPAN, FLAGS_rows, FLAGS_cols, {xrel, yrel, 0});
+    if (!FLAGS_half) {
+      simulator->AddWing(new UVLM::wing::NACA4digitGenerator(WINGDIGIT), m,
+                         CHORD, SPAN, FLAGS_rows, FLAGS_cols, {xrel, -yrel, 0});
+    }
   }
 }
 
