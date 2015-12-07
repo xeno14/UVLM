@@ -224,7 +224,7 @@ void SimpleSimulator::CalcLoad(const std::vector<Eigen::Vector3d>& normal,
              << std::endl;
 }
 
-void SimpleSimulator::EraseWake() {
+void SimpleSimulator::EraseOldestWake() {
   wake_pos_.erase_last_row();
   wake_gamma_.erase_last_row();
 }
@@ -295,7 +295,7 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
     if (FLAGS_erase_wake_after > 0 &&
         step >= static_cast<std::size_t>(FLAGS_erase_wake_after)) {
       LOG(INFO) << "Erase";
-      EraseWake();
+      EraseOldestWake();
     }
   }
 }
