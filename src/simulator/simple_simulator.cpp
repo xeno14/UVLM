@@ -11,6 +11,7 @@
 #include <gflags/gflags.h>
 
 DEFINE_int32(omp_num_threads, 0, "number of threads. if 0, use default value.");
+DEFINE_int32(erase_wake_after, 0, "erase wake after the step. if 0, disabled.");
 
 namespace UVLM {
 namespace simulator {
@@ -223,6 +224,11 @@ void SimpleSimulator::CalcLoad(const std::vector<Eigen::Vector3d>& normal,
              << std::endl;
 }
 
+void SimpleSimulator::EraseOldestWake() {
+  wake_pos_.erase_last_row();
+  wake_gamma_.erase_last_row();
+}
+
 void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
   const double t = step * dt;
 
@@ -286,6 +292,11 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
   for (std::size_t step = STEP_MIN; step <= STEP_MIN + steps; step++) {
     LOG(INFO) << "step=" << step;
     MainLoop(step, dt);
+    if (FLAGS_erase_wake_after > 0 &&
+        step >= static_cast<std::size_t>(FLAGS_erase_wake_after)) {
+      LOG(INFO) << "Erase";
+      EraseOldestWake();
+    }
   }
 }
 

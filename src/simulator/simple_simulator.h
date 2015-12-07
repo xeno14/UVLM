@@ -94,6 +94,7 @@ class SimpleSimulator {
   Eigen::Vector3d Velocity(const Eigen::Vector3d& x) const {
     return -forward_flight_ + BoundVelocity(x) + WakeVelocity(x);
   }
+  void EraseOldestWake();
 
   void BuildWing();
   void MainLoop(const std::size_t step, const double dt);
