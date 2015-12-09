@@ -44,7 +44,8 @@ auto ParseRange(const std::string& range) {
   return std::make_tuple(x0, y0, x1, y1, cross_section);
 }
 
-void CreatePoints(std::vector<Eigen::Vector3d>* points) {
+auto CreatePoints() {
+  std::vector<Eigen::Vector3d> points;
   CheckPlane(FLAGS_plane);
   std::map<char, std::vector<double>> pos;
   std::set<char> keys {'x', 'y', 'z'};
@@ -70,10 +71,11 @@ void CreatePoints(std::vector<Eigen::Vector3d>* points) {
   for (double x : pos['x']) {
     for (double y : pos['y']) {
       for (double z : pos['z']) {
-        points->emplace_back(x, y, z);
+        points.emplace_back(x, y, z);
       }
     }
   }
+  return points;
 }
 
 auto GetVortices() {
@@ -97,11 +99,12 @@ struct Data {
 };
 
 template <class InputIterator1, class InputIterator2>
-void CalcData(std::vector<Data>* data, InputIterator1 pos_first,
+auto CalcData(InputIterator1 pos_first,
               InputIterator1 pos_last, InputIterator2 v_first,
               InputIterator2 v_last) {
+  std::vector<Data> data;
   const std::size_t size = std::distance(pos_first, pos_last);
-  data->resize(size);
+  data.resize(size);
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -109,8 +112,9 @@ void CalcData(std::vector<Data>* data, InputIterator1 pos_first,
     const auto pos = *(pos_first + i);
     Eigen::Vector3d vel;
     UVLM::InducedVelocity(&vel, pos, v_first, v_last);
-    data->at(i) = Data{pos, vel};
+    data.at(i) = Data{pos, vel};
   }
+  return data;
 }
 
 std::string Sep() {
@@ -123,10 +127,11 @@ std::string Sep() {
   }
 }
 
-void Output(const std::vector<Data>& data) {
-  std::ofstream ofs(FLAGS_output);
-  CHECK(ofs) << "Unable to open " << FLAGS_output;
-  LOG(INFO) << "Output: " << FLAGS_output;
+
+void Output(const std::vector<Data>& data, const std::string& output) {
+  std::ofstream ofs(output);
+  CHECK(ofs) << "Unable to open " << output;
+  LOG(INFO) << "Output: " << output;
   const std::string sep = Sep();
   ofs << "#"
       << "x" << sep
@@ -145,6 +150,14 @@ void Output(const std::vector<Data>& data) {
   }
 }
 
+void Write(const UVLM::proto::Snapshot2& snapshot, const std::string& output) {
+  const auto points = CreatePoints();
+  const auto vortices = GetVortices();
+  const auto data = CalcData(points.cbegin(), points.cend(), vortices->cbegin(),
+                             vortices->cend());
+  Output(data, output);
+}
+
 }  // anonymous namespace
 
 int main(int argc, char* argv[]) {
@@ -153,16 +166,16 @@ int main(int argc, char* argv[]) {
   google::InstallFailureSignalHandler();
   FLAGS_logtostderr = true;
 
-  std::vector<Eigen::Vector3d> points;
-  CreatePoints(&points);
-
-  auto vortices = GetVortices();
-
-  std::vector<Data> data;
-  CalcData(&data, points.cbegin(), points.cend(), vortices->cbegin(),
-           vortices->cend());
-
-  Output(data);
+  // std::vector<Eigen::Vector3d> points;
+  // CreatePoints(&points);
+  //
+  // auto vortices = GetVortices();
+  //
+  // std::vector<Data> data;
+  // CalcData(&data, points.cbegin(), points.cend(), vortices->cbegin(),
+  //          vortices->cend());
+  //
+  // Output(data);
 
   return 0;
 }
