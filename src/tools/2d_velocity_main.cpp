@@ -6,8 +6,10 @@
 #include "../proto_adaptor.h"
 #include "../shed.h"
 #include "../util.h"
+#include "../recordio/recordio.h"
 
 #include <cstdio>
+#include <glob.h>
 #include <fstream>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
@@ -23,6 +25,7 @@ DEFINE_string(plane, "xz", "coordinate plane. e.g. 'xy', 'yz', 'xz'");
 DEFINE_string(range, "[-1:1]x[-1:1]@0",
               "Calculate range. e.g. if plane=='xy', [-1:1]x[-2:2]@0 will plot x "
               "in [-1, 1], y in [-2:2] at z=0");
+DEFINE_bool(recordio, false, "use recordio instead of glob");
 
 namespace {
 
@@ -78,19 +81,13 @@ auto CreatePoints() {
   return points;
 }
 
-auto GetVortices() {
-  std::ifstream ifs(FLAGS_input, std::ios::binary);
-  CHECK(ifs) << "Unable to open " << FLAGS_input;
-  LOG(INFO) << "Input: " << FLAGS_input;
-
-  UVLM::proto::Snapshot2 snapshot2;
-  snapshot2.ParseFromIstream(&ifs);
-
-  std::vector<UVLM::VortexContainer> containers;
-  UVLM::Snapshot2ToContainers(&containers, snapshot2);
-
-  CHECK(containers.size() > 0) << "no container";
-  return containers.begin()->vortices();
+std::vector<UVLM::VortexRing> GetVortices(const UVLM::proto::Snapshot2& snapshot) {
+  std::vector<UVLM::VortexRing> res;
+  res.resize(snapshot.vortices().size());
+  std::transform(snapshot.vortices().begin(), snapshot.vortices().end(),
+                 res.begin(),
+                 [](const auto& v) { return UVLM::ProtoToVortexRing(v); });
+  return res;
 }
 
 struct Data {
@@ -152,10 +149,52 @@ void Output(const std::vector<Data>& data, const std::string& output) {
 
 void Write(const UVLM::proto::Snapshot2& snapshot, const std::string& output) {
   const auto points = CreatePoints();
-  const auto vortices = GetVortices();
-  const auto data = CalcData(points.cbegin(), points.cend(), vortices->cbegin(),
-                             vortices->cend());
+  const auto vortices = GetVortices(snapshot);
+  const auto data = CalcData(points.cbegin(), points.cend(), vortices.cbegin(),
+                             vortices.cend());
   Output(data, output);
+}
+
+std::string OutputPath(const std::string& output_path,
+                       const std::size_t index) {
+  char path[256];
+  sprintf(path, "%s/%08lu.%s", output_path.c_str(), index,
+          FLAGS_filetype.c_str());
+  return std::string(path);
+}
+
+std::size_t GlobWriter(const std::string& input_path,
+                       const std::string& output_path) {
+  glob_t globbuf;
+
+  CHECK(glob(input_path.c_str(), 0, NULL, &globbuf) == 0);
+  std::size_t index = 0;
+  for (index = 0; index < globbuf.gl_pathc; index++) {
+    std::ifstream in;
+    CHECK((in.open(globbuf.gl_pathv[index], std::ios::binary), in));
+
+    UVLM::proto::Snapshot2 snapshot;
+    CHECK(snapshot.ParseFromIstream(&in));
+
+    Write(snapshot, OutputPath(output_path, index));
+  }
+  globfree(&globbuf);
+  return index;
+}
+
+std::size_t RecordioWriter(const std::string& input_path,
+                    const std::string& output_path) {
+  std::ifstream in;
+  CHECK((in.open(input_path, std::ios::binary), in));
+  recordio::RecordReader reader(&in);
+
+  std::size_t index = 0;
+  UVLM::proto::Snapshot2 snapshot;
+  while (reader.ReadProtocolMessage(&snapshot)) {
+    Write(snapshot, OutputPath(output_path, index));
+    ++index;
+  }
+  return index;
 }
 
 }  // anonymous namespace
@@ -166,16 +205,13 @@ int main(int argc, char* argv[]) {
   google::InstallFailureSignalHandler();
   FLAGS_logtostderr = true;
 
-  // std::vector<Eigen::Vector3d> points;
-  // CreatePoints(&points);
-  //
-  // auto vortices = GetVortices();
-  //
-  // std::vector<Data> data;
-  // CalcData(&data, points.cbegin(), points.cend(), vortices->cbegin(),
-  //          vortices->cend());
-  //
-  // Output(data);
+  std::size_t num = 0;
+  if (FLAGS_recordio) {
+    num = RecordioWriter(FLAGS_input, FLAGS_output);
+  } else {
+    num = GlobWriter(FLAGS_input, FLAGS_output);
+  }
+  LOG(INFO) << "write " << num << " files";
 
   return 0;
 }
