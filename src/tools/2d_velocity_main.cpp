@@ -8,6 +8,7 @@
 #include "../util.h"
 #include "../recordio/recordio.h"
 
+#include <boost/algorithm/string.hpp>
 #include <cstdio>
 #include <glob.h>
 #include <fstream>
@@ -16,15 +17,15 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <string>
 
 DEFINE_int32(resolution, 100, "number of points for each edge");
 DEFINE_string(input, "", "snapshot2");
 DEFINE_string(output, "", "output filename");
 DEFINE_string(filetype, "csv", "csv or tsv");
 DEFINE_string(plane, "xz", "coordinate plane. e.g. 'xy', 'yz', 'xz'");
-DEFINE_string(range, "[-1:1]x[-1:1]@0",
-              "Calculate range. e.g. if plane=='xy', [-1:1]x[-2:2]@0 will plot x "
-              "in [-1, 1], y in [-2:2] at z=0");
+DEFINE_string(range, "-1,-1,1,1", "min0,max0,min1,max1");
+DEFINE_double(at, 0., "position of plane.");
 DEFINE_bool(recordio, false, "use recordio instead of glob");
 
 namespace {
@@ -39,12 +40,16 @@ void CheckPlane(const std::string& plane) {
 }
 
 auto ParseRange(const std::string& range) {
-  // TODO check format
-  double x0, y0, x1, y1, cross_section;
-  CHECK(sscanf(range.c_str(), "[%lf:%lf]x[%lf:%lf]@%lf", &x0, &y0, &x1, &y1,
-               &cross_section) == 5)
-      << "Something wrong with FLAGS_range format: " << range;
-  return std::make_tuple(x0, y0, x1, y1, cross_section);
+  std::array<double, 4> res;
+  std::vector<std::string> splited;
+  boost::algorithm::split(splited, FLAGS_range, boost::is_any_of(","));
+  CHECK(splited.size() == 4);
+  std::transform(splited.begin(), splited.end(), res.begin(),
+                 [](const std::string& s) {
+                   std::string::size_type sz;
+                   return std::stod(s, &sz);
+                 });
+  return std::make_tuple(res[0], res[1], res[2], res[3]);
 }
 
 auto CreatePoints() {
@@ -53,9 +58,10 @@ auto CreatePoints() {
   std::map<char, std::vector<double>> pos;
   std::set<char> keys {'x', 'y', 'z'};
   double min0, max0, min1, max1, cross_section;
-  std::tie(min0, max0, min1, max1, cross_section) = ParseRange(FLAGS_range);
-  LOG(INFO) << "range: " << min0 << "," << max0 << " x " << min1 << "," << max1
-            << " at " << cross_section;
+  std::tie(min0, max0, min1, max1) = ParseRange(FLAGS_range);
+  cross_section = FLAGS_at;
+  LOG(INFO) << "range: [" << min0 << "," << max0 << "] x [" << min1 << "," << max1
+            << "] at " << cross_section;
 
   // 0
   const char key0 = FLAGS_plane[0];
@@ -130,8 +136,7 @@ void Output(const std::vector<Data>& data, const std::string& output) {
   CHECK(ofs) << "Unable to open " << output;
   LOG(INFO) << "Output: " << output;
   const std::string sep = Sep();
-  ofs << "#"
-      << "x" << sep
+  ofs << "x" << sep
       << "y" << sep
       << "z" << sep
       << "u" << sep
