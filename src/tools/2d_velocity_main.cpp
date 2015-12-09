@@ -27,6 +27,7 @@ DEFINE_string(plane, "xz", "coordinate plane. e.g. 'xy', 'yz', 'xz'");
 DEFINE_string(range, "-1,-1,1,1", "min0,max0,min1,max1");
 DEFINE_double(at, 0., "position of plane.");
 DEFINE_bool(recordio, false, "use recordio instead of glob");
+DEFINE_string(prefix, "v", "prefix of output files");
 
 namespace {
 
@@ -163,8 +164,8 @@ void Write(const UVLM::proto::Snapshot2& snapshot, const std::string& output) {
 std::string OutputPath(const std::string& output_path,
                        const std::size_t index) {
   char path[256];
-  sprintf(path, "%s/%08lu.%s", output_path.c_str(), index,
-          FLAGS_filetype.c_str());
+  sprintf(path, "%s/%s%08lu.%s", output_path.c_str(), FLAGS_prefix.c_str(),
+          index, FLAGS_filetype.c_str());
   return std::string(path);
 }
 
