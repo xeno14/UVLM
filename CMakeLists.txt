@@ -158,6 +158,9 @@ add_executable(dump_centroid src/tools/dump_centroid_main.cpp)
 enable_gflags(dump_centroid)
 target_link_libraries(dump_centroid uvlm protobuf glog yaml-cpp)
 
+add_executable(wakefront src/tools/wakefront_main.cpp)
+enable_gflags(wakefront)
+target_link_libraries(wakefront uvlm protobuf glog yaml-cpp)
 
 ###########################################################
 # install
