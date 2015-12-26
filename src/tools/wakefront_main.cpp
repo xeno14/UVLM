@@ -50,6 +50,7 @@ int WakeFront() {
     for (auto it = first; it!=last; ++it) {
       ofs << "\t" << it->nodes().begin()->x();
     }
+    ofs << "\t" << (last - 1)->nodes()[1].x();
     ofs << std::endl;
     
     ++steps;
