@@ -19,6 +19,7 @@
 DEFINE_string(input, "", "AllVortexSheets recordio");
 DEFINE_string(output, "", "output filename");
 DEFINE_int32(start, 0, "start tracking wake front");
+DEFINE_int32(id, 0, "wing id");
 
 namespace {
 
@@ -45,8 +46,8 @@ int WakeFront() {
 
     ofs << t;
 
-    const auto first = wake.iterator_at(0, target_row, 0);
-    const auto last = wake.iterator_at(0, target_row + 1, 0);
+    const auto first = wake.iterator_at(FLAGS_id, target_row, 0);
+    const auto last = wake.iterator_at(FLAGS_id, target_row + 1, 0);
     for (auto it = first; it!=last; ++it) {
       ofs << "\t" << it->nodes().begin()->x();
     }
