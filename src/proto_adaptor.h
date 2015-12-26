@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../proto/uvlm.pb.h"
+#include "multiple_sheet/multiple_sheet.h"
 #include "vortex_container.h"
 #include "wing_builder.h"
 #include "uvlm_vortex_ring.h"
@@ -108,5 +109,42 @@ inline void Snapshot2ToMorphingVelocities(
     v_nodes->emplace_back(a);
   }
 }
+
+namespace proto_adaptor {
+using multiple_sheet::MultipleSheet;
+
+inline proto::VortexSheet ToVortexSheet(
+    const MultipleSheet<Eigen::Vector3d>& pos,
+    const MultipleSheet<double>& gamma) {
+  proto::VortexSheet res;
+  res.set_num(gamma.num());
+  res.set_rows(gamma.rows());
+  res.set_cols(gamma.cols());
+
+  std::size_t n, i, j;
+  for (const auto& index : gamma.list_index()) {
+    std::tie(std::ignore, n, i, j) = index;
+    UVLM::VortexRing vortex;
+    vortex.PushNode(pos.at(n, i, j))
+      .PushNode(pos.at(n, i, j + 1))
+      .PushNode(pos.at(n, i + 1, j + 1))
+      .PushNode(pos.at(n, i + 1, j));
+    vortex.set_gamma(gamma.at(n, i, j));
+    auto* v = res.add_vortices();
+    v->CopyFrom(VortexRingToProto(vortex));
+  }
+  return res;
+}
+
+inline MultipleSheet<UVLM::VortexRing> FromVortexSheet(
+    const proto::VortexSheet& sheet) {
+  MultipleSheet<UVLM::VortexRing> res(sheet.num(), sheet.rows(), sheet.cols());
+
+  std::transform(sheet.vortices().begin(), sheet.vortices().end(), res.begin(),
+                 ProtoToVortexRing);
+  return res;
+}
+
+}  // namespace proto_adaptor
 
 }  // namespace UVLM

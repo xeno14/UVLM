@@ -12,7 +12,8 @@
 
 using UVLM::simulator::SimpleSimulator;
 
-DEFINE_string(result_path, "", "directory to save Snapshot2");
+DEFINE_string(result_path, "", "Snapshot2 recordio");
+DEFINE_string(sheet_path, "", "AllVortexSheets recordio");
 DEFINE_string(load_path, "", "path to aerodynamic loads");
 DEFINE_int32(rows, 6, "chordwise num");
 DEFINE_int32(cols, 20, "spanwise num");
@@ -74,8 +75,9 @@ void AddWing(SimpleSimulator* simulator) {
 void Run() {
   SimpleSimulator simulator;
   AddWing(&simulator);
-  simulator.set_result_path(FLAGS_result_path);
-  simulator.set_load_path(FLAGS_load_path);
+  if (FLAGS_result_path.size()) simulator.set_result_path(FLAGS_result_path);
+  if (FLAGS_sheet_path.size()) simulator.set_sheet_path(FLAGS_sheet_path);
+  if (FLAGS_load_path.size()) simulator.set_load_path(FLAGS_load_path);
   simulator.set_forward_flight({-Q, 0, 0});
   simulator.set_advection(UVLM::advect::AdvectFactory(FLAGS_advect));
 

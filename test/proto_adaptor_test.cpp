@@ -47,3 +47,33 @@ TEST_F(Snapshot2ToContainersTest, containers) {
   EXPECT_DOUBLE_EQ(2, containers[1][0].gamma());
   EXPECT_DOUBLE_EQ(3, containers[1][1].gamma());
 }
+
+
+TEST(MultipleSheetTest, test) {
+  // TODO test position
+  using multiple_sheet::MultipleSheet;
+  MultipleSheet<Eigen::Vector3d> pos(2, 3, 2);
+  MultipleSheet<double> gamma(2, 2, 1);
+  gamma.at(0, 0, 0) = 0;
+  gamma.at(0, 1, 0) = 1;
+  gamma.at(1, 0, 0) = 2;
+  gamma.at(1, 1, 0) = 3;
+
+  const auto to_sheet = UVLM::proto_adaptor::ToVortexSheet(pos, gamma);
+  EXPECT_EQ(2, to_sheet.num());
+  EXPECT_EQ(2, to_sheet.rows());
+  EXPECT_EQ(1, to_sheet.cols());
+  EXPECT_DOUBLE_EQ(0, to_sheet.vortices(0).gamma());
+  EXPECT_DOUBLE_EQ(1, to_sheet.vortices(1).gamma());
+  EXPECT_DOUBLE_EQ(2, to_sheet.vortices(2).gamma());
+  EXPECT_DOUBLE_EQ(3, to_sheet.vortices(3).gamma());
+
+  const auto from_sheet = UVLM::proto_adaptor::FromVortexSheet(to_sheet);
+  EXPECT_EQ(2, from_sheet.num());
+  EXPECT_EQ(2, from_sheet.rows());
+  EXPECT_EQ(1, from_sheet.cols());
+  EXPECT_DOUBLE_EQ(0, from_sheet.at(0, 0, 0).gamma());
+  EXPECT_DOUBLE_EQ(1, from_sheet.at(0, 1, 0).gamma());
+  EXPECT_DOUBLE_EQ(2, from_sheet.at(1, 0, 0).gamma());
+  EXPECT_DOUBLE_EQ(3, from_sheet.at(1, 1, 0).gamma());
+}
