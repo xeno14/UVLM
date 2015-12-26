@@ -91,3 +91,10 @@ message VortexSheet {
 
   // Next: 6
 }
+
+
+message AllVortexSheets {
+  optional double t = 1;
+  optional VortexSheet wing = 2;
+  optional VortexSheet wake = 3;
+}

@@ -50,11 +50,19 @@ std::vector<Eigen::Vector3d> Normals(
 
 
 void SimpleSimulator::set_result_path(const std::string& path) {
-  if (path.size() == 0) return;
+  CHECK(path.size() > 0) << "Invalid path";
 
 
   CHECK((ofs_result_.reset(new std::ofstream(path)), *ofs_result_));
   writer_.reset(new recordio::RecordWriter(ofs_result_.get()));
+}
+
+
+void SimpleSimulator::set_sheet_path(const std::string& path) {
+  CHECK(path.size() > 0) << "Invalid path";
+
+  CHECK((ofs_sheet_.reset(new std::ofstream(path)), *ofs_sheet_));
+  sheet_writer_.reset(new recordio::RecordWriter(ofs_sheet_.get()));
 }
 
 
@@ -264,6 +272,10 @@ void SimpleSimulator::MainLoop(const std::size_t step, const double dt) {
     LOG(INFO) << "Output";
     OutputPanels(step, dt);
   }
+  if (sheet_writer_) {
+    LOG(INFO) << "Sheet output";
+    OutputSheet(step, dt);
+  }
   if (ofs_load_) {
     LOG(INFO) << "Load";
     CalcLoad(normal, t, dt);
@@ -316,6 +328,17 @@ void SimpleSimulator::OutputPanels(const std::size_t step,
     }
   }
   writer_->WriteProtocolMessage(snapshot);
+}
+
+void SimpleSimulator::OutputSheet(const std::size_t step, const double dt) const {
+  UVLM::proto::AllVortexSheets sheets;
+  sheets.set_t(step * dt);
+
+  sheets.mutable_wing()->CopyFrom(
+      UVLM::proto_adaptor::ToVortexSheet(wing_pos_, wing_gamma_));
+  sheets.mutable_wake()->CopyFrom(
+      UVLM::proto_adaptor::ToVortexSheet(wake_pos_, wake_gamma_));
+  sheet_writer_->WriteProtocolMessage(sheets);
 }
 
 void SimpleSimulator::PrepareOutputLoad() {
