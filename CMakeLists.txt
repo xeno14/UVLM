@@ -138,6 +138,10 @@ add_executable(multiple_flapping_wings src/multiple_flapping_wings_main.cpp src/
 enable_gflags(multiple_flapping_wings)
 target_link_libraries(multiple_flapping_wings uvlm wing protobuf glog yaml-cpp)
 
+add_executable(multiple_fixed_wings src/multiple_fixed_wings_main.cpp src/advect_factory.cpp)
+enable_gflags(multiple_fixed_wings)
+target_link_libraries(multiple_fixed_wings uvlm wing protobuf glog yaml-cpp)
+
 add_executable(sandwich src/sandwich_main.cpp src/advect_factory.cpp)
 enable_gflags(sandwich)
 target_link_libraries(sandwich uvlm wing protobuf glog yaml-cpp)
