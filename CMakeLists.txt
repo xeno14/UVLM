@@ -134,6 +134,9 @@ target_link_libraries(unsteady_plate uvlm wing protobuf glog yaml-cpp)
 add_executable(2d_velocity src/tools/2d_velocity_main.cpp)
 target_link_libraries(2d_velocity uvlm protobuf glog)
 
+add_executable(velocity_at src/tools/velocity_at_main.cpp)
+target_link_libraries(velocity_at uvlm protobuf glog recordio)
+
 add_executable(multiple_flapping_wings src/multiple_flapping_wings_main.cpp src/advect_factory.cpp)
 enable_gflags(multiple_flapping_wings)
 target_link_libraries(multiple_flapping_wings uvlm wing protobuf glog yaml-cpp)
