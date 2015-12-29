@@ -56,12 +56,15 @@ int main(int argc, char* argv[]) {
   std::ofstream ofs(FLAGS_output);
   CHECK(ofs);
 
+  ofs << "step\tt\tx\ty\tz" << std::endl;
+
   std::size_t count = 0;
   for (const auto& snapshot :
        recordio::ReaderRange<UVLM::proto::Snapshot2>(FLAGS_input)) {
     auto data = Calc(snapshot);
 
-    ofs << data.t << "\t" 
+    ofs << count << "\t"
+        << data.t << "\t"
         << data.v.x() << "\t"
         << data.v.y() << "\t"
         << data.v.z() << "\n";
