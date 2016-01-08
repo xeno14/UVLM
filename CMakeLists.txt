@@ -113,6 +113,7 @@ target_link_libraries(naca00XX wing)
 add_subdirectory(test)
 add_subdirectory(src/recordio)
 
+# validation
 add_executable(flapping_validation src/validation/flapping_validation.cpp)
 target_link_libraries(flapping_validation uvlm wing protobuf glog yaml-cpp)
 
@@ -131,9 +132,15 @@ target_link_libraries(steady2 uvlm wing protobuf glog yaml-cpp)
 add_executable(unsteady_plate src/validation/unsteady_plate.cpp)
 target_link_libraries(unsteady_plate uvlm wing protobuf glog yaml-cpp)
 
-add_executable(2d_velocity src/tools/2d_velocity_main.cpp)
-target_link_libraries(2d_velocity uvlm protobuf glog)
+add_executable(stanford_baseline src/validation/stanford_baseline_main.cpp src/advect_factory.cpp)
+enable_gflags(stanford_baseline)
+target_link_libraries(stanford_baseline uvlm wing protobuf glog yaml-cpp)
 
+add_executable(sudden_acceleration src/validation/sudden_acceleration_main.cpp)
+enable_gflags(sudden_acceleration)
+target_link_libraries(sudden_acceleration uvlm wing protobuf glog yaml-cpp)
+
+# calc
 add_executable(multiple_flapping_wings src/multiple_flapping_wings_main.cpp src/advect_factory.cpp)
 enable_gflags(multiple_flapping_wings)
 target_link_libraries(multiple_flapping_wings uvlm wing protobuf glog yaml-cpp)
@@ -146,13 +153,14 @@ add_executable(sandwich src/sandwich_main.cpp src/advect_factory.cpp)
 enable_gflags(sandwich)
 target_link_libraries(sandwich uvlm wing protobuf glog yaml-cpp)
 
-add_executable(stanford_baseline src/validation/stanford_baseline_main.cpp src/advect_factory.cpp)
-enable_gflags(stanford_baseline)
-target_link_libraries(stanford_baseline uvlm wing protobuf glog yaml-cpp)
 
 add_executable(calc_impulse src/calc_impulse_main.cpp)
 enable_gflags(calc_impulse)
 target_link_libraries(calc_impulse uvlm protobuf glog yaml-cpp)
+
+# tools
+add_executable(2d_velocity src/tools/2d_velocity_main.cpp)
+target_link_libraries(2d_velocity uvlm protobuf glog)
 
 add_executable(dump_circulation src/tools/dump_circulation_main.cpp)
 enable_gflags(dump_circulation)

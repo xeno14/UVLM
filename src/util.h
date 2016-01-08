@@ -32,6 +32,7 @@ inline double DegToRad(double deg) {
   return deg / 180.0 * M_PI;
 }
 
+
 inline std::vector<double> linspace(double a, double b, std::size_t N) {
   double dx = (b - a) / (N - 1);
   std::vector<double> res;
@@ -54,6 +55,14 @@ inline std::vector<std::pair<std::size_t, std::size_t>> DoubleLoop(
 
 namespace UVLM {
 namespace util {
+
+inline double radians(double deg) {
+  return deg / 180. * M_PI;
+}
+
+inline double degrees(double rad) {
+  return rad / M_PI * 180.;
+}
 
 template <class InputIterator>
 std::string join(const std::string& sep, InputIterator first,
