@@ -29,18 +29,19 @@ const double Q = 1;
 const double OMEGA = 2 * Q * Kg / CHORD;
 
 void AddWing(SimpleSimulator* simulator) {
-  UVLM::Morphing m;
   const double omega = OMEGA;
   const double span = SPAN;
   const double beta = 4. * M_PI / 180.;
   const double Aphi = 15. * M_PI / 180.;
-  m.set_flap([omega, Aphi](double t) { return Aphi * cos(omega * t); });
-  m.set_twist([omega, beta, span](const Eigen::Vector3d& x0, double t) {
-    return beta * fabs(x0.y()) / span * cos(omega * t + M_PI_2);
-  });
-  m.set_alpha(FLAGS_alpha * M_PI / 180.);
-  simulator->AddWing(new UVLM::wing::RectGenerator(), m, CHORD, SPAN,
-                     FLAGS_rows, FLAGS_cols, {0, 0, 0});
+  simulator->AddWing(
+      new UVLM::wing::RectGenerator(),
+      UVLM::Morphing()
+          .set_alpha(FLAGS_alpha * M_PI / 180.)
+          .set_flap([omega, Aphi](double t) { return Aphi * cos(omega * t); })
+          .set_twist([omega, beta, span](const Eigen::Vector3d& x0, double t) {
+            return beta * fabs(x0.y()) / span * cos(omega * t + M_PI_2);
+          }),
+      CHORD, SPAN, FLAGS_rows, FLAGS_cols, {0, 0, 0});
 }
 
 void Run() {
