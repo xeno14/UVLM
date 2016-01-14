@@ -3,26 +3,33 @@
  * @brief Add description here
  */
 
+
 #include "../proto_adaptor.h"
+#include "../recordio/recordio.h"
+#include "../recordio/recordio_range.h"
 #include "../shed.h"
 #include "../util.h"
 
+#include <boost/algorithm/string.hpp>
 #include <cstdio>
 #include <fstream>
 #include <gflags/gflags.h>
+#include <glob.h>
 #include <glog/logging.h>
-#include <vector>
 #include <map>
 #include <set>
+#include <string>
+#include <vector>
 
 DEFINE_int32(resolution, 100, "number of points for each edge");
 DEFINE_string(input, "", "snapshot2");
 DEFINE_string(output, "", "output filename");
 DEFINE_string(filetype, "csv", "csv or tsv");
 DEFINE_string(plane, "xz", "coordinate plane. e.g. 'xy', 'yz', 'xz'");
-DEFINE_string(range, "[-1:1]x[-1:1]@0",
-              "Calculate range. e.g. if plane=='xy', [-1:1]x[-2:2]@0 will plot x "
-              "in [-1, 1], y in [-2:2] at z=0");
+DEFINE_string(range, "-1,-1,1,1", "min0,max0,min1,max1");
+DEFINE_double(at, 0., "position of plane.");
+DEFINE_bool(recordio, false, "use recordio instead of glob");
+DEFINE_string(prefix, "v", "prefix of output files");
 
 namespace {
 
@@ -36,22 +43,28 @@ void CheckPlane(const std::string& plane) {
 }
 
 auto ParseRange(const std::string& range) {
-  // TODO check format
-  double x0, y0, x1, y1, cross_section;
-  CHECK(sscanf(range.c_str(), "[%lf:%lf]x[%lf:%lf]@%lf", &x0, &y0, &x1, &y1,
-               &cross_section) == 5)
-      << "Something wrong with FLAGS_range format: " << range;
-  return std::make_tuple(x0, y0, x1, y1, cross_section);
+  std::array<double, 4> res;
+  std::vector<std::string> splited;
+  boost::algorithm::split(splited, FLAGS_range, boost::is_any_of(","));
+  CHECK(splited.size() == 4);
+  std::transform(splited.begin(), splited.end(), res.begin(),
+                 [](const std::string& s) {
+                   std::string::size_type sz;
+                   return std::stod(s, &sz);
+                 });
+  return std::make_tuple(res[0], res[1], res[2], res[3]);
 }
 
-void CreatePoints(std::vector<Eigen::Vector3d>* points) {
+auto CreatePoints() {
+  std::vector<Eigen::Vector3d> points;
   CheckPlane(FLAGS_plane);
   std::map<char, std::vector<double>> pos;
   std::set<char> keys {'x', 'y', 'z'};
   double min0, max0, min1, max1, cross_section;
-  std::tie(min0, max0, min1, max1, cross_section) = ParseRange(FLAGS_range);
-  LOG(INFO) << "range: " << min0 << "," << max0 << " x " << min1 << "," << max1
-            << " at " << cross_section;
+  std::tie(min0, max0, min1, max1) = ParseRange(FLAGS_range);
+  cross_section = FLAGS_at;
+  LOG(INFO) << "range: [" << min0 << "," << max0 << "] x [" << min1 << "," << max1
+            << "] at " << cross_section;
 
   // 0
   const char key0 = FLAGS_plane[0];
@@ -70,25 +83,20 @@ void CreatePoints(std::vector<Eigen::Vector3d>* points) {
   for (double x : pos['x']) {
     for (double y : pos['y']) {
       for (double z : pos['z']) {
-        points->emplace_back(x, y, z);
+        points.emplace_back(x, y, z);
       }
     }
   }
+  return points;
 }
 
-auto GetVortices() {
-  std::ifstream ifs(FLAGS_input, std::ios::binary);
-  CHECK(ifs) << "Unable to open " << FLAGS_input;
-  LOG(INFO) << "Input: " << FLAGS_input;
-
-  UVLM::proto::Snapshot2 snapshot2;
-  snapshot2.ParseFromIstream(&ifs);
-
-  std::vector<UVLM::VortexContainer> containers;
-  UVLM::Snapshot2ToContainers(&containers, snapshot2);
-
-  CHECK(containers.size() > 0) << "no container";
-  return containers.begin()->vortices();
+std::vector<UVLM::VortexRing> GetVortices(const UVLM::proto::Snapshot2& snapshot) {
+  std::vector<UVLM::VortexRing> res;
+  res.resize(snapshot.vortices().size());
+  std::transform(snapshot.vortices().begin(), snapshot.vortices().end(),
+                 res.begin(),
+                 [](const auto& v) { return UVLM::ProtoToVortexRing(v); });
+  return res;
 }
 
 struct Data {
@@ -97,11 +105,12 @@ struct Data {
 };
 
 template <class InputIterator1, class InputIterator2>
-void CalcData(std::vector<Data>* data, InputIterator1 pos_first,
+auto CalcData(InputIterator1 pos_first,
               InputIterator1 pos_last, InputIterator2 v_first,
               InputIterator2 v_last) {
+  std::vector<Data> data;
   const std::size_t size = std::distance(pos_first, pos_last);
-  data->resize(size);
+  data.resize(size);
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -109,8 +118,9 @@ void CalcData(std::vector<Data>* data, InputIterator1 pos_first,
     const auto pos = *(pos_first + i);
     Eigen::Vector3d vel;
     UVLM::InducedVelocity(&vel, pos, v_first, v_last);
-    data->at(i) = Data{pos, vel};
+    data.at(i) = Data{pos, vel};
   }
+  return data;
 }
 
 std::string Sep() {
@@ -123,13 +133,13 @@ std::string Sep() {
   }
 }
 
-void Output(const std::vector<Data>& data) {
-  std::ofstream ofs(FLAGS_output);
-  CHECK(ofs) << "Unable to open " << FLAGS_output;
-  LOG(INFO) << "Output: " << FLAGS_output;
+
+void Output(const std::vector<Data>& data, const std::string& output) {
+  std::ofstream ofs(output);
+  CHECK(ofs) << "Unable to open " << output;
+  LOG(INFO) << "Output: " << output;
   const std::string sep = Sep();
-  ofs << "#"
-      << "x" << sep
+  ofs << "x" << sep
       << "y" << sep
       << "z" << sep
       << "u" << sep
@@ -145,6 +155,53 @@ void Output(const std::vector<Data>& data) {
   }
 }
 
+void Write(const UVLM::proto::Snapshot2& snapshot, const std::string& output) {
+  const auto points = CreatePoints();
+  const auto vortices = GetVortices(snapshot);
+  const auto data = CalcData(points.cbegin(), points.cend(), vortices.cbegin(),
+                             vortices.cend());
+  Output(data, output);
+}
+
+std::string OutputPath(const std::string& output_path,
+                       const std::size_t index) {
+  char path[256];
+  sprintf(path, "%s/%s%08lu.%s", output_path.c_str(), FLAGS_prefix.c_str(),
+          index, FLAGS_filetype.c_str());
+  return std::string(path);
+}
+
+std::size_t GlobWriter(const std::string& input_path,
+                       const std::string& output_path) {
+  glob_t globbuf;
+
+  CHECK(glob(input_path.c_str(), 0, NULL, &globbuf) == 0);
+  std::size_t index = 0;
+  for (index = 0; index < globbuf.gl_pathc; index++) {
+    std::ifstream in;
+    CHECK((in.open(globbuf.gl_pathv[index], std::ios::binary), in));
+
+    UVLM::proto::Snapshot2 snapshot;
+    CHECK(snapshot.ParseFromIstream(&in));
+
+    Write(snapshot, OutputPath(output_path, index));
+  }
+  globfree(&globbuf);
+  return index;
+}
+
+std::size_t RecordioWriter(const std::string& input_path,
+                    const std::string& output_path) {
+  std::size_t index = 0;
+  UVLM::proto::Snapshot2 snapshot;
+  for (const auto& snapshot :
+       recordio::ReaderRange<UVLM::proto::Snapshot2>(input_path)) {
+    Write(snapshot, OutputPath(output_path, index));
+    ++index;
+  }
+  return index;
+}
+
 }  // anonymous namespace
 
 int main(int argc, char* argv[]) {
@@ -153,16 +210,13 @@ int main(int argc, char* argv[]) {
   google::InstallFailureSignalHandler();
   FLAGS_logtostderr = true;
 
-  std::vector<Eigen::Vector3d> points;
-  CreatePoints(&points);
-
-  auto vortices = GetVortices();
-
-  std::vector<Data> data;
-  CalcData(&data, points.cbegin(), points.cend(), vortices->cbegin(),
-           vortices->cend());
-
-  Output(data);
+  std::size_t num = 0;
+  if (FLAGS_recordio) {
+    num = RecordioWriter(FLAGS_input, FLAGS_output);
+  } else {
+    num = GlobWriter(FLAGS_input, FLAGS_output);
+  }
+  LOG(INFO) << "write " << num << " files";
 
   return 0;
 }

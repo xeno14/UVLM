@@ -13,6 +13,7 @@
 #include "../multiple_sheet/multiple_sheet.h"
 #include "../recordio/recordio.h"
 #include "../velocity.h"
+#include "../wing/wing.h"
 
 using multiple_sheet::MultipleSheet;
 
