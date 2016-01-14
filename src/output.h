@@ -6,12 +6,15 @@
 #pragma once
 
 #include "../proto/uvlm.pb.h"
+#include "multiple_sheet/multiple_sheet.h"
 #include "proto_adaptor.h"
 
 #include <glog/logging.h>
 #include <fstream>
 #include <iterator>
 #include <type_traits>
+
+using multiple_sheet::MultipleSheet;
 
 namespace UVLM {
 namespace output {
@@ -49,6 +52,10 @@ void SimpleAppendSnapshot(UVLM::proto::Snapshot2* snapshot,
     snapshot->add_vortices()->CopyFrom(::UVLM::VortexRingToProto(v));
   }
 }
+
+void SheetToSnapshot(UVLM::proto::Snapshot2* snapshot,
+                            const MultipleSheet<Eigen::Vector3d>& pos,
+                            const MultipleSheet<double>& gamma);
 
 }  // namespace output
 }  // namespace UVLM
