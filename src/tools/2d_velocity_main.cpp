@@ -7,6 +7,7 @@
 #include "../shed.h"
 #include "../util.h"
 #include "../recordio/recordio.h"
+#include "../recordio/recordio_range.h"
 
 #include <boost/algorithm/string.hpp>
 #include <cstdio>
@@ -190,13 +191,10 @@ std::size_t GlobWriter(const std::string& input_path,
 
 std::size_t RecordioWriter(const std::string& input_path,
                     const std::string& output_path) {
-  std::ifstream in;
-  CHECK((in.open(input_path, std::ios::binary), in));
-  recordio::RecordReader reader(&in);
-
   std::size_t index = 0;
   UVLM::proto::Snapshot2 snapshot;
-  while (reader.ReadProtocolMessage(&snapshot)) {
+  for (const auto& snapshot :
+       recordio::ReaderRange<UVLM::proto::Snapshot2>(input_path)) {
     Write(snapshot, OutputPath(output_path, index));
     ++index;
   }

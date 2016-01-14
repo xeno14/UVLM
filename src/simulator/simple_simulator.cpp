@@ -315,18 +315,8 @@ void SimpleSimulator::Run(const std::size_t steps, const double dt) {
 void SimpleSimulator::OutputPanels(const std::size_t step,
                                    const double dt) const {
   UVLM::proto::Snapshot2 snapshot;
-  for (std::size_t n = 0; n < wing_gamma_.num(); n++) {
-    UVLM::output::SimpleAppendSnapshot(
-        &snapshot, wing_pos_.sheet_begin(n), wing_pos_.sheet_end(n),
-        wing_gamma_.sheet_begin(n), wing_gamma_.sheet_end(n),
-        wing_gamma_.cols());
-    if (wake_gamma_.size()) {
-      UVLM::output::SimpleAppendSnapshot(
-          &snapshot, wake_pos_.sheet_begin(n), wake_pos_.sheet_end(n),
-          wake_gamma_.sheet_begin(n), wake_gamma_.sheet_end(n),
-          wake_gamma_.cols());
-    }
-  }
+  UVLM::output::SheetToSnapshot(&snapshot, wing_pos_, wing_gamma_);
+  UVLM::output::SheetToSnapshot(&snapshot, wake_pos_, wake_gamma_);
   writer_->WriteProtocolMessage(snapshot);
 }
 

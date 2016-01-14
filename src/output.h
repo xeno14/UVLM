@@ -6,12 +6,15 @@
 #pragma once
 
 #include "../proto/uvlm.pb.h"
+#include "multiple_sheet/multiple_sheet.h"
 #include "proto_adaptor.h"
 
 #include <glog/logging.h>
 #include <fstream>
 #include <iterator>
 #include <type_traits>
+
+using multiple_sheet::MultipleSheet;
 
 namespace UVLM {
 namespace output {
@@ -46,6 +49,28 @@ void SimpleAppendSnapshot(UVLM::proto::Snapshot2* snapshot,
         .PushNode(*(pos + 1 + cols + 1))
         .PushNode(*(pos + cols + 1));
     v.set_gamma(*gamma);
+    snapshot->add_vortices()->CopyFrom(::UVLM::VortexRingToProto(v));
+  }
+}
+
+inline void SheetToSnapshot(UVLM::proto::Snapshot2* snapshot,
+                            const MultipleSheet<Eigen::Vector3d>& pos,
+                            const MultipleSheet<double>& gamma) {
+  for (const auto& index : gamma.list_index()) {
+    std::size_t n, i, j;
+    std::tie(std::ignore, n, i, j) = index;
+
+    // TODO wrap here
+    const auto& p0 = pos.at(n, i, j);
+    const auto& p1 = pos.at(n, i, j + 1);
+    const auto& p2 = pos.at(n, i + 1, j + 1);
+    const auto& p3 = pos.at(n, i + 1, j);
+    const double g = gamma.at(n, i, j);
+
+    UVLM::VortexRing v;
+    v.PushNode(p3).PushNode(p2).PushNode(p1).PushNode(p0);
+    // v.PushNode(p0).PushNode(p1).PushNode(p2).PushNode(p3);
+    v.set_gamma(g);
     snapshot->add_vortices()->CopyFrom(::UVLM::VortexRingToProto(v));
   }
 }
