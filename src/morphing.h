@@ -67,14 +67,25 @@ class Morphing {
   void PrepareMatrix(Eigen::Matrix3d* m, const Eigen::Vector3d& x0,
                      double t) const;
 
-  void set_alpha(double alpha) { alpha_ = alpha; }
-  void set_plug(std::function<double(double)> f) { plug_ = f; }
-  void set_flap(std::function<double(double)> f) { flap_ = f; }
-  void set_twist(std::function<double(const Eigen::Vector3d&, double)> f) {
-    twist_ = f;
+  Morphing& set_alpha(double alpha) {
+    alpha_ = alpha;
+    return *this;
   }
-  void set_bend(std::function<double(const Eigen::Vector3d&, double)> f) {
+  Morphing& set_plug(std::function<double(double)> f) {
+    plug_ = f;
+    return *this;
+  }
+  Morphing& set_flap(std::function<double(double)> f) {
+    flap_ = f;
+    return *this;
+  }
+  Morphing& set_twist(std::function<double(const Eigen::Vector3d&, double)> f) {
+    twist_ = f;
+    return *this;
+  }
+  Morphing& set_bend(std::function<double(const Eigen::Vector3d&, double)> f) {
     bend_ = f;
+    return *this;
   }
 
   /** @brief Set position of the root of wing */
