@@ -13,6 +13,7 @@
 #include "../multiple_sheet/multiple_sheet.h"
 #include "../recordio/recordio.h"
 #include "../velocity.h"
+#include "../wing/wing.h"
 
 using multiple_sheet::MultipleSheet;
 
@@ -56,6 +57,7 @@ class SimpleSimulator {
   void set_forward_flight(const Eigen::Vector3d& v) { forward_flight_ = v; }
   void set_result_path(const std::string& path);
   void set_load_path(const std::string& loadpath);
+  void set_sheet_path(const std::string& path);
   void set_advection(advect::Advection* advection) {
     advection_.reset(advection);
   }
@@ -72,8 +74,10 @@ class SimpleSimulator {
   std::vector<Morphing> morphings_;
   std::vector<WingInformation> wing_info_;
   std::unique_ptr<std::ofstream> ofs_result_;
+  std::unique_ptr<std::ofstream> ofs_sheet_;
   std::unique_ptr<std::ofstream> ofs_load_;
   std::unique_ptr<recordio::RecordWriter> writer_;
+  std::unique_ptr<recordio::RecordWriter> sheet_writer_;
 
   Eigen::MatrixXd CalcMatrix(const std::vector<Eigen::Vector3d>& cpos,
                              const std::vector<Eigen::Vector3d>& normal) const;
@@ -99,6 +103,7 @@ class SimpleSimulator {
   void BuildWing();
   void MainLoop(const std::size_t step, const double dt);
   void OutputPanels(const std::size_t step, const double dt) const;
+  void OutputSheet(const std::size_t step, const double dt) const;
   void PrepareOutputLoad();
 };
 }  // namespace simulator

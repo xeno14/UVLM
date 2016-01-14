@@ -79,3 +79,22 @@ message Snapshot2 {
 
   // Next: 5
 }
+
+message VortexSheet {
+  optional double t = 1;
+
+  required uint32 num  = 2;
+  required uint32 rows = 3;
+  required uint32 cols = 4;
+
+  repeated VortexRing vortices = 5;
+
+  // Next: 6
+}
+
+
+message AllVortexSheets {
+  optional double t = 1;
+  optional VortexSheet wing = 2;
+  optional VortexSheet wake = 3;
+}

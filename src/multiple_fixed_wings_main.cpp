@@ -1,5 +1,5 @@
 /**
- * @file multiple_flapping_wings_main.cpp
+ * @file multiple_fixed_wings_main.cpp
  * @brief Add description here
  */
 
@@ -22,9 +22,8 @@ DEFINE_double(xrel, 3, "relative position x");
 DEFINE_double(yrel, 6, "relative position y");
 DEFINE_double(phase, 0., "phase difference [deg]");
 DEFINE_int32(steps, 50, "number of steps to simulate");
-DEFINE_int32(steps_per_cycle, 40, "number of steps per flapping cycle");
+DEFINE_double(dt, 0.1, "time per step");
 DEFINE_string(advect, "euler", "advection method (see advect_factory.cpp)");
-DEFINE_double(reduced_frequency, 0.1, "reduced frequency");
 DEFINE_bool(half, false, "use half of V-shape (i.e. line)");
 
 namespace {
@@ -33,9 +32,7 @@ int WINGDIGIT;
 double ALPHA;
 double CHORD;
 double SPAN;
-double Kg;
 double Q;
-double OMEGA;
 
 void InitParam() {
   AR = 6;
@@ -43,26 +40,16 @@ void InitParam() {
   ALPHA = 5. * M_PI / 180.;
   CHORD = 1.;
   SPAN = CHORD * AR;
-  Kg = FLAGS_reduced_frequency;
   Q = 1;
-  OMEGA = 2 * Q * Kg / CHORD;
 }
 
 void AddWing(SimpleSimulator* simulator) {
-  UVLM::Morphing m_leading;
-  const double omega = OMEGA;
-  m_leading.set_flap([omega](double t) { return -M_PI_4 * cos(omega * t); });
-  m_leading.set_alpha(ALPHA);
-  simulator->AddWing(new UVLM::wing::NACA4digitGenerator(WINGDIGIT), m_leading,
+  UVLM::Morphing m;
+  simulator->AddWing(new UVLM::wing::NACA4digitGenerator(WINGDIGIT), m,
                      CHORD, SPAN, FLAGS_rows, FLAGS_cols, {0, 0, 0});
   for (int i = 1; i < FLAGS_lines; i++) {
-    UVLM::Morphing m;
-    const double dphi = FLAGS_phase / 180. * M_PI * i;
     const double xrel = FLAGS_xrel * i;
     const double yrel = FLAGS_yrel * i;
-    m.set_flap(
-        [omega, dphi](double t) { return -M_PI_4 * cos(omega * t + dphi); });
-    m.set_alpha(ALPHA);
     simulator->AddWing(new UVLM::wing::NACA4digitGenerator(WINGDIGIT), m, CHORD,
                        SPAN, FLAGS_rows, FLAGS_cols, {xrel, yrel, 0});
     if (!FLAGS_half) {
@@ -81,8 +68,7 @@ void Run() {
   simulator.set_forward_flight({-Q, 0, 0});
   simulator.set_advection(UVLM::advect::AdvectFactory(FLAGS_advect));
 
-  const double dt = 2. * M_PI / OMEGA / FLAGS_steps_per_cycle;
-  simulator.Run(FLAGS_steps, dt);
+  simulator.Run(FLAGS_steps, FLAGS_dt);
 }
 }  // anonymous namespace
 
