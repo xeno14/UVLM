@@ -3,22 +3,23 @@
  * @brief Add description here
  */
 
+
 #include "../proto_adaptor.h"
-#include "../shed.h"
-#include "../util.h"
 #include "../recordio/recordio.h"
 #include "../recordio/recordio_range.h"
+#include "../shed.h"
+#include "../util.h"
 
 #include <boost/algorithm/string.hpp>
 #include <cstdio>
-#include <glob.h>
 #include <fstream>
 #include <gflags/gflags.h>
+#include <glob.h>
 #include <glog/logging.h>
-#include <vector>
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 DEFINE_int32(resolution, 100, "number of points for each edge");
 DEFINE_string(input, "", "snapshot2");
