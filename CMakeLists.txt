@@ -86,6 +86,7 @@ add_library(uvlm
             ${PROTO_DIR}/uvlm.pb.cc
             src/advect.cpp
             src/shed.cpp
+            src/output.cpp
             src/vortex.cpp
             src/vortex_container.cpp
             src/uvlm_vortex_ring.cpp
