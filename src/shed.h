@@ -36,6 +36,10 @@ void InducedVelocity(Eigen::Vector3d* const result,
                      InputIterator first, InputIterator last);
 
 template <class InputIterator>
+void InducedVelocity(const Eigen::Vector3d& pos, InputIterator first,
+                     InputIterator last);
+
+template <class InputIterator>
 void ChordwiseInducedVelocity(Eigen::Vector3d* const result,
                               const Eigen::Vector3d& pos, InputIterator first,
                               InputIterator last);

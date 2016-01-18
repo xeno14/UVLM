@@ -141,7 +141,9 @@ add_executable(sudden_acceleration src/validation/sudden_acceleration_main.cpp)
 enable_gflags(sudden_acceleration)
 target_link_libraries(sudden_acceleration uvlm wing protobuf glog yaml-cpp)
 
-# calc
+add_executable(velocity_at src/tools/velocity_at_main.cpp)
+target_link_libraries(velocity_at uvlm protobuf glog recordio)
+
 add_executable(multiple_flapping_wings src/multiple_flapping_wings_main.cpp src/advect_factory.cpp)
 enable_gflags(multiple_flapping_wings)
 target_link_libraries(multiple_flapping_wings uvlm wing protobuf glog yaml-cpp)

@@ -4,3 +4,6 @@
 [submodule "src/recordio"]
 	path = src/recordio
 	url = https://github.com/xeno1991/recordio
+[submodule "src/csv_writer"]
+	path = src/csv_writer
+	url = https://github.com/xeno1991/csv_writer.git
