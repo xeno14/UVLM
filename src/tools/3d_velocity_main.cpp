@@ -22,8 +22,12 @@
 DEFINE_int32(resolution, 100, "number of points for each edge");
 DEFINE_string(input, "", "snapshot2 recordio");
 DEFINE_string(output, "", "output filename");
-DEFINE_string(range, "-1,-1,1,1", "min0,max0,min1,max1");
-DEFINE_double(at, 0., "position of plane.");
+DEFINE_double(xmin, 0, "min value of x");
+DEFINE_double(xmax, 8, "max value of x");
+DEFINE_double(ymin, -4, "min value of y");
+DEFINE_double(ymax, 4, "max value of y");
+DEFINE_double(zmin, -4, "min value of z");
+DEFINE_double(zmax, 4, "max value of z");
 DEFINE_string(prefix, "v", "prefix of output files");
 DEFINE_uint64(step, 0, "step");
 
@@ -62,19 +66,17 @@ struct Data {
   Eigen::Vector3d vel;
 };
 
-template <class InputIterator1, class InputIterator2>
-auto CalcData(InputIterator1 pos_first, InputIterator1 pos_last,
-              InputIterator2 v_first, InputIterator2 v_last) {
-  std::vector<Data> data;
-  const std::size_t size = std::distance(pos_first, pos_last);
-  data.resize(size);
+auto CalcData(const std::vector<Eigen::Vector3d>& points,
+              const std::vector<UVLM::VortexRing>& vortices) {
+  std::vector<Data> data(points.size());
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (std::size_t i = 0; i < size; i++) {
-    const auto pos = *(pos_first + i);
+  for (std::size_t i = 0; i < points.size(); i++) {
+    const auto& pos = points[i];
     Eigen::Vector3d vel;
-    UVLM::InducedVelocity(&vel, pos, v_first, v_last);
+    UVLM::InducedVelocity(&vel, pos, vortices.cbegin(), vortices.cend());
+    vel += Eigen::Vector3d(1, 0, 0);  // freestream
     data.at(i) = Data{pos, vel};
   }
   return data;
@@ -82,15 +84,15 @@ auto CalcData(InputIterator1 pos_first, InputIterator1 pos_last,
 
 std::size_t Write(const UVLM::proto::Snapshot2& snapshot,
                   const std::string& output) {
-  const std::size_t Nx = 10;
-  const std::size_t Ny = 10;
-  const std::size_t Nz = 10;
-  const double xmin = 0;
-  const double xmax = 8;
-  const double ymin = -4;
-  const double ymax = 4;
-  const double zmin = -4;
-  const double zmax = 4;
+  const std::size_t Nx = FLAGS_resolution;
+  const std::size_t Ny = FLAGS_resolution;
+  const std::size_t Nz = FLAGS_resolution;
+  const double xmin = FLAGS_xmin;
+  const double xmax = FLAGS_xmax;
+  const double ymin = FLAGS_ymin;
+  const double ymax = FLAGS_ymax;
+  const double zmin = FLAGS_zmin;
+  const double zmax = FLAGS_zmax;
   const double dx = (xmax - xmin) / (Nx - 1);
   const double dy = (ymax - ymin) / (Ny - 1);
   const double dz = (zmax - zmin) / (Nz - 1);
@@ -106,8 +108,7 @@ std::size_t Write(const UVLM::proto::Snapshot2& snapshot,
   const auto points =
       CreatePoints(xmin, xmax, Nx, ymin, ymax, Ny, zmin, zmax, Nz);
   const auto vortices = GetVortices(snapshot);
-  const auto result = CalcData(points.cbegin(), points.cend(),
-                               vortices.cbegin(), vortices.cend());
+  const auto result = CalcData(points, vortices);
 
   FILE* fp = fopen(output.c_str(), "w");
   CHECK(fp != NULL) << "Unable to open " << output;
