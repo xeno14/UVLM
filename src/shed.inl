@@ -32,6 +32,14 @@ void InducedVelocity(Eigen::Vector3d* result,
   }
 }
 
+template <class InputIterator>
+void InducedVelocity(const Eigen::Vector3d& pos, InputIterator first,
+                     InputIterator last) {
+  Eigen::Vector3d res;
+  InducedVelocity(&res, pos, first, last);
+  return res;
+}
+
 template <class InputIterator, class OutputIterator>
 void Advect(InputIterator vortex_first, InputIterator vortex_last,
             OutputIterator wake_first, OutputIterator wake_last,
