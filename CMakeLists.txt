@@ -165,6 +165,9 @@ target_link_libraries(calc_impulse uvlm protobuf glog yaml-cpp)
 add_executable(2d_velocity src/tools/2d_velocity_main.cpp)
 target_link_libraries(2d_velocity uvlm protobuf glog)
 
+add_executable(3d_velocity src/tools/3d_velocity_main.cpp)
+target_link_libraries(3d_velocity uvlm protobuf glog)
+
 add_executable(dump_circulation src/tools/dump_circulation_main.cpp)
 enable_gflags(dump_circulation)
 target_link_libraries(dump_circulation uvlm protobuf glog yaml-cpp)
